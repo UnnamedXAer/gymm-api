@@ -25,5 +25,5 @@ func (us UserService) GetUserById(u *models.User) error {
 
 func (us UserService) CreateUser(u *models.User) error {
 	log.Println("[UserService.CreateUser] " + fmt.Sprintf("%v", u))
-	return us.repo.GetUserById(u)
+	return us.repo.CreateUser(u)
 }

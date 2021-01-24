@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/unnamedxaer/gymm-api/server/models"
@@ -20,22 +21,27 @@ func CreateUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer req.Body.Close()
+	u.CreatedAt = time.Now()
 	log.Println("[CreateUser] -> body: " + fmt.Sprintf("%v", u))
-
 	err = services.UService.CreateUser(&u)
 	if err != nil {
-		responseWithError(w, http.StatusUnprocessableEntity, err)
+		responseWithError(w, http.StatusInternalServerError, err)
 		return
 	}
 	// u.Password = ""
 	responseWithJSON(w, http.StatusCreated, u)
 }
 
-func GetUser(w http.ResponseWriter, req *http.Request) {
+func GetUserById(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
+	id1 := req.FormValue("id")
+	log.Printf("vars: %v", vars)
 	id := vars["id"]
-	log.Println("[GetUser] -> id: " + id)
+	if id == "" {
+		id = id1
+	}
+	log.Println("[GetUserById] -> id: " + id)
 	var u models.User
 	if id == "" {
 		responseWithError(w, http.StatusUnprocessableEntity, errors.New("Missign 'ID'"))
@@ -45,7 +51,7 @@ func GetUser(w http.ResponseWriter, req *http.Request) {
 
 	err := services.UService.GetUserById(&u)
 	if err != nil {
-		responseWithError(w, http.StatusUnprocessableEntity, err)
+		responseWithError(w, http.StatusInternalServerError, err)
 		return
 	}
 

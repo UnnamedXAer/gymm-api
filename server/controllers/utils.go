@@ -2,10 +2,13 @@ package controllers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"strconv"
 )
 
 func responseWithError(w http.ResponseWriter, code int, err error) {
+	log.Println("[responseWithError] code: " + strconv.Itoa(code) + ", err: " + err.Error())
 	responseWithJSON(w, code, map[string]string{"error": err.Error()})
 }
 

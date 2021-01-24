@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	log.Println(time.Now().Local().String() + "-> App starts")
+	log.Println(time.Now().Local().String() + "-> App starts, env = ")
 	app := server.App{}
 	app.InitializeApp()
 	app.Run(":" + os.Getenv("PORT"))

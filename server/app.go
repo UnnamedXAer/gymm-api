@@ -35,7 +35,7 @@ func (app *App) Run(addr string) {
 }
 
 func (app *App) addHandlers() {
-	app.Router.HandleFunc("/users/{id:[0-9a-zA-Z]+}", controllers.GetUser).Methods("GET")
+	app.Router.HandleFunc("/users/{id:[0-9a-zA-Z]+}", controllers.GetUserById).Methods("GET")
 	app.Router.HandleFunc("/users", controllers.CreateUser).Methods("POST")
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
 		log.Println("[" + r.Method + "/] -> URL: " + r.RequestURI)
