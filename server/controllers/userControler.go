@@ -35,12 +35,7 @@ func CreateUser(w http.ResponseWriter, req *http.Request) {
 func GetUserById(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
-	id1 := req.FormValue("id")
-	log.Printf("vars: %v", vars)
 	id := vars["id"]
-	if id == "" {
-		id = id1
-	}
 	log.Println("[GetUserById] -> id: " + id)
 	var u models.User
 	if id == "" {
