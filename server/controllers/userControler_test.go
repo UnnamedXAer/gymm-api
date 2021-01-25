@@ -4,7 +4,13 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
+	"github.com/unnamedxaer/gymm-api/repository"
+	"github.com/unnamedxaer/gymm-api/services"
 )
 
 // func clearTables(repoType string) {
@@ -45,19 +51,43 @@ import (
 // 	t.Fatal("Test test fatal 😀")
 // }
 
+func TestMain(m *testing.M) {
+	godotenv.Overload("../../.test.env")
+	log.Println(" [TestMain] start " + os.Getenv("ENV"))
+
+	var repo repository.IRepository
+	repo = &repository.MongoRepository{}
+	mongoURI := os.Getenv("MONGO_URI")
+	err := repo.Initialize(mongoURI)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	services.UService.SetRepo(repo)
+
+	code := m.Run()
+
+	log.Println(" [TestMain] end")
+	os.Exit(code)
+}
+
 func TestGetUserById(t *testing.T) {
+	rURI := "/users/600efe8882b4c5ed52e7deb4"
 	log.Println(" [TestGetUserById] start")
-	req, err := http.NewRequest("GET", "/users/600dab27ec9c7bb884438d78", nil)
+	router := mux.NewRouter()
+	handler := http.HandlerFunc(GetUserById)
+	router.Handle("/users/{id:[0-9a-zA-Z]+}", handler)
+	req, err := http.NewRequest("GET", rURI, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	q := req.URL.Query()
-	q.Add("id", "600dab27ec9c7bb884438d78")
-	req.URL.RawQuery = q.Encode()
+
+	req.RequestURI = rURI
+	req.Host = "localhost:" + os.Getenv("PORT")
+	req.RemoteAddr = "[::1]:65213"
+	req.URL.RawPath = rURI
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(GetUserById)
-	http.Handle("/users/{id}", handler)
-	handler.ServeHTTP(rr, req)
+	router.ServeHTTP(rr, req)
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
