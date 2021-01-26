@@ -6,13 +6,14 @@ import (
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/unnamedxaer/gymm-api/server"
+	"github.com/rs/zerolog"
 )
 
 func main() {
-	log.Println(time.Now().Local().String() + "-> App starts, env = ")
-	app := server.App{}
-	app.InitializeApp()
-	app.Run(":" + os.Getenv("PORT"))
-
+	logger := zerolog.New(os.Stdout)
+	logger.Info().Msg(time.Now().Local().String() + "-> App starts, env = " + os.Getenv("ENV"))
+	log.Println()
+	// app := server.App{}
+	// app.InitializeApp()
+	// app.Run(":" + os.Getenv("PORT"))
 }

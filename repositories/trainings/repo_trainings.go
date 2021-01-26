@@ -14,9 +14,8 @@ type trainingData struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty,required"`
 	UserID    primitive.ObjectID `bson:"user_id,omitempty,required"`
 	StartTime time.Time          `bson:"start_time,omitempty,required"`
-	EndTime   time.Time          `bson:"end_time,omitempty,required"`
-	Exercises []interface{}      `bson:"exercises_id,omitempty,required"`
-	Comment   string             `bson:"comment,omitempty,required"`
+	EndTime   time.Time          `bson:"end_time,omitempty"`
+	Comment   string             `bson:"comment,omitempty"`
 }
 
 func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (t entities.Training, err error) {

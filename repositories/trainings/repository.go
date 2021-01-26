@@ -7,10 +7,10 @@ import (
 
 type TrainingRepository struct {
 	col *mongo.Collection
-	l   zerolog.Logger
+	l   *zerolog.Logger
 }
 
-func NewRepository(logger zerolog.Logger, collection *mongo.Collection) *TrainingRepository {
+func NewRepository(logger *zerolog.Logger, collection *mongo.Collection) *TrainingRepository {
 	return &TrainingRepository{
 		collection,
 		logger,
