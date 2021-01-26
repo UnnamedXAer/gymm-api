@@ -1,4 +1,4 @@
-package traning
+package trainings
 
 import (
 	"github.com/rs/zerolog"

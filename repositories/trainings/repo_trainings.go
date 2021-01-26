@@ -1,4 +1,4 @@
-package traning
+package trainings
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type trainingData struct {
 	Comment   string             `bson:"comment,omitempty,required"`
 }
 
-func (r *TrainingRepository) startTraining(userID string, startTime time.Time) (t entities.Training, err error) {
+func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (t entities.Training, err error) {
 	ouID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		r.l.Error().Msg(err.Error())
@@ -41,7 +41,7 @@ func (r *TrainingRepository) startTraining(userID string, startTime time.Time) (
 	}, nil
 }
 
-func (r *TrainingRepository) getStartedTraining(userID string) (t entities.Training, err error) {
+func (r *TrainingRepository) GetStartedTraining(userID string) (t entities.Training, err error) {
 	oUserID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		r.l.Error().Msg(err.Error())
