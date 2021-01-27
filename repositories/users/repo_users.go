@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/repositories"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
@@ -63,11 +64,11 @@ func (r *UserRepository) CreateUser(firstName, lastName, emailAddress string, pa
 		CreatedAt:    now,
 	}
 
-	panic("todo: ensure email unique")
 	results, err := r.col.InsertOne(nil, ud)
 	if err != nil {
 		return u, err
 	}
+	panic(repositories.NewErrorEmailAddressInUse())
 
 	return entities.User{
 		results.InsertedID.(primitive.ObjectID).Hex(),

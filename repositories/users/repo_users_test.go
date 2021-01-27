@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -13,47 +14,98 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var ur *UserRepository
-var db *mongo.Database
+var (
+	ur *UserRepository
+	db *mongo.Database
+	u  userData
+)
 
 func TestMain(m *testing.M) {
-	err := repositories.ValidateTestEnv()
+	logger := zerolog.New(os.Stdout)
+	repositories.EnsureTestEnv()
+
+	dbName := os.Getenv("DB_NAME")
+	if dbName == "" {
+		panic("environment variable 'DB_NAME' is not set")
+	}
+	mongoURI := os.Getenv("MONGO_URI")
+	if mongoURI == "" {
+		panic("environment variable 'MONGO_URI' is not set")
+	}
+	db, err := repositories.GetDatabase(&logger, mongoURI, dbName)
 	if err != nil {
 		panic(err)
 	}
-	db, err = repositories.GetDatabase(os.Getenv("MONGO_URI"))
+
+	err = repositories.CreateCollections(&logger, db)
 	if err != nil {
 		panic(err)
 	}
-	defer repositories.DisconnectDB(db)
+	defer repositories.DisconnectDB(&logger, db)
+
 	usersCol := db.Collection("users")
+	_, err = usersCol.DeleteMany(nil, nil)
+	if err != nil {
+		panic(err)
+	}
+
 	ur = NewRepository(&zerolog.Logger{}, usersCol)
+
+	password, _ := hashPassword("TheSecretestPasswordEver123$%^")
+	u = userData{
+		FirstName:    "John",
+		LastName:     "Silver",
+		EmailAddress: "johnsilver@email.com",
+		Password:     password,
+		CreatedAt:    time.Now().UTC(),
+	}
+
 	code := m.Run()
 	os.Exit(code)
 }
 
 func TestCreateUser(t *testing.T) {
-	password, _ := hashPassword("TheSecretestPasswordEver")
-	u := userData{
-		FirstName:    "John",
-		LastName:     "Silver",
-		EmailAddress: "johnsilver@email.com",
-		Password:     password,
-		CreatedAt:    time.Now().UTC(),
+	gotUser, err := ur.CreateUser(u.FirstName, u.LastName, u.EmailAddress, u.Password)
+	if err != nil {
+		t.Fatal(err)
 	}
-	t.Error(u)
-	// ur.CreateUser()
+	if u.EmailAddress != gotUser.EmailAddress ||
+		u.FirstName != gotUser.FirstName ||
+		u.LastName != gotUser.LastName {
+		t.Errorf("Expect to get user base on data: %v, got: %v",
+			u,
+			gotUser)
+	}
+
+	if gotUser.ID == "" {
+		t.Fatalf("Expected 'ID' to not be empty, got '%s' for email: %s",
+			gotUser.ID,
+			u.EmailAddress)
+	}
+
+	if gotUser.CreatedAt.IsZero() {
+		t.Fatalf("Expected 'CreateAt' to not be zero value, got '%s' for email: %s",
+			gotUser.CreatedAt,
+			u.EmailAddress)
+	}
+}
+
+func TestCreateUserDuplicatedEmail(t *testing.T) {
+	gotUser, err := ur.CreateUser(u.FirstName, u.LastName, u.EmailAddress, u.Password)
+	if err != nil {
+		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
+			return
+		}
+		t.Fatal(err)
+	}
+	t.Fatalf("Expected to get error '%s' for email addres: '%s', got new user with ID: '%s'",
+		repositories.NewErrorEmailAddressInUse(),
+		u.EmailAddress,
+		gotUser.ID)
 }
 
 func TestGetUserByID(t *testing.T) {
-	password, _ := hashPassword("TheSecretestPasswordEver")
-	u := userData{
-		FirstName:    "John",
-		LastName:     "Silver",
-		EmailAddress: "johnsilver@email.com",
-		Password:     password,
-		CreatedAt:    time.Now().UTC(),
-	}
+
 	results, err := ur.col.InsertOne(context.TODO(), u)
 	if err != nil {
 		t.Fatal(err)
