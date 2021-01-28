@@ -6,12 +6,18 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
+	"github.com/unnamedxaer/gymm-api/endpoints/http"
 	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/repositories/users"
 )
 
 func main() {
 	logger := zerolog.New(os.Stdout)
 	logger.Info().Msg(time.Now().Local().String() + "-> App starts, env = " + os.Getenv("ENV"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		panic("environment variable 'PORT' is not set")
+	}
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
 		panic("environment variable 'DB_NAME' is not set")
@@ -20,12 +26,16 @@ func main() {
 	if mongoURI == "" {
 		panic("environment variable 'MONGO_URI' is not set")
 	}
+
 	db, err := repositories.GetDatabase(&logger, mongoURI, dbName)
 	if err != nil {
 		panic(err)
 	}
 	repositories.CreateCollections(&logger, db)
-	// app := server.App{}
-	// app.InitializeApp()
-	// app.Run(":" + os.Getenv("PORT"))
+	usersColl := repositories.GetCollection(&logger, db, "users")
+	usersRepo := users.NewRepository(&logger, usersColl)
+	app := http.NewServer(&logger, usersRepo) // why error
+	app.AddHandlers()
+
+	app.Run(":" + os.Getenv("PORT"))
 }

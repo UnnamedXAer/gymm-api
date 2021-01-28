@@ -20,24 +20,35 @@ type UserData struct {
 
 var validate *validator.Validate = validator.New()
 
-type UserGetter interface {
+type UserRepo interface {
 	// New creates new error of type EmailAddressInUse
-	NewEmailAddressInUse() error
+	// NewEmailAddressInUse() error
 	// GetUserByID it is signature of repo method
 	// it's here to not couple both packages
 	GetUserByID(id string) (entities.User, error)
 	CreateUser(fName, lName, email string, password []byte) (entities.User, error)
 }
 
-func GetUserByIDUseCase(userGetter UserGetter) func(id string) (entities.User, error) {
-	return func(id string) (entities.User, error) {
-		return userGetter.GetUserByID(id)
-	}
+type UserUseCases struct {
+	repo UserRepo
 }
 
-func CreateUserUseCase(userGetter UserGetter) func(u *UserData) (entities.User, error) {
-	return func(u *UserData) (entities.User, error) {
-		// validate
-		return userGetter.CreateUser(u.FirstName, u.LastName, u.EmailAddress, u.Password)
+type IUserUseCases interface {
+	GetUserByID(id string) (entities.User, error)
+	CreateUser(u *UserData) (entities.User, error)
+}
+
+func (uc *UserUseCases) GetUserByID(id string) (entities.User, error) {
+	return uc.repo.GetUserByID(id)
+}
+
+func (uc *UserUseCases) CreateUser(u *UserData) (entities.User, error) {
+	// validate
+	return uc.repo.CreateUser(u.FirstName, u.LastName, u.EmailAddress, u.Password)
+}
+
+func NewUserUseCases(userRepo UserRepo) IUserUseCases {
+	return &UserUseCases{
+		repo: userRepo,
 	}
 }

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -35,6 +36,17 @@ func GetDatabase(l *zerolog.Logger, uri, dbName string) (*mongo.Database, error)
 	return db, nil
 }
 
+func GetCollection(l *zerolog.Logger, db *mongo.Database, collName string) *mongo.Collection {
+	switch collName {
+	case usersCollectionName:
+		fallthrough
+	case trainingsCollectionName:
+		return db.Collection(collName)
+	default:
+		panic(fmt.Sprintf("unknown collection name '%s'", collName))
+	}
+}
+
 // CreateCollections creates mongodb collections
 func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 	collections, err := db.ListCollectionNames(nil, nil)
@@ -52,9 +64,9 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 	if sliceIndexOf(collections, trainingsCollectionName) == -1 {
 		err = createTrainingCollection(l, db, trainingsCollectionName)
 		return err
-	} else {
-		l.Info().Msgf("collection '%s' already exists - skipped")
 	}
+	l.Info().Msgf("collection '%s' already exists - skipped")
+
 	return nil
 }
 
@@ -87,7 +99,6 @@ func createUsersCollection(l *zerolog.Logger, db *mongo.Database, collectionName
 }
 
 func createTrainingCollection(l *zerolog.Logger, db *mongo.Database, collectionName string) error {
-	const collectionName string = "trainings"
 	err := db.CreateCollection(context.Background(), collectionName)
 	if err != nil {
 		l.Info().Msgf("collection '%s' created", collectionName)

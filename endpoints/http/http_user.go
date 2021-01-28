@@ -2,15 +2,17 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
-func CreateUser(w http.ResponseWriter, req *http.Request) {
+func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	var u usecases.UserData
 	err := json.NewDecoder(req.Body).Decode(&u)
 	if err != nil {
@@ -23,14 +25,8 @@ func CreateUser(w http.ResponseWriter, req *http.Request) {
 
 	// @todo: refactor
 	panic("not implemented yet")
-	// logger := zerolog.Logger{}
-	// db, err := repositories.GetDatabase(&logger, os.Getenv("MONGO_URI"), os.Getenv("DB_NAME"))
-	// createUser := usecases.CreateUserUseCase(usersRepo.NewRepository(
-	// 	&logger,
-	// 	db.Collection("users"),
-	// ))
 
-	user, err := createUser(&u)
+	user, err := app.Usecases.CreateUser(&u)
 	if err != nil {
 		responseWithError(w, http.StatusInternalServerError, err)
 		return
@@ -39,23 +35,21 @@ func CreateUser(w http.ResponseWriter, req *http.Request) {
 	responseWithJSON(w, http.StatusCreated, user)
 }
 
-// func GetUserById(w http.ResponseWriter, req *http.Request) {
+func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 
-// 	vars := mux.Vars(req)
-// 	id := vars["id"]
-// 	log.Println("[GET / GetUserById] -> id: " + id)
-// 	var u models.User
-// 	if id == "" {
-// 		responseWithError(w, http.StatusUnprocessableEntity, errors.New("Missign 'ID'"))
-// 		return
-// 	}
-// 	u.ID = id
+	vars := mux.Vars(req)
+	id := vars["id"]
+	log.Println("[GET / GetUserById] -> id: " + id)
+	if id == "" {
+		responseWithError(w, http.StatusUnprocessableEntity, errors.New("Missign 'ID'"))
+		return
+	}
 
-// 	err := services.UService.GetUserById(&u)
-// 	if err != nil {
-// 		responseWithError(w, http.StatusInternalServerError, err)
-// 		return
-// 	}
+	u, err := app.Usecases.GetUserByID(id)
+	if err != nil {
+		responseWithError(w, http.StatusInternalServerError, err)
+		return
+	}
 
-// 	responseWithJSON(w, http.StatusOK, u)
-// }
+	responseWithJSON(w, http.StatusOK, u)
+}
