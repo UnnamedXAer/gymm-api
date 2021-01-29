@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/repositories/users"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -47,7 +48,7 @@ func (uc *UserUseCases) CreateUser(u *UserData) (entities.User, error) {
 	return uc.repo.CreateUser(u.FirstName, u.LastName, u.EmailAddress, u.Password)
 }
 
-func NewUserUseCases(userRepo UserRepo) IUserUseCases {
+func NewUserUseCases(userRepo *users.UserRepository) IUserUseCases {
 	return &UserUseCases{
 		repo: userRepo,
 	}

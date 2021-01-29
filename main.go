@@ -34,7 +34,7 @@ func main() {
 	repositories.CreateCollections(&logger, db)
 	usersColl := repositories.GetCollection(&logger, db, "users")
 	usersRepo := users.NewRepository(&logger, usersColl)
-	app := http.NewServer(&logger, usersRepo) // why error
+	app := http.NewServer(&logger, usersRepo)
 	app.AddHandlers()
 
 	app.Run(":" + os.Getenv("PORT"))
