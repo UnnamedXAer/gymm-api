@@ -9,6 +9,7 @@ import (
 	"github.com/unnamedxaer/gymm-api/endpoints/http"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
+	"github.com/unnamedxaer/gymm-api/validation"
 )
 
 func main() {
@@ -34,7 +35,8 @@ func main() {
 	repositories.CreateCollections(&logger, db)
 	usersColl := repositories.GetCollection(&logger, db, "users")
 	usersRepo := users.NewRepository(&logger, usersColl)
-	app := http.NewServer(&logger, usersRepo)
+	validate := validation.New()
+	app := http.NewServer(&logger, usersRepo, validate)
 	app.AddHandlers()
 
 	app.Run(":" + os.Getenv("PORT"))

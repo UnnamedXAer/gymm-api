@@ -53,8 +53,7 @@ func TestMain(m *testing.M) {
 
 	password, _ := hashPassword("TheSecretestPasswordEver123$%^")
 	u = userData{
-		FirstName:    "John",
-		LastName:     "Silver",
+		Username:     "John Silver",
 		EmailAddress: "johnsilver@email.com",
 		Password:     password,
 		CreatedAt:    time.Now().UTC(),
@@ -65,13 +64,12 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateUser(t *testing.T) {
-	gotUser, err := ur.CreateUser(u.FirstName, u.LastName, u.EmailAddress, u.Password)
+	gotUser, err := ur.CreateUser(u.Username, u.EmailAddress, u.Password)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if u.EmailAddress != gotUser.EmailAddress ||
-		u.FirstName != gotUser.FirstName ||
-		u.LastName != gotUser.LastName {
+		u.Username != gotUser.Username {
 		t.Errorf("Expect to get user base on data: %v, got: %v",
 			u,
 			gotUser)
@@ -91,7 +89,7 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestCreateUserDuplicatedEmail(t *testing.T) {
-	gotUser, err := ur.CreateUser(u.FirstName, u.LastName, u.EmailAddress, u.Password)
+	gotUser, err := ur.CreateUser(u.Username, u.EmailAddress, u.Password)
 	if err != nil {
 		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
 			return
@@ -121,8 +119,7 @@ func TestGetUserByID(t *testing.T) {
 
 	if timesEqual(u.CreatedAt, gotUser.CreatedAt) == false ||
 		u.EmailAddress != gotUser.EmailAddress ||
-		u.FirstName != gotUser.FirstName ||
-		u.LastName != gotUser.LastName ||
+		u.Username != gotUser.Username ||
 		uID != gotUser.ID {
 		t.Errorf("Expect to get user like: %v, got: %v", u, gotUser)
 	}

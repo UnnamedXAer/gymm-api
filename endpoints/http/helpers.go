@@ -2,14 +2,19 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 )
 
-func responseWithError(w http.ResponseWriter, code int, err error) {
-	log.Println("[responseWithError] code: " + strconv.Itoa(code) + ", err: " + err.Error())
+func responseWithErrorMsg(w http.ResponseWriter, code int, err error) {
+	log.Println(fmt.Sprintf("[responseWithErrorMsg] code: %d, err: %#v", code, err))
 	responseWithJSON(w, code, map[string]string{"error": err.Error()})
+}
+
+func responseWithErrorJSON(w http.ResponseWriter, code int, errObj interface{}) {
+	log.Println(fmt.Sprintf("[responseWithErrorJSON] code: %d, err: %#v", code, errObj))
+	responseWithJSON(w, code, errObj)
 }
 
 func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
@@ -18,7 +23,7 @@ func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 	output, err := json.Marshal(payload)
 	if err != nil {
-		responseWithError(w, http.StatusInternalServerError, err)
+		responseWithErrorMsg(w, http.StatusInternalServerError, err)
 	}
 	w.Write(output)
 }

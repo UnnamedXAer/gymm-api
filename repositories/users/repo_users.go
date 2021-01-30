@@ -14,12 +14,11 @@ import (
 )
 
 type userData struct {
-	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
-	FirstName    string             `json:"firstName,omitempty" bson:"first_name,omitempty"`
-	LastName     string             `json:"lastName,omitempty" bson:"last_name,omitempty"`
-	EmailAddress string             `json:"emailAddress,omitempty" bson:"email_address,omitempty"`
+	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id"`
+	Username     string             `json:"username,omitempty" bson:"username"`
+	EmailAddress string             `json:"emailAddress,omitempty" bson:"email_address"`
 	Password     []byte             `json:"password,omitempty" bson:"password,omitempty"`
-	CreatedAt    time.Time          `json:"createdAt,omitempty" bson:"created_at,omitempty"`
+	CreatedAt    time.Time          `json:"createdAt,omitempty" bson:"created_at"`
 }
 
 // GetUserByID retrieves user info from storage
@@ -33,6 +32,7 @@ func (r *UserRepository) GetUserByID(id string) (entities.User, error) {
 	}
 
 	err = r.col.FindOne(context.Background(), bson.M{"_id": oID}).Decode(&ud)
+	// @todo: handle mongo document nil error
 	if err != nil {
 		r.l.Error().Msg(err.Error())
 		return u, err
@@ -41,42 +41,47 @@ func (r *UserRepository) GetUserByID(id string) (entities.User, error) {
 	u = entities.User{
 		ID:           ud.ID.Hex(),
 		EmailAddress: ud.EmailAddress,
-		FirstName:    ud.FirstName,
-		LastName:     ud.LastName,
+		Username:     ud.Username,
 		CreatedAt:    ud.CreatedAt,
 	}
 	return u, nil
 }
 
 // CreateUser inserts newly registered user into storage
-func (r *UserRepository) CreateUser(firstName, lastName, emailAddress string, passwordHash []byte) (u entities.User, err error) {
-	password, err := hashPassword("TheSecretestPasswordEver")
+func (r *UserRepository) CreateUser(
+	username,
+	emailAddress string,
+	passwordHash string) (u entities.User, err error) {
+	password, err := hashPassword(passwordHash)
 	if err != nil {
 		return u, errors.New("incorrect password, cannot hash")
 	}
 	now := time.Now().UTC()
 
 	ud := userData{
-		FirstName:    firstName,
-		LastName:     lastName,
+		Username:     username,
 		EmailAddress: emailAddress,
 		Password:     password,
 		CreatedAt:    now,
 	}
 
 	results, err := r.col.InsertOne(nil, ud)
+
 	if err != nil {
+		if repositories.IsDuplicatedError(err) {
+			return u, fmt.Errorf("email address already in use")
+		}
+
 		return u, err
 	}
-	panic(repositories.NewErrorEmailAddressInUse())
 
-	return entities.User{
+	u = entities.User{
 		results.InsertedID.(primitive.ObjectID).Hex(),
-		firstName,
-		lastName,
+		username,
 		emailAddress,
 		now,
-	}, nil
+	}
+	return u, nil
 }
 func hashPassword(pwd string) ([]byte, error) {
 	return bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.MinCost)

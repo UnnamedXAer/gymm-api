@@ -49,7 +49,7 @@ func GetCollection(l *zerolog.Logger, db *mongo.Database, collName string) *mong
 
 // CreateCollections creates mongodb collections
 func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
-	collections, err := db.ListCollectionNames(nil, nil)
+	collections, err := db.ListCollectionNames(context.Background(), bson.M{})
 	if err != nil {
 		return err
 	}
@@ -59,13 +59,13 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 			return err
 		}
 	} else {
-		l.Info().Msgf("collection '%s' already exists - skipped")
+		l.Info().Msgf("collection '%s' already exists - skipped", usersCollectionName)
 	}
 	if sliceIndexOf(collections, trainingsCollectionName) == -1 {
 		err = createTrainingCollection(l, db, trainingsCollectionName)
 		return err
 	}
-	l.Info().Msgf("collection '%s' already exists - skipped")
+	l.Info().Msgf("collection '%s' already exists - skipped", trainingsCollectionName)
 
 	return nil
 }
@@ -74,6 +74,7 @@ func createUsersCollection(l *zerolog.Logger, db *mongo.Database, collectionName
 	err := db.CreateCollection(context.Background(), collectionName, &options.CreateCollectionOptions{
 		Collation: &options.Collation{
 			Strength: 2,
+			Locale:   "en",
 		},
 	})
 	if err != nil {
@@ -101,7 +102,7 @@ func createUsersCollection(l *zerolog.Logger, db *mongo.Database, collectionName
 func createTrainingCollection(l *zerolog.Logger, db *mongo.Database, collectionName string) error {
 	err := db.CreateCollection(context.Background(), collectionName)
 	if err != nil {
-		l.Info().Msgf("collection '%s' created", collectionName)
+		return errors.WithMessagef(err, "create '%s' collection", collectionName)
 	}
 	l.Info().Msgf("collection '%s' created", collectionName)
 	return nil

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
@@ -14,17 +15,20 @@ type App struct {
 	l        *zerolog.Logger
 	Usecases usecases.IUserUseCases
 	Router   *mux.Router
+	Validate *validator.Validate
 }
 
 func NewServer(
 	logger *zerolog.Logger,
-	userRepo *users.UserRepository) *App {
+	userRepo *users.UserRepository,
+	validate *validator.Validate) *App {
 	userUsecases := usecases.NewUserUseCases(userRepo)
 	router := mux.NewRouter()
 	app := App{
 		l:        logger,
 		Usecases: userUsecases,
 		Router:   router,
+		Validate: validate,
 	}
 	return &app
 }
