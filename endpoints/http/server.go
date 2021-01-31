@@ -7,7 +7,6 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
-	"github.com/unnamedxaer/gymm-api/repositories/users"
 	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
@@ -20,7 +19,7 @@ type App struct {
 
 func NewServer(
 	logger *zerolog.Logger,
-	userRepo *users.UserRepository,
+	userRepo usecases.UserRepo,
 	validate *validator.Validate) *App {
 	userUsecases := usecases.NewUserUseCases(userRepo)
 	router := mux.NewRouter()

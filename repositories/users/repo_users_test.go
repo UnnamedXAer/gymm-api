@@ -44,18 +44,18 @@ func TestMain(m *testing.M) {
 	defer repositories.DisconnectDB(&logger, db)
 
 	usersCol := db.Collection("users")
-	_, err = usersCol.DeleteMany(nil, nil)
+	_, err = usersCol.DeleteMany(nil, bson.D{})
 	if err != nil {
 		panic(err)
 	}
 
 	ur = NewRepository(&zerolog.Logger{}, usersCol)
 
-	password, _ := hashPassword("TheSecretestPasswordEver123$%^")
+	// password := []byte("TheSecretestPasswordEver123$%^")
 	u = userData{
 		Username:     "John Silver",
 		EmailAddress: "johnsilver@email.com",
-		Password:     password,
+		Password:     []byte("TheSecretestPasswordEver123$%^"),
 		CreatedAt:    time.Now().UTC(),
 	}
 
@@ -64,6 +64,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateUser(t *testing.T) {
+	clearCollection(t)
 	gotUser, err := ur.CreateUser(u.Username, u.EmailAddress, u.Password)
 	if err != nil {
 		t.Fatal(err)
@@ -89,6 +90,8 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestCreateUserDuplicatedEmail(t *testing.T) {
+	clearCollection(t)
+	insertMockUser(t)
 	gotUser, err := ur.CreateUser(u.Username, u.EmailAddress, u.Password)
 	if err != nil {
 		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
@@ -103,7 +106,7 @@ func TestCreateUserDuplicatedEmail(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-
+	clearCollection(t)
 	results, err := ur.col.InsertOne(context.TODO(), u)
 	if err != nil {
 		t.Fatal(err)
@@ -126,9 +129,8 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestGetUserByIDNotExisting(t *testing.T) {
+	clearCollection(t)
 	uID := "60108393da81e60598d5347f"
-	uObjectID, _ := primitive.ObjectIDFromHex(uID)
-	ur.col.DeleteOne(context.TODO(), bson.M{"_id": uObjectID})
 
 	gotUser, err := ur.GetUserByID(uID)
 	if err != nil {
@@ -148,4 +150,17 @@ func timesEqual(t1, t2 time.Time) bool {
 		t1.Hour() == t2.Hour() &&
 		t1.Minute() == t2.Minute() &&
 		t1.Second() == t2.Second()
+}
+
+func clearCollection(t *testing.T) {
+	_, err := ur.col.DeleteMany(context.TODO(), bson.D{})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+func insertMockUser(t *testing.T) {
+	_, err := ur.col.InsertOne(context.TODO(), u)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

@@ -5,18 +5,16 @@ import (
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories/users"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // UserInput represents data received from req
 type UserInput struct {
-	ID           primitive.ObjectID `json:"id" validate:"-"`
-	Username     string             `json:"username" validate:"required,min=2,max=50,printascii"`
-	EmailAddress string             `json:"emailAddress" validate:"required,email"`
-	Password     string             `json:"password" validate:"required,min=6,max=24,pwd"`
-	CreatedAt    time.Time          `json:"createdAt"`
+	// ID           primitive.ObjectID `json:"id" validate:"-"`
+	Username     string    `json:"username" validate:"required,min=2,max=50,printascii"`
+	EmailAddress string    `json:"emailAddress" validate:"required,email"`
+	Password     string    `json:"password" validate:"required,min=6,max=24,pwd"`
+	CreatedAt    time.Time `json:"createdAt"`
 }
 
 type UserRepo interface {
@@ -50,7 +48,7 @@ func (uc *UserUseCases) CreateUser(u *UserInput) (entities.User, error) {
 	return uc.repo.CreateUser(u.Username, u.EmailAddress, passwordHash)
 }
 
-func NewUserUseCases(userRepo *users.UserRepository) IUserUseCases {
+func NewUserUseCases(userRepo UserRepo) IUserUseCases {
 	return &UserUseCases{
 		repo: userRepo,
 	}
