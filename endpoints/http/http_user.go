@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -15,9 +16,13 @@ import (
 
 func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	var u usecases.UserInput
+	f, ff := validation.GetFieldJSONTag(&u, "Username")
+	fmt.Println(f, ff)
 	err := json.NewDecoder(req.Body).Decode(&u)
+	log.Println("[POST / CreateUser] -> body: " + fmt.Sprintf("%v", u))
 	if err != nil {
-		responseWithErrorMsg(w, http.StatusUnprocessableEntity, err)
+		resErrText := getErrOfMalformedInput(&u, []string{"ID", "CreatedAt"})
+		responseWithErrorMsg(w, http.StatusUnprocessableEntity, errors.New(resErrText))
 		return
 	}
 	defer req.Body.Close()
@@ -25,12 +30,6 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	err = validateUserInput(app.Validate, &u)
 	if err != nil {
 		if svErr, ok := err.(*validation.StructValidError); ok {
-			// var errObj map[string]string
-			// errUnmarshal := json.Unmarshal([]byte(err.Error()), &errObj)
-			// if errUnmarshal != nil {
-			// 	responseWithErrorMsg(w, http.StatusInternalServerError, err)
-			// 	return
-			// }
 			responseWithErrorJSON(w, http.StatusNotAcceptable, svErr.ValidationErrors())
 			return
 		}
@@ -39,15 +38,18 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	}
 
 	u.CreatedAt = time.Now()
-	log.Println("[POST / CreateUser] -> body: " + fmt.Sprintf("%v", u))
 
 	user, err := app.Usecases.CreateUser(&u)
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "email address already in use") {
+			responseWithErrorMsg(w, http.StatusConflict, err)
+			return
+		}
+
 		responseWithErrorMsg(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	// u.Password = ""
 	responseWithJSON(w, http.StatusCreated, user)
 }
 

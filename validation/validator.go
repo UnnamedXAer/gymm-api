@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"reflect"
 	"unicode"
 
 	"github.com/go-playground/validator/v10"
@@ -81,4 +82,32 @@ func pwdStrengthValidateFunc(fdl validator.FieldLevel) bool {
 	}
 
 	return true
+}
+
+// PrintValidationErrorInfo prints `err` info to the console
+func PrintValidationErrorInfo(err validator.FieldError) {
+	fmt.Println("Error: ", err.Error())
+	fmt.Println("Namespace: ", err.Namespace()) // can differ when a custom TagNameFunc is registered or
+	fmt.Println("Field: ", err.Field())         // by passing alt name to ReportError like below
+	fmt.Println("StructNamespace: ", err.StructNamespace())
+	fmt.Println("StructField: ", err.StructField())
+	fmt.Println("Tag: ", err.Tag())
+	fmt.Println("ActualTag: ", err.ActualTag())
+	fmt.Println("Kind: ", err.Kind())
+	fmt.Println("Type: ", err.Type())
+	fmt.Println("Value: ", err.Value())
+	fmt.Println("Param: ", err.Param())
+	fmt.Println("")
+}
+
+// GetFieldJSONTag returns field's `json` tag name
+func GetFieldJSONTag(u interface{}, fldName string) (string, bool) {
+	v := reflect.ValueOf(u)
+	i := reflect.Indirect(v)
+	s := i.Type()
+	field, found := s.FieldByName(fldName)
+	if found == false {
+		return "", false
+	}
+	return field.Tag.Get("json"), true
 }

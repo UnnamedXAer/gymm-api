@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
+	"github.com/unnamedxaer/gymm-api/helpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -53,7 +54,7 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 	if err != nil {
 		return err
 	}
-	if sliceIndexOf(collections, usersCollectionName) == -1 {
+	if helpers.StrSliceIndexOf(collections, usersCollectionName) == -1 {
 		err = createUsersCollection(l, db, usersCollectionName)
 		if err != nil {
 			return err
@@ -61,7 +62,7 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 	} else {
 		l.Info().Msgf("collection '%s' already exists - skipped", usersCollectionName)
 	}
-	if sliceIndexOf(collections, trainingsCollectionName) == -1 {
+	if helpers.StrSliceIndexOf(collections, trainingsCollectionName) == -1 {
 		err = createTrainingCollection(l, db, trainingsCollectionName)
 		return err
 	}
@@ -106,13 +107,4 @@ func createTrainingCollection(l *zerolog.Logger, db *mongo.Database, collectionN
 	}
 	l.Info().Msgf("collection '%s' created", collectionName)
 	return nil
-}
-
-func sliceIndexOf(slice []string, s string) int {
-	for i, count := 0, len(slice); i < count; i++ {
-		if slice[i] == s {
-			return i
-		}
-	}
-	return -1
 }
