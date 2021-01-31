@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
@@ -41,7 +41,7 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 
 	user, err := app.Usecases.CreateUser(&u)
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "email address already in use") {
+		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
 			responseWithErrorMsg(w, http.StatusConflict, err)
 			return
 		}
@@ -65,6 +65,11 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 
 	u, err := app.Usecases.GetUserByID(id)
 	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			responseWithJSON(w, 200, nil)
+			return
+		}
+
 		responseWithErrorMsg(w, http.StatusInternalServerError, err)
 		return
 	}

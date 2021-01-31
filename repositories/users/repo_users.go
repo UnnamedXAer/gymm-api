@@ -31,9 +31,8 @@ func (r *UserRepository) GetUserByID(id string) (entities.User, error) {
 	}
 
 	err = r.col.FindOne(context.Background(), bson.M{"_id": oID}).Decode(&ud)
-	// @todo: handle mongo document nil error
 	if err != nil {
-		r.l.Error().Msg(err.Error())
+		r.l.Info().Msgf("%s, id: %s", err.Error(), id)
 		return u, err
 	}
 
@@ -65,7 +64,7 @@ func (r *UserRepository) CreateUser(
 
 	if err != nil {
 		if repositories.IsDuplicatedError(err) {
-			return u, fmt.Errorf("email address already in use")
+			return u, repositories.NewErrorEmailAddressInUse()
 		}
 
 		return u, err
