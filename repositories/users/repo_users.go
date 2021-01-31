@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -10,15 +9,15 @@ import (
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
 )
 
+// userData is used only to push data to db
 type userData struct {
-	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id"`
-	Username     string             `json:"username,omitempty" bson:"username"`
-	EmailAddress string             `json:"emailAddress,omitempty" bson:"email_address"`
+	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Username     string             `json:"username,omitempty" bson:"username,omitempty"`
+	EmailAddress string             `json:"emailAddress,omitempty" bson:"email_address,omitempty"`
 	Password     []byte             `json:"password,omitempty" bson:"password,omitempty"`
-	CreatedAt    time.Time          `json:"createdAt,omitempty" bson:"created_at"`
+	CreatedAt    time.Time          `json:"createdAt,omitempty" bson:"created_at,omitempty"`
 }
 
 // GetUserByID retrieves user info from storage
@@ -51,17 +50,14 @@ func (r *UserRepository) GetUserByID(id string) (entities.User, error) {
 func (r *UserRepository) CreateUser(
 	username,
 	emailAddress string,
-	passwordHash string) (u entities.User, err error) {
-	password, err := hashPassword(passwordHash)
-	if err != nil {
-		return u, errors.New("incorrect password, cannot hash")
-	}
+	passwordHash []byte) (u entities.User, err error) {
+
 	now := time.Now().UTC()
 
 	ud := userData{
 		Username:     username,
 		EmailAddress: emailAddress,
-		Password:     password,
+		Password:     passwordHash,
 		CreatedAt:    now,
 	}
 
@@ -82,7 +78,4 @@ func (r *UserRepository) CreateUser(
 		now,
 	}
 	return u, nil
-}
-func hashPassword(pwd string) ([]byte, error) {
-	return bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.MinCost)
 }

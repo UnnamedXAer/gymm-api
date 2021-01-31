@@ -1,11 +1,13 @@
 package usecases
 
 import (
+	"errors"
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // UserInput represents data received from req
@@ -23,7 +25,7 @@ type UserRepo interface {
 	// GetUserByID it is signature of repo method
 	// it's here to not couple both packages
 	GetUserByID(id string) (entities.User, error)
-	CreateUser(username, email string, password string) (entities.User, error)
+	CreateUser(username, email string, passwordHash []byte) (entities.User, error)
 }
 
 type UserUseCases struct {
@@ -40,11 +42,20 @@ func (uc *UserUseCases) GetUserByID(id string) (entities.User, error) {
 }
 
 func (uc *UserUseCases) CreateUser(u *UserInput) (entities.User, error) {
-	return uc.repo.CreateUser(u.Username, u.EmailAddress, u.Password)
+	passwordHash, err := hashPassword(u.Password)
+	if err != nil {
+		return entities.User{}, errors.New("incorrect password, cannot hash")
+	}
+
+	return uc.repo.CreateUser(u.Username, u.EmailAddress, passwordHash)
 }
 
 func NewUserUseCases(userRepo *users.UserRepository) IUserUseCases {
 	return &UserUseCases{
 		repo: userRepo,
 	}
+}
+
+func hashPassword(pwd string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.MinCost)
 }
