@@ -3,9 +3,8 @@ package usecases
 import (
 	"os"
 	"testing"
-	"time"
 
-	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/mocks"
 )
 
 var (
@@ -18,28 +17,9 @@ var (
 	userID string = "dadadada"
 )
 
-type MockUserRepo struct {
-}
-
-func (ur MockUserRepo) GetUserByID(id string) (entities.User, error) {
-	// mock storage get where ID = id
-	return entities.User{
-		ID: id,
-	}, nil
-}
-func (ur MockUserRepo) CreateUser(username, email string, passwordHash []byte) (entities.User, error) {
-	// mock storage insert new user
-
-	return entities.User{
-		Username:     username,
-		EmailAddress: email,
-		CreatedAt:    time.Now(),
-	}, nil
-}
-
 func TestMain(m *testing.M) {
 
-	var ur UserRepo = MockUserRepo{}
+	var ur UserRepo = mocks.MockUserRepo{}
 
 	uc = NewUserUseCases(ur)
 
