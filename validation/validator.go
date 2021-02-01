@@ -62,7 +62,6 @@ func validatePassword(pwd string) bool {
 	var hasLetter, hasDigit, hasSpecial, hasSpecialExtended bool
 
 	for _, v := range pwdRunes {
-		fmt.Println(string(rune(0x2f)))
 		if v <= 0x2f || (v >= 0x3a && v <= 0x40) || (v >= 0x5b && v <= 0x60) {
 			if hasSpecial == false {
 				hasSpecial = true

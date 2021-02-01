@@ -15,6 +15,8 @@ import (
 func main() {
 	logger := zerolog.New(os.Stdout)
 	logger.Info().Msg(time.Now().Local().String() + "-> App starts, env = " + os.Getenv("ENV"))
+
+	// @refactor: make it config file
 	port := os.Getenv("PORT")
 	if port == "" {
 		panic("environment variable 'PORT' is not set")

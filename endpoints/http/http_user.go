@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/unnamedxaer/gymm-api/repositories"
@@ -36,8 +35,6 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 		responseWithErrorMsg(w, http.StatusInternalServerError, err)
 		return
 	}
-
-	u.CreatedAt = time.Now()
 
 	user, err := app.Usecases.CreateUser(&u)
 	if err != nil {
