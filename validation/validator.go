@@ -3,7 +3,6 @@ package validation
 import (
 	"fmt"
 	"reflect"
-	"unicode"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -48,40 +47,50 @@ func New() *validator.Validate {
 }
 
 func pwdStrengthValidateFunc(fdl validator.FieldLevel) bool {
-	fldValue := fdl.Field().String() // debugging
-	fldValueRune := []rune(fldValue)
-	pwdCount := len(fldValueRune)
-	charCounts := make(map[rune]int, pwdCount)
-	var hasLetter, hasDigit bool
+	fldValue := fdl.Field().String()
+	return validatePassword(fldValue)
+}
 
-	for _, v := range fldValueRune {
-		if hasLetter == false && unicode.IsLetter(v) {
-			hasLetter = true
-		}
-		if hasDigit == false && unicode.IsDigit(v) {
-			hasDigit = true
+func validatePassword(pwd string) bool {
+	pwdCount := len(pwd)
+	if pwdCount < 6 {
+		return false
+	}
+	pwdRunes := []rune(pwd)
+	charCounts := make(map[rune]int, pwdCount)
+	var diffCharTypesCnt int
+	var hasLetter, hasDigit, hasSpecial, hasSpecialExtended bool
+
+	for _, v := range pwdRunes {
+		fmt.Println(string(rune(0x2f)))
+		if v <= 0x2f || (v >= 0x3a && v <= 0x40) || (v >= 0x5b && v <= 0x60) {
+			if hasSpecial == false {
+				hasSpecial = true
+				diffCharTypesCnt++
+			}
+		} else if (v >= 0x61 && v <= 0x7a) || (v >= 0x41 && v <= 0x5a) {
+			if hasLetter == false {
+				hasLetter = true
+				diffCharTypesCnt++
+			}
+		} else if v >= 0x30 && v <= 0x39 {
+			if hasDigit == false {
+				hasDigit = true
+				diffCharTypesCnt++
+			}
+		} else if v >= 0x7b {
+			if hasSpecialExtended == false {
+				hasSpecialExtended = true
+				diffCharTypesCnt++
+			}
 		}
 
 		charCounts[v]++
-	}
-
-	if hasLetter == false && hasDigit == false {
-		return false
-	}
-
-	countF := float32(pwdCount)
-	ratio := float32(len(charCounts)) / countF
-	fmt.Println(fmt.Sprintf("pwd ratio: %f", ratio))
-	if ratio > 0.8 {
-		return false
-	}
-	for _, v := range charCounts {
-		if float32(v)/countF > 0.35 {
-			return false
+		if diffCharTypesCnt > 1 && len(charCounts) >= 5 {
+			return true
 		}
 	}
-
-	return true
+	return false
 }
 
 // PrintValidationErrorInfo prints `err` info to the console
