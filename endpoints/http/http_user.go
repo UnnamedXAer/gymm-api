@@ -65,7 +65,7 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 
 	u, err := app.Usecases.GetUserByID(id)
 	if err != nil {
-		if err.Error() == "mongo: no documents in result" {
+		if errors.Is(err, repositories.NewErrorNotFoundRecord()) {
 			responseWithJSON(w, 200, nil)
 			return
 		}

@@ -5,23 +5,39 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// EmailAddressInUse is an error returned when user tries to register new account using email address that already exists in storage
-type EmailAddressInUse struct {
+// EmailAddressInUseError is an error returned when user tries to register new account using email address that already exists in storage
+type EmailAddressInUseError struct {
 	msg string
 }
 
-func (err EmailAddressInUse) Error() string {
+func (err EmailAddressInUseError) Error() string {
 	return err.msg
 }
 
 // NewErrorEmailAddressInUse returns a new error of type EmailAddressInUse
-func NewErrorEmailAddressInUse() EmailAddressInUse {
-	return EmailAddressInUse{
+func NewErrorEmailAddressInUse() EmailAddressInUseError {
+	return EmailAddressInUseError{
 		msg: "email address already in use",
 	}
 }
 
-// IsDuplicatedError checks whether given mongo error says that an insert violated unique contrain
+// NotFoundRecordError is an error returned when single row result query did not found matching data
+type NotFoundRecordError struct {
+	msg string
+}
+
+func (err NotFoundRecordError) Error() string {
+	return err.msg
+}
+
+// NewErrorNotFoundRecord returns a new error of type NotFoundRecord
+func NewErrorNotFoundRecord() NotFoundRecordError {
+	return NotFoundRecordError{
+		msg: "record not found",
+	}
+}
+
+// IsDuplicatedError checks whether given mongo error says that an insert violated unique constrain
 func IsDuplicatedError(err error) bool {
 	var e mongo.WriteException
 
