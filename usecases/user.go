@@ -11,7 +11,7 @@ import (
 // UserInput represents data received from req
 type UserInput struct {
 	// ID           primitive.ObjectID `json:"id" validate:"-"`
-	Username     string    `json:"username" validate:"required,min=2,max=50,printascii"`
+	Username     string    `json:"userName" validate:"required,min=2,max=50,printascii"`
 	EmailAddress string    `json:"emailAddress" validate:"required,email"`
 	Password     string    `json:"password" validate:"required,min=6,max=24,pwd"`
 	CreatedAt    time.Time `json:"createdAt"`
