@@ -71,19 +71,19 @@ func TestCreateUser(t *testing.T) {
 	}
 	if u.EmailAddress != gotUser.EmailAddress ||
 		u.Username != gotUser.Username {
-		t.Errorf("Expect to get user base on data: %v, got: %v",
+		t.Fatalf("Expect to get user base on data: %v, got: %v",
 			u,
 			gotUser)
 	}
 
 	if gotUser.ID == "" {
-		t.Fatalf("Expected 'ID' to not be empty, got '%s' for email: %s",
+		t.Fatalf("Expected 'ID' to NOT be zero value, got %q for email: %q",
 			gotUser.ID,
 			u.EmailAddress)
 	}
 
 	if gotUser.CreatedAt.IsZero() {
-		t.Fatalf("Expected 'CreateAt' to not be zero value, got '%s' for email: %s",
+		t.Fatalf("Expected 'CreateAt' to NOT be zero value, got %q for email: %q",
 			gotUser.CreatedAt,
 			u.EmailAddress)
 	}
@@ -99,7 +99,7 @@ func TestCreateUserDuplicatedEmail(t *testing.T) {
 		}
 		t.Fatal(err)
 	}
-	t.Fatalf("Expected to get error '%s' for email addres: '%s', got new user with ID: '%s'",
+	t.Fatalf("Expected to get error %q for email addres: %q, got new user with ID: %q",
 		repositories.NewErrorEmailAddressInUse(),
 		u.EmailAddress,
 		gotUser.ID)
@@ -115,7 +115,6 @@ func TestGetUserByID(t *testing.T) {
 	uID := results.InsertedID.(primitive.ObjectID).Hex()
 
 	gotUser, err := ur.GetUserByID(uID)
-	// gotUser, err := ur.GetUserByID("6010835ea16aa7173e36fc0d")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,13 +132,25 @@ func TestGetUserByIDNotExisting(t *testing.T) {
 	uID := "60108393da81e60598d5347f"
 
 	gotUser, err := ur.GetUserByID(uID)
-	if err != nil {
-		if err.Error() == "mongo: no documents in result" {
-			return
-		}
-		t.Fatal(err)
+	if err == nil || errors.Is(err, repositories.NewErrorNotFoundRecord()) == false {
+		t.Fatalf("Expected to get error: %q, got: %v", repositories.NewErrorNotFoundRecord(), err)
 	}
-	t.Errorf("Expect to NOT get any user for _id: '%s', but got: %v", uID, gotUser)
+	if gotUser.ID != "" || gotUser.EmailAddress != "" {
+		t.Errorf("Expect to NOT get any user for _id: %q, but got: %v", uID, gotUser)
+	}
+}
+
+func TestGetUserByIDInvalidID(t *testing.T) {
+	clearCollection(t)
+	uID := "6s108393da81e60598d5347f"
+
+	gotUser, err := ur.GetUserByID(uID)
+	if err == nil || errors.Is(err, repositories.NewErrorInvalidID(uID)) == false {
+		t.Fatalf("Expected to get error: %q, got: %v", repositories.NewErrorInvalidID(uID), err)
+	}
+	if gotUser.ID != "" || gotUser.EmailAddress != "" {
+		t.Errorf("Expect to NOT get any user for _id: %q, but got: %v", uID, gotUser)
+	}
 }
 
 func timesEqual(t1, t2 time.Time) bool {

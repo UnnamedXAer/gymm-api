@@ -23,8 +23,8 @@ func EnsureTestEnv() {
 			}
 		}
 	}
-	if os.Getenv("ENV") != "TEST" {
-		panic(fmt.Errorf("wrong env, wanted '%s', got '%s'", "TEST", os.Getenv("ENV")))
+	if os.Getenv("ENV") != "test" {
+		panic(fmt.Errorf("wrong env, wanted '%s', got '%s'", "test", os.Getenv("ENV")))
 	}
 }
 

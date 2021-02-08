@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/mocks"
+	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
@@ -29,6 +30,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	repositories.EnsureTestEnv()
+
 	validate = validation.New()
 	l := &zerolog.Logger{}
 	l.Level(zerolog.Disabled)
