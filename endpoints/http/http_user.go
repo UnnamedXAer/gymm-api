@@ -63,7 +63,12 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 	u, err := app.Usecases.GetUserByID(id)
 	if err != nil {
 		if errors.Is(err, repositories.NewErrorNotFoundRecord()) {
-			responseWithJSON(w, 200, nil)
+			responseWithJSON(w, http.StatusOK, nil)
+			return
+		}
+
+		if errors.Is(err, repositories.NewErrorInvalidID(id)) {
+			responseWithErrorMsg(w, http.StatusBadRequest, err)
 			return
 		}
 

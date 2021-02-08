@@ -37,6 +37,22 @@ func NewErrorNotFoundRecord() NotFoundRecordError {
 	}
 }
 
+// InvalidIDError is an error returned when given ID is not valid
+type InvalidIDError struct {
+	msg string
+}
+
+func (err InvalidIDError) Error() string {
+	return err.msg
+}
+
+// NewErrorInvalidID returns a new error of type InvalidID
+func NewErrorInvalidID(id string) InvalidIDError {
+	return InvalidIDError{
+		msg: "invalid ID: " + id,
+	}
+}
+
 // IsDuplicatedError checks whether given mongo error says that an insert violated unique constrain
 func IsDuplicatedError(err error) bool {
 	var e mongo.WriteException
