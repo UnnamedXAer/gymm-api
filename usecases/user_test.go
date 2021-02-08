@@ -1,10 +1,7 @@
 package usecases
 
 import (
-	"os"
 	"testing"
-
-	"github.com/unnamedxaer/gymm-api/mocks"
 )
 
 var (
@@ -16,16 +13,6 @@ var (
 	}
 	userID string = "dadadada"
 )
-
-func TestMain(m *testing.M) {
-
-	var ur UserRepo = mocks.MockUserRepo{}
-
-	uc = NewUserUseCases(ur)
-
-	code := m.Run()
-	os.Exit(code)
-}
 
 func TestCreateUser(t *testing.T) {
 	u, _ := uc.CreateUser(&ui)
