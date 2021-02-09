@@ -119,7 +119,7 @@ func TestGetUserByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if timesEqual(u.CreatedAt, gotUser.CreatedAt) == false ||
+	if repositories.TimesEqual(u.CreatedAt, gotUser.CreatedAt) == false ||
 		u.EmailAddress != gotUser.EmailAddress ||
 		u.Username != gotUser.Username ||
 		uID != gotUser.ID {
@@ -151,16 +151,6 @@ func TestGetUserByIDInvalidID(t *testing.T) {
 	if gotUser.ID != "" || gotUser.EmailAddress != "" {
 		t.Errorf("Expect to NOT get any user for _id: %q, but got: %v", uID, gotUser)
 	}
-}
-
-func timesEqual(t1, t2 time.Time) bool {
-
-	return t1.Year() == t2.Year() &&
-		t1.Month() == t2.Month() &&
-		t1.Day() == t2.Day() &&
-		t1.Hour() == t2.Hour() &&
-		t1.Minute() == t2.Minute() &&
-		t1.Second() == t2.Second()
 }
 
 func clearCollection(t *testing.T) {

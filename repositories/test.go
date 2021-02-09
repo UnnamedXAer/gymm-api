@@ -43,6 +43,10 @@ func DisconnectDB(l *zerolog.Logger, db *mongo.Database) {
 
 // InsertMockUser inserts mocked user to repository with use of the repo functionality
 func InsertMockUser(ur usecases.UserRepo) (entities.User, error) {
+	if os.Getenv("ENV") == "test" {
+		panic(fmt.Errorf("wrong env, NOT wanted 'test', got '%s'", os.Getenv("ENV")))
+	}
+
 	return ur.CreateUser(
 		"John Silver",
 		"johnsilver@email.com",
@@ -52,4 +56,14 @@ func InsertMockUser(ur usecases.UserRepo) (entities.User, error) {
 
 func StartMockTraining(tr usecases.TrainingRepo) (entities.Training, error) {
 	return tr.StartTraining()
+}
+
+func TimesEqual(t1, t2 time.Time) bool {
+
+	return t1.Year() == t2.Year() &&
+		t1.Month() == t2.Month() &&
+		t1.Day() == t2.Day() &&
+		t1.Hour() == t2.Hour() &&
+		t1.Minute() == t2.Minute() &&
+		t1.Second() == t2.Second()
 }
