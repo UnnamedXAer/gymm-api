@@ -1,7 +1,6 @@
 package http
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -37,12 +36,12 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/users", app.CreateUser).Methods("POST")
 
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		log.Println("[" + r.Method + "/] -> URL: " + r.RequestURI)
+		app.l.Info().Msg("[" + r.Method + "/] -> URL: " + r.RequestURI)
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 	})
 }
 
 func (app *App) Run(addr string) {
-	log.Println("server is up and running at " + addr)
-	log.Fatalln(http.ListenAndServe(addr, app.Router))
+	app.l.Info().Msg("server is up and running at " + addr)
+	app.l.Error().Stack().Err(http.ListenAndServe(addr, app.Router)).Msg("")
 }

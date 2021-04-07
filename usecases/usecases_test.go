@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/unnamedxaer/gymm-api/mocks"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/testhelpers"
 )
 
 func TestMain(m *testing.M) {
-	repositories.EnsureTestEnv()
+	testhelpers.EnsureTestEnv()
 
 	var ur UserRepo = mocks.MockUserRepo{}
 

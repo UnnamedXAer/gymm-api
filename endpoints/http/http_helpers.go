@@ -21,8 +21,8 @@ func responseWithErrorJSON(w http.ResponseWriter, code int, errObj interface{}) 
 }
 
 func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
-	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
 
 	output, err := json.Marshal(payload)
 	if err != nil {

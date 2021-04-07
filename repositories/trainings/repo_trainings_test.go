@@ -8,8 +8,10 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/mocks"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
+	"github.com/unnamedxaer/gymm-api/testhelpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,7 +32,7 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	repositories.EnsureTestEnv()
+	testhelpers.EnsureTestEnv()
 	logger := zerolog.New(os.Stdout)
 
 	dbName := os.Getenv("DB_NAME")
@@ -50,7 +52,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	defer repositories.DisconnectDB(&logger, db)
+	defer testhelpers.DisconnectDB(&logger, db)
 
 	trainingsCol := db.Collection(trCollName)
 	usersCol := db.Collection(uCollName)
@@ -67,7 +69,7 @@ func TestMain(m *testing.M) {
 		logger.Err(err).Msgf("%d", res.DeletedCount)
 		panic(err)
 	}
-	mockedUser, err = repositories.InsertMockUser(userRepo)
+	mockedUser, err = mocks.InsertMockUser(userRepo)
 	if err != nil {
 		panic(err)
 	}
@@ -92,58 +94,68 @@ func TestStartTraining(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if repositories.TimesEqual(gotTraining.StartTime, trainingdata.StartTime) == false {
-		t.Fatalf("Expect to get started training base on data: %v, got: %v",
+	if testhelpers.TimesEqual(gotTraining.StartTime, trainingdata.StartTime) == false {
+		t.Errorf("Expect to get started training base on data: %v, got: %v",
 			trainingdata,
 			gotTraining)
+		return
 	}
 
 	if gotTraining.ID == "" {
-		t.Fatalf("Expected 'ID' to NOT be zero value, got %q", gotTraining.ID)
+		t.Errorf("expected 'ID' to NOT be zero value, got %q", gotTraining.ID)
 	}
 
 	if gotTraining.EndTime.IsZero() == false {
-		t.Fatalf("Expected 'EndTime' to be zero value, got %q", gotTraining.EndTime)
+		t.Errorf("expected 'EndTime' to be zero value, got %q", gotTraining.EndTime)
 	}
 
 	if len(gotTraining.Exercises) > 0 {
-		t.Fatalf("Expected 'Exercises' to be empty, got %v exercises", gotTraining.Exercises)
+		t.Errorf("expected 'Exercises' to be empty, got %v exercises", gotTraining.Exercises)
 	}
 
 	if gotTraining.Comment != "" {
-		t.Fatalf("Expected 'Comment' to be empty, got %q", gotTraining.Comment)
+		t.Errorf("expected 'Comment' to be empty, got %q", gotTraining.Comment)
 	}
 }
 
-func TestGetStartedTraining(t *testing.T) {
+func TestGetStartedTrainings(t *testing.T) {
 	if mockedStartedTraining.StartTime.IsZero() {
 		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
 	}
 
-	gotTraining, err := trainingRepo.GetStartedTraining((mockedStartedTraining.UserID.Hex())
+	gotTrainings, err := trainingRepo.GetStartedTrainings(mockedStartedTraining.UserID)
 	if err != nil {
-		t.Fatal(err)
+		t.Errorf("expect to get one training, got: %v", err)
+		return
 	}
-	if repositories.TimesEqual(gotTraining.StartTime, trainingdata.StartTime) == false {
-		t.Fatalf("Expect to get started training base on data: %v, got: %v",
+
+	if len(gotTrainings) != 1 {
+		t.Errorf("expect to get one started traning, got: %d", len(gotTrainings))
+		return
+	}
+
+	gotTraining := gotTrainings[0]
+	if testhelpers.TimesEqual(gotTraining.StartTime, trainingdata.StartTime) == false {
+		t.Errorf("expect to get started training base on data: %v, got: %v",
 			trainingdata,
 			gotTraining)
+		return
 	}
 
 	if gotTraining.ID == "" {
-		t.Fatalf("Expected 'ID' to NOT be zero value, got %q", gotTraining.ID)
+		t.Errorf("expected 'ID' to NOT be zero value, got %q", gotTraining.ID)
 	}
 
 	if gotTraining.EndTime.IsZero() == false {
-		t.Fatalf("Expected 'EndTime' to be zero value, got %q", gotTraining.EndTime)
+		t.Errorf("expected 'EndTime' to be zero value, got %q", gotTraining.EndTime)
 	}
 
 	if len(gotTraining.Exercises) > 0 {
-		t.Fatalf("Expected 'Exercises' to be empty, got %v exercises", gotTraining.Exercises)
+		t.Errorf("expected 'Exercises' to be empty, got %v exercises", gotTraining.Exercises)
 	}
 
 	if gotTraining.Comment != "" {
-		t.Fatalf("Expected 'Comment' to be empty, got %q", gotTraining.Comment)
+		t.Errorf("expected 'Comment' to be empty, got %q", gotTraining.Comment)
 	}
 }
 

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -18,7 +17,7 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	f, ff := validation.GetFieldJSONTag(&u, "Username")
 	fmt.Println(f, ff)
 	err := json.NewDecoder(req.Body).Decode(&u)
-	log.Println("[POST / CreateUser] -> body: " + fmt.Sprintf("%v", u))
+	app.l.Debug().Msg("[POST / CreateUser] -> body: " + fmt.Sprintf("%v", u))
 	if err != nil {
 		resErrText := getErrOfMalformedInput(&u, []string{"ID", "CreatedAt"})
 		responseWithErrorMsg(w, http.StatusUnprocessableEntity, errors.New(resErrText))
@@ -54,9 +53,9 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 	id := vars["id"]
-	log.Println("[GET / GetUserById] -> id: " + id)
+	app.l.Debug().Msg("[GET / GetUserById] -> id: " + id)
 	if id == "" {
-		responseWithErrorMsg(w, http.StatusUnprocessableEntity, errors.New("Missign 'ID'"))
+		responseWithErrorMsg(w, http.StatusUnprocessableEntity, errors.New("missign 'ID'"))
 		return
 	}
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/testhelpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -22,7 +23,7 @@ var (
 
 func TestMain(m *testing.M) {
 	logger := zerolog.New(os.Stdout)
-	repositories.EnsureTestEnv()
+	testhelpers.EnsureTestEnv()
 
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
@@ -41,7 +42,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	defer repositories.DisconnectDB(&logger, db)
+	defer testhelpers.DisconnectDB(&logger, db)
 
 	usersCol := db.Collection("users")
 	_, err = usersCol.DeleteMany(nil, bson.D{})
@@ -119,7 +120,7 @@ func TestGetUserByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if repositories.TimesEqual(u.CreatedAt, gotUser.CreatedAt) == false ||
+	if testhelpers.TimesEqual(u.CreatedAt, gotUser.CreatedAt) == false ||
 		u.EmailAddress != gotUser.EmailAddress ||
 		u.Username != gotUser.Username ||
 		uID != gotUser.ID {

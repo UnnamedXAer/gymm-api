@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/mocks"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/testhelpers"
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
@@ -30,7 +30,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	repositories.EnsureTestEnv()
+	testhelpers.EnsureTestEnv()
 
 	validate = validation.New()
 	l := &zerolog.Logger{}
@@ -41,12 +41,14 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 	os.Exit(code)
 }
+
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	rr := httptest.NewRecorder()
 	app.Router.ServeHTTP(rr, req)
 
 	return rr
 }
+
 func checkResponseCode(t *testing.T, expectedcode, actualCode int) {
 	if expectedcode != actualCode {
 		t.Errorf("Expected response code %d. Got %d", expectedcode, actualCode)

@@ -77,7 +77,7 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 	results := r.col.FindOneAndUpdate(context.Background(), trainingData{ID: tOID}, trainingData{EndTime: endTime}, &options)
 	err = results.Err()
 	if err != nil {
-		msg := fmt.Sprintf("cannot update training with ID %q, error: %v", err)
+		msg := fmt.Sprintf("cannot update training with ID %s, error: %v", trainingID, err)
 		r.l.Error().Msg(msg)
 		if repositories.IsDuplicatedError(err) {
 			//
