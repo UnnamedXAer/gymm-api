@@ -2,6 +2,7 @@ package trainings
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -14,13 +15,12 @@ import (
 	"github.com/unnamedxaer/gymm-api/testhelpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
-	trainingRepo          *TrainingRepository
-	userRepo              *users.UserRepository
-	db                    *mongo.Database
+	trainingRepo *TrainingRepository
+	userRepo     *users.UserRepository
+	// db                    *mongo.Database
 	trainingdata          trainingData
 	mockedUser            entities.User
 	mockedStartedTraining entities.Training
@@ -83,6 +83,7 @@ func TestMain(m *testing.M) {
 		StartTime: time.Now().UTC(),
 	}
 
+	fmt.Println("main!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	code := m.Run()
 	os.Exit(code)
 }
@@ -159,16 +160,16 @@ func TestGetStartedTrainings(t *testing.T) {
 	}
 }
 
-func clearCollection(t *testing.T) {
-	_, err := trainingRepo.col.DeleteMany(context.TODO(), bson.D{})
-	if err != nil {
-		t.Fatal(err)
-	}
-}
+// func clearCollection(t *testing.T) {
+// 	_, err := trainingRepo.col.DeleteMany(context.TODO(), bson.D{})
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// }
 
-func insertMockTraining(t *testing.T) {
-	_, err := trainingRepo.col.InsertOne(context.TODO(), trainingdata)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
+// func insertMockTraining(t *testing.T) {
+// 	_, err := trainingRepo.col.InsertOne(context.TODO(), trainingdata)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// }

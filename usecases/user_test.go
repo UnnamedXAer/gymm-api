@@ -1,12 +1,14 @@
-package usecases
+package usecases_test
 
 import (
 	"testing"
+
+	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
 var (
-	uc IUserUseCases
-	ui UserInput = UserInput{
+	uc usecases.IUserUseCases
+	ui usecases.UserInput = usecases.UserInput{
 		Username:     "John Silver",
 		EmailAddress: "johnsilver@email.com",
 		Password:     "TheSecretestPasswordEver123$%^",

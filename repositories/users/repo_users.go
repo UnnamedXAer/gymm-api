@@ -62,7 +62,7 @@ func (r *UserRepository) CreateUser(
 		CreatedAt:    now,
 	}
 
-	results, err := r.col.InsertOne(nil, ud)
+	results, err := r.col.InsertOne(context.Background(), ud)
 	if err != nil {
 		if repositories.IsDuplicatedError(err) {
 			return u, repositories.NewErrorEmailAddressInUse()
@@ -72,10 +72,10 @@ func (r *UserRepository) CreateUser(
 	}
 
 	u = entities.User{
-		results.InsertedID.(primitive.ObjectID).Hex(),
-		username,
-		emailAddress,
-		now,
+		ID:           results.InsertedID.(primitive.ObjectID).Hex(),
+		Username:     username,
+		EmailAddress: emailAddress,
+		CreatedAt:    now,
 	}
 	return u, nil
 }

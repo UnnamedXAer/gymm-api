@@ -12,13 +12,12 @@ import (
 	"github.com/unnamedxaer/gymm-api/testhelpers"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var (
 	ur *UserRepository
-	db *mongo.Database
-	u  userData
+	// db *mongo.Database
+	u userData
 )
 
 func TestMain(m *testing.M) {
@@ -45,7 +44,7 @@ func TestMain(m *testing.M) {
 	defer testhelpers.DisconnectDB(&logger, db)
 
 	usersCol := db.Collection("users")
-	_, err = usersCol.DeleteMany(nil, bson.D{})
+	_, err = usersCol.DeleteMany(context.Background(), bson.D{})
 	if err != nil {
 		panic(err)
 	}

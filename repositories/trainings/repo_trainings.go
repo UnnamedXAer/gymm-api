@@ -130,20 +130,25 @@ func (r *TrainingRepository) GetStartedTrainings(userID string) (t []entities.Tr
 	oUserID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		r.l.Error().Msg(err.Error())
-		return t, fmt.Errorf("invalid user id: %s", userID)
+		return nil, fmt.Errorf("invalid user id: %s", userID)
 	}
 
-	cursor, err := r.col.Find(context.TODO(), bson.M{"user_id": oUserID, "start_time": nil})
+	cursor, err := r.col.Find(context.Background(), bson.M{"user_id": oUserID, "start_time": nil})
 	if err != nil {
 		r.l.Error().Msg(err.Error())
-		return t, err
+		return nil, err
 	}
 
-	panic("TrainingRepository - GetStartedTrainings - not implemented yet.")
+	// panic("TrainingRepository - GetStartedTrainings - not implemented yet.")
 	for cursor.Next(context.Background()) {
-		// t = append(t, entities.Training{
-		// 	ID: cursor.,
-		// })
+		currTraining := entities.Training{}
+
+		err = cursor.Decode(&currTraining)
+		if err != nil {
+			return nil, err
+		}
+
+		t = append(t, currTraining)
 	}
 	return t, nil
 }

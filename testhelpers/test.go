@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -23,7 +24,7 @@ func EnsureTestEnv() {
 			}
 		}
 	}
-	if os.Getenv("ENV") != "test" {
+	if strings.ToLower(os.Getenv("ENV")) != "test" {
 		panic(fmt.Errorf("wrong env, wanted '%s', got '%s'", "test", os.Getenv("ENV")))
 	}
 }
