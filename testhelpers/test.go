@@ -24,7 +24,10 @@ func EnsureTestEnv() {
 			}
 		}
 	}
-	if strings.ToLower(os.Getenv("ENV")) != "test" {
+
+	env := strings.ToLower(os.Getenv("ENV"))
+
+	if env != "test" {
 		panic(fmt.Errorf("wrong env, wanted '%s', got '%s'", "test", os.Getenv("ENV")))
 	}
 }
