@@ -2,7 +2,6 @@ package trainings
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -83,7 +82,6 @@ func TestMain(m *testing.M) {
 		StartTime: time.Now().UTC(),
 	}
 
-	fmt.Println("main!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	code := m.Run()
 	os.Exit(code)
 }
@@ -159,17 +157,3 @@ func TestGetStartedTrainings(t *testing.T) {
 		t.Errorf("expected 'Comment' to be empty, got %q", gotTraining.Comment)
 	}
 }
-
-// func clearCollection(t *testing.T) {
-// 	_, err := trainingRepo.col.DeleteMany(context.TODO(), bson.D{})
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// }
-
-// func insertMockTraining(t *testing.T) {
-// 	_, err := trainingRepo.col.InsertOne(context.TODO(), trainingdata)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// }

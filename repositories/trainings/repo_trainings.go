@@ -133,22 +133,46 @@ func (r *TrainingRepository) GetStartedTrainings(userID string) (t []entities.Tr
 		return nil, fmt.Errorf("invalid user id: %s", userID)
 	}
 
-	cursor, err := r.col.Find(context.Background(), bson.M{"user_id": oUserID, "start_time": nil})
+	cursor, err := r.col.Find(context.Background(), bson.M{"user_id": oUserID, "end_time": nil})
 	if err != nil {
 		r.l.Error().Msg(err.Error())
 		return nil, err
 	}
+	defer cursor.Close(context.TODO())
 
-	// panic("TrainingRepository - GetStartedTrainings - not implemented yet.")
 	for cursor.Next(context.Background()) {
-		currTraining := entities.Training{}
-
-		err = cursor.Decode(&currTraining)
+		var training trainingData
+		err = cursor.Decode(&training)
 		if err != nil {
 			return nil, err
 		}
 
-		t = append(t, currTraining)
+		t = append(t, mapTrainingToEntity(training))
 	}
+
+	if err = cursor.Err(); err != nil {
+		return nil, err
+	}
+
 	return t, nil
+}
+
+func mapTrainingToEntity(t trainingData) entities.Training {
+	return entities.Training{
+		ID:        t.ID.Hex(),
+		UserID:    t.UserID.Hex(),
+		StartTime: t.StartTime,
+		EndTime:   t.EndTime,
+		Exercises: mapExercisesToEntity(t.Exercises),
+	}
+}
+
+func mapExercisesToEntity(ex []trainingExerciseData) (te []entities.TrainingExercise) {
+
+	return te
+}
+
+func mapSetsToEntity(ex []trainingSetData) (ts []entities.TrainingSet) {
+
+	return ts
 }
