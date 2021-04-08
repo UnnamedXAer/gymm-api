@@ -23,6 +23,8 @@ var (
 	trainingdata          trainingData
 	mockedUser            entities.User
 	mockedStartedTraining entities.Training
+	mockedStartedExercise entities.TrainingExercise
+	mockedSet             entities.TrainingSet
 )
 
 const (
@@ -87,14 +89,15 @@ func TestMain(m *testing.M) {
 }
 
 func TestStartTraining(t *testing.T) {
-	// clearCollection(t)
 	gotTraining, err := trainingRepo.StartTraining(trainingdata.UserID.Hex(), trainingdata.StartTime)
 	mockedStartedTraining = gotTraining
 	if err != nil {
-		t.Fatal(err)
+		t.Errorf("expect to start training, got error: %v", err)
+		return
 	}
+
 	if testhelpers.TimesEqual(gotTraining.StartTime, trainingdata.StartTime) == false {
-		t.Errorf("Expect to get started training base on data: %v, got: %v",
+		t.Errorf("expect to get started training base on data: %v, got: %v",
 			trainingdata,
 			gotTraining)
 		return
@@ -124,7 +127,7 @@ func TestGetStartedTrainings(t *testing.T) {
 
 	gotTrainings, err := trainingRepo.GetStartedTrainings(mockedStartedTraining.UserID)
 	if err != nil {
-		t.Errorf("expect to get one training, got: %v", err)
+		t.Errorf("expect to get started training, got error: %v", err)
 		return
 	}
 
@@ -135,10 +138,9 @@ func TestGetStartedTrainings(t *testing.T) {
 
 	gotTraining := gotTrainings[0]
 	if testhelpers.TimesEqual(gotTraining.StartTime, trainingdata.StartTime) == false {
-		t.Errorf("expect to get started training base on data: %v, got: %v",
-			trainingdata,
-			gotTraining)
-		return
+		t.Errorf("expect training start time to be: %s, got %s",
+			trainingdata.StartTime,
+			gotTraining.StartTime)
 	}
 
 	if gotTraining.ID == "" {
@@ -150,10 +152,196 @@ func TestGetStartedTrainings(t *testing.T) {
 	}
 
 	if len(gotTraining.Exercises) > 0 {
-		t.Errorf("expected 'Exercises' to be empty, got %v exercises", gotTraining.Exercises)
+		t.Errorf("expected 'Exercises' to be empty, got %v", gotTraining.Exercises)
 	}
 
 	if gotTraining.Comment != "" {
 		t.Errorf("expected 'Comment' to be empty, got %q", gotTraining.Comment)
+	}
+}
+
+func TestAddExercise(t *testing.T) {
+	if mockedStartedTraining.StartTime.IsZero() {
+		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
+	}
+
+	now := time.Now()
+	exId := "123 321" // @todo: exId from db
+	mockedStartedExercise.StartTime = now
+	mockedStartedExercise.ExerciseID = exId
+	var te entities.TrainingExercise
+	te, err := trainingRepo.AddExercise(mockedStartedExercise)
+	if err != nil {
+		t.Errorf("expect to add exercise, got error: %v", err)
+		return
+	}
+
+	if testhelpers.TimesEqual(te.StartTime, now) {
+		t.Errorf("expect exercise start time to be: %s, got %s", now, te.StartTime)
+	}
+
+	if te.ID != "" {
+		t.Errorf("expect 'ID' not to be empty, got %q", te.ID)
+	}
+
+	if te.ExerciseID != exId {
+		t.Errorf("expect 'ExerciseID' to be %q, got %q", exId, te.ExerciseID)
+	}
+
+	if !te.EndTime.IsZero() {
+		t.Errorf("expected 'EndTime' to be zero value, got %q", te.EndTime)
+	}
+
+	if te.Comment != "" {
+		t.Errorf("expected 'Comment' to be empty, got %q", te.Comment)
+	}
+
+	if len(te.Sets) > 0 {
+		t.Errorf("expected 'Sets' to be empty, got %v", te.Sets)
+	}
+
+	mockedStartedExercise = te
+}
+
+func TestAddSet(t *testing.T) {
+	if mockedStartedExercise.StartTime.IsZero() {
+		t.Run("create new started exercise by 'TestAddExercise'", TestAddExercise)
+	}
+
+	now := time.Now()
+	reps := 12
+	mockedSet.Time = now
+	mockedSet.Reps = reps
+	var ts entities.TrainingSet
+	ts, err := trainingRepo.AddSet(mockedStartedExercise.ID, mockedSet)
+	if err != nil {
+		t.Errorf("expect to add set, got error: %v", err)
+		return
+	}
+
+	if ts.ID != "" {
+		t.Errorf("expect 'ID' not to be empty, got %q", ts.ID)
+	}
+
+	if testhelpers.TimesEqual(ts.Time, now) {
+		t.Errorf("expect set time to be: %s, got %s", now, ts.Time)
+	}
+
+	if ts.Reps != reps {
+		t.Errorf("expect reps to be %d, got %d", reps, ts.Reps)
+	}
+
+	mockedSet = ts
+}
+
+func TestGetTrainingExercises(t *testing.T) {
+	if mockedSet.Time.IsZero() {
+		t.Run("create new started exercise by 'TestAddSet'", TestAddSet)
+	}
+
+	now := time.Now()
+	reps := 12
+	mockedSet.Time = now
+	mockedSet.Reps = reps
+	var te []entities.TrainingExercise
+	te, err := trainingRepo.GetTrainingExercises(mockedStartedTraining.ID)
+	if err != nil {
+		t.Errorf("expect to get training exercises, got error: %v", err)
+		return
+	}
+
+	if (len(te)) == 0 {
+		t.Errorf("expect to get at least one exercises for training %q", mockedStartedTraining.ID)
+		return
+	}
+
+	var testExercise entities.TrainingExercise
+	for _, ex := range te {
+		if mockedStartedExercise.ID == ex.ID {
+			testExercise = ex
+			break
+		}
+	}
+
+	if testExercise.ID == "" {
+		t.Errorf("expect exercise %q to be among training %q exercises", mockedStartedExercise.ID, mockedStartedTraining.ID)
+		return
+	}
+
+	var testSet entities.TrainingSet
+	for _, set := range testExercise.Sets {
+		if mockedSet.ID == set.ID {
+			testSet = set
+			break
+		}
+	}
+
+	if testSet.ID == "" {
+		t.Errorf("expect set %q to be among sets of exercise %q", mockedSet.ID, testExercise.ID)
+	}
+
+}
+
+func TestEndExercise(t *testing.T) {
+	if mockedStartedExercise.StartTime.IsZero() {
+		t.Run("create new started exercise by 'TestAddExercise'", TestAddExercise)
+	}
+
+	now := time.Now()
+	var te entities.TrainingExercise
+	te, err := trainingRepo.EndExercise(mockedStartedExercise.ID, now)
+	if err != nil {
+		t.Errorf("expect to end exercise, got error: %v", err)
+	}
+
+	if testhelpers.TimesEqual(te.EndTime, now) {
+		t.Errorf("expect exercise end time to be: %s, got %s", now, te.EndTime)
+	}
+}
+
+func TestEndTraining(t *testing.T) {
+	if mockedStartedTraining.StartTime.IsZero() {
+		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
+	}
+
+	now := time.Now()
+	tr, err := trainingRepo.EndTraining(mockedStartedTraining.ID, now)
+	if err != nil {
+		t.Errorf("expected to end training (%s), got error: %v", mockedStartedTraining.ID, err)
+		return
+	}
+
+	if !testhelpers.TimesEqual(tr.EndTime, now) {
+		t.Errorf("expected to training end time be: %s, got %s", now, tr.EndTime)
+	}
+}
+
+func TestGetUserTrainings(t *testing.T) {
+	if mockedStartedTraining.StartTime.IsZero() {
+		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
+	}
+
+	var tr []entities.Training
+	tr, err := trainingRepo.GetUserTrainings(mockedStartedTraining.UserID)
+	if err != nil {
+		t.Errorf("expected to get trainings for user %q, got error: %v", mockedStartedTraining.UserID, err)
+		return
+	}
+
+	if len(tr) == 0 {
+		t.Errorf("expect to get at least one training for user %q", mockedStartedTraining.UserID)
+		return
+	}
+
+	var testTraining entities.Training
+	for _, training := range tr {
+		if mockedStartedTraining.ID == training.ID {
+			testTraining = training
+			break
+		}
+	}
+
+	if testTraining.ID == "" {
+		t.Errorf("expect training %q to be among trainings for user %q", mockedStartedTraining.ID, mockedStartedTraining.UserID)
 	}
 }
