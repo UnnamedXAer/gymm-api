@@ -125,7 +125,7 @@ func TestGetStartedTrainings(t *testing.T) {
 		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
 	}
 
-	gotTrainings, err := trainingRepo.GetStartedTrainings(mockedStartedTraining.UserID)
+	gotTrainings, err := trainingRepo.GetUserTrainings(mockedStartedTraining.UserID, true)
 	if err != nil {
 		t.Errorf("expect to get started training, got error: %v", err)
 		return
@@ -166,22 +166,22 @@ func TestAddExercise(t *testing.T) {
 	}
 
 	now := time.Now()
-	exId := "123 321" // @todo: exId from db
+	exId := "6070007dac9cb6e543aba500" // @todo: exId from db
 	mockedStartedExercise.StartTime = now
 	mockedStartedExercise.ExerciseID = exId
 	var te entities.TrainingExercise
-	te, err := trainingRepo.AddExercise(mockedStartedExercise)
+	te, err := trainingRepo.AddExercise(mockedStartedTraining.ID, mockedStartedExercise)
 	if err != nil {
 		t.Errorf("expect to add exercise, got error: %v", err)
 		return
 	}
 
-	if testhelpers.TimesEqual(te.StartTime, now) {
+	if !testhelpers.TimesEqual(te.StartTime, now) {
 		t.Errorf("expect exercise start time to be: %s, got %s", now, te.StartTime)
 	}
 
-	if te.ID != "" {
-		t.Errorf("expect 'ID' not to be empty, got %q", te.ID)
+	if te.ID == "" {
+		t.Error("expect 'ID' not to be empty", te.ID)
 	}
 
 	if te.ExerciseID != exId {
@@ -322,7 +322,7 @@ func TestGetUserTrainings(t *testing.T) {
 	}
 
 	var tr []entities.Training
-	tr, err := trainingRepo.GetUserTrainings(mockedStartedTraining.UserID)
+	tr, err := trainingRepo.GetUserTrainings(mockedStartedTraining.UserID, false)
 	if err != nil {
 		t.Errorf("expected to get trainings for user %q, got error: %v", mockedStartedTraining.UserID, err)
 		return
