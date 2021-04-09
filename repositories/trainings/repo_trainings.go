@@ -32,6 +32,7 @@ type trainingExerciseData struct {
 	Sets       []trainingSetData  `bson:"sets,omitempty"`
 	Comment    string             `bson:"comment,omitempty"`
 }
+
 type trainingSetData struct {
 	ID   primitive.ObjectID `bson:"_id,omitempty,required"`
 	Time time.Time          `bson:"time,omitempty,required"`
@@ -126,14 +127,20 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 	return t, nil
 }
 
-func (r *TrainingRepository) GetStartedTrainings(userID string) (t []entities.Training, err error) {
+func (r *TrainingRepository) GetUserTrainings(userID string, started bool) (t []entities.Training, err error) {
 	oUserID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		r.l.Error().Msg(err.Error())
 		return nil, fmt.Errorf("invalid user id: %s", userID)
 	}
 
-	cursor, err := r.col.Find(context.Background(), bson.M{"user_id": oUserID, "end_time": nil})
+	filter := bson.M{}
+	filter["user_id"] = oUserID
+	if started {
+		filter["end_time"] = nil
+	}
+	//bson.M{"user_id": oUserID, "end_time": nil}
+	cursor, err := r.col.Find(context.Background(), filter)
 	if err != nil {
 		r.l.Error().Msg(err.Error())
 		return nil, err
@@ -157,22 +164,80 @@ func (r *TrainingRepository) GetStartedTrainings(userID string) (t []entities.Tr
 	return t, nil
 }
 
-func mapTrainingToEntity(t trainingData) entities.Training {
-	return entities.Training{
-		ID:        t.ID.Hex(),
-		UserID:    t.UserID.Hex(),
-		StartTime: t.StartTime,
-		EndTime:   t.EndTime,
-		Exercises: mapExercisesToEntity(t.Exercises),
+func (r TrainingRepository) AddExercise(trID string, exercise entities.TrainingExercise) (entities.TrainingExercise, error) {
+	tOID, err := primitive.ObjectIDFromHex(trID)
+	if err != nil {
+		return entities.TrainingExercise{}, repositories.NewErrorInvalidID(trID)
 	}
+
+	exOID, err := primitive.ObjectIDFromHex(exercise.ExerciseID)
+	if err != nil {
+		return entities.TrainingExercise{}, repositories.NewErrorInvalidID(exercise.ExerciseID)
+	}
+	newExercise := trainingExerciseData{
+		ID:         primitive.NewObjectID(),
+		ExerciseID: exOID,
+		StartTime:  exercise.StartTime,
+		Comment:    exercise.Comment,
+	}
+
+	update := bson.M{"$push": bson.M{"exercises": newExercise}}
+	filter := bson.M{"_id": tOID}
+
+	results, err := r.col.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return entities.TrainingExercise{}, err
+	}
+
+	if results.ModifiedCount == 0 {
+		return entities.TrainingExercise{}, fmt.Errorf("add exercise: no documents were modified")
+	}
+
+	return entities.TrainingExercise{
+		ID:         newExercise.ID.Hex(),
+		ExerciseID: newExercise.ExerciseID.Hex(),
+		StartTime:  newExercise.StartTime,
+		EndTime:    newExercise.EndTime,
+		Comment:    newExercise.Comment,
+		Sets:       mapSetsToEntity(newExercise.Sets),
+	}, nil
 }
 
-func mapExercisesToEntity(ex []trainingExerciseData) (te []entities.TrainingExercise) {
+func (r TrainingRepository) AddSet(teID string, set entities.TrainingSet) (entities.TrainingSet, error) {
+	tOID, err := primitive.ObjectIDFromHex(teID)
+	if err != nil {
+		return entities.TrainingSet{}, repositories.NewErrorInvalidID(teID)
+	}
 
-	return te
+	newSet := trainingSetData{
+		ID:   primitive.NewObjectID(),
+		Time: set.Time,
+		Reps: set.Reps,
+	}
+
+	update := bson.M{"$push": bson.M{"sets": newSet}}
+	filter := bson.M{"_id": tOID}
+	// filter does not point to specific exercise
+	panic("not implemented yet")
+	results, err := r.col.UpdateOne(context.Background(), filter, update)
+	if err != nil {
+		return entities.TrainingSet{}, err
+	}
+
+	if results.ModifiedCount == 0 {
+		return entities.TrainingSet{}, fmt.Errorf("add set: no documents were modified")
+	}
+
+	return entities.TrainingSet{
+		ID:   newSet.ID.Hex(),
+		Time: newSet.Time,
+		Reps: newSet.Reps,
+	}, nil
 }
 
-func mapSetsToEntity(ex []trainingSetData) (ts []entities.TrainingSet) {
-
-	return ts
+func (r TrainingRepository) GetTrainingExercises(id string) ([]entities.TrainingExercise, error) {
+	return []entities.TrainingExercise{}, fmt.Errorf("not implemented yet")
+}
+func (r TrainingRepository) EndExercise(id string, endTime time.Time) (entities.TrainingExercise, error) {
+	return entities.TrainingExercise{}, fmt.Errorf("not implemented yet")
 }
