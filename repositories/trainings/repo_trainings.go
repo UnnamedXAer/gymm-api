@@ -204,7 +204,7 @@ func (r TrainingRepository) AddExercise(trID string, exercise entities.TrainingE
 }
 
 func (r TrainingRepository) AddSet(teID string, set entities.TrainingSet) (entities.TrainingSet, error) {
-	tOID, err := primitive.ObjectIDFromHex(teID)
+	teOID, err := primitive.ObjectIDFromHex(teID)
 	if err != nil {
 		return entities.TrainingSet{}, repositories.NewErrorInvalidID(teID)
 	}
@@ -215,10 +215,12 @@ func (r TrainingRepository) AddSet(teID string, set entities.TrainingSet) (entit
 		Reps: set.Reps,
 	}
 
-	update := bson.M{"$push": bson.M{"sets": newSet}}
-	filter := bson.M{"_id": tOID}
-	// filter does not point to specific exercise
-	panic("not implemented yet")
+	filter := bson.M{
+		"exercises._id": teOID,
+	}
+	// @improvement: check if there is a type safe way to insert nested docs
+	update := bson.M{"$push": bson.M{"exercises.$.sets": newSet}}
+
 	results, err := r.col.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		return entities.TrainingSet{}, err
@@ -236,8 +238,30 @@ func (r TrainingRepository) AddSet(teID string, set entities.TrainingSet) (entit
 }
 
 func (r TrainingRepository) GetTrainingExercises(id string) ([]entities.TrainingExercise, error) {
-	return []entities.TrainingExercise{}, fmt.Errorf("not implemented yet")
+	tOID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, repositories.NewErrorInvalidID(id)
+	}
+
+	filter := bson.M{"_id": tOID}
+
+	c, err := r.col.Find(context.Background(), filter)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get training exercises: %v", err)
+	}
+	var tr []trainingData
+	err = c.All(context.Background(), &tr)
+	if err != nil {
+		return nil, fmt.Errorf("get training exercises: %v", err)
+	}
+
+	te := mapExercisesToEntity(tr[0].Exercises)
+	return te, nil
 }
+
 func (r TrainingRepository) EndExercise(id string, endTime time.Time) (entities.TrainingExercise, error) {
 	return entities.TrainingExercise{}, fmt.Errorf("not implemented yet")
 }
