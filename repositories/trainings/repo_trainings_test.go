@@ -2,6 +2,7 @@ package trainings
 
 import (
 	"context"
+	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -209,7 +210,7 @@ func TestAddSet(t *testing.T) {
 	}
 
 	now := time.Now()
-	reps := 12
+	reps := rand.New(rand.NewSource(time.Now().Unix())).Intn(30)
 	mockedSet.Time = now
 	mockedSet.Reps = reps
 	var ts entities.TrainingSet
@@ -219,11 +220,11 @@ func TestAddSet(t *testing.T) {
 		return
 	}
 
-	if ts.ID != "" {
+	if ts.ID == "" {
 		t.Errorf("expect 'ID' not to be empty, got %q", ts.ID)
 	}
 
-	if testhelpers.TimesEqual(ts.Time, now) {
+	if !testhelpers.TimesEqual(ts.Time, now) {
 		t.Errorf("expect set time to be: %s, got %s", now, ts.Time)
 	}
 
