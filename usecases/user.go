@@ -20,6 +20,7 @@ type UserInput struct {
 type UserRepo interface {
 	// New creates new error of type EmailAddressInUse
 	// NewEmailAddressInUse() error
+
 	// GetUserByID it is signature of repo method
 	// it's here to not couple both packages
 	GetUserByID(id string) (entities.User, error)
