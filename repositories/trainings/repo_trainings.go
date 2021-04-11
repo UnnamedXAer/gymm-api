@@ -42,8 +42,7 @@ type trainingSetData struct {
 func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (t entities.Training, err error) {
 	ouID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		r.l.Error().Msg(err.Error())
-		return t, fmt.Errorf("invalid user id: %s", userID)
+		return t, fmt.Errorf("start training: %v", err)
 	}
 	td := trainingData{
 		UserID:    ouID,
@@ -51,8 +50,7 @@ func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (
 	}
 	results, err := r.col.InsertOne(context.TODO(), td)
 	if err != nil {
-		r.l.Error().Msg(err.Error())
-		return t, err
+		return t, fmt.Errorf("start training: %v", err)
 	}
 	return entities.Training{
 		ID:        results.InsertedID.(primitive.ObjectID).Hex(),
@@ -68,18 +66,12 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 		return t, repositories.NewErrorInvalidID(trainingID)
 	}
 
-	returnDoc := options.After
-	upsert := false
-	options := options.FindOneAndUpdateOptions{
-		ReturnDocument: &returnDoc,
-		Upsert:         &upsert,
-	}
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	update := bson.M{"$set": bson.M{"end_time": endTime}}
 
-	results := r.col.FindOneAndUpdate(context.Background(), trainingData{ID: tOID}, trainingData{EndTime: endTime}, &options)
+	results := r.col.FindOneAndUpdate(context.Background(), trainingData{ID: tOID}, update, opts)
 	err = results.Err()
 	if err != nil {
-		msg := fmt.Sprintf("cannot update training with ID %s, error: %v", trainingID, err)
-		r.l.Error().Msg(msg)
 		if repositories.IsDuplicatedError(err) {
 			//
 		} else if strings.Contains(err.Error(), "") {
@@ -87,14 +79,14 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 		} else if errors.Is(err, mongo.ErrNoDocuments) {
 			return t, repositories.NewErrorNotFoundRecord()
 		}
-		return t, err
+		return t, fmt.Errorf("end training: %v", err)
 	}
 
 	td := trainingData{}
 	err = results.Decode(&td)
 	if err != nil {
 		r.l.Err(err).Send()
-		return t, err
+		return t, fmt.Errorf("end training: %v", err)
 	}
 
 	t.ID = td.ID.Hex()
@@ -130,8 +122,7 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 func (r *TrainingRepository) GetUserTrainings(userID string, started bool) (t []entities.Training, err error) {
 	oUserID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		r.l.Error().Msg(err.Error())
-		return nil, fmt.Errorf("invalid user id: %s", userID)
+		return nil, fmt.Errorf("get user trainings: %v", err)
 	}
 
 	filter := bson.M{}
@@ -139,11 +130,10 @@ func (r *TrainingRepository) GetUserTrainings(userID string, started bool) (t []
 	if started {
 		filter["end_time"] = nil
 	}
-	//bson.M{"user_id": oUserID, "end_time": nil}
+
 	cursor, err := r.col.Find(context.Background(), filter)
 	if err != nil {
-		r.l.Error().Msg(err.Error())
-		return nil, err
+		return nil, fmt.Errorf("get user trainings: %v", err)
 	}
 	defer cursor.Close(context.TODO())
 
@@ -151,14 +141,14 @@ func (r *TrainingRepository) GetUserTrainings(userID string, started bool) (t []
 		var training trainingData
 		err = cursor.Decode(&training)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("get user trainings: %v", err)
 		}
 
 		t = append(t, mapTrainingToEntity(training))
 	}
 
 	if err = cursor.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get user trainings: %v", err)
 	}
 
 	return t, nil
@@ -186,7 +176,7 @@ func (r TrainingRepository) AddExercise(trID string, exercise entities.TrainingE
 
 	results, err := r.col.UpdateOne(context.Background(), filter, update)
 	if err != nil {
-		return entities.TrainingExercise{}, err
+		return entities.TrainingExercise{}, fmt.Errorf("add exercise: %v", err)
 	}
 
 	if results.ModifiedCount == 0 {
@@ -263,5 +253,26 @@ func (r TrainingRepository) GetTrainingExercises(id string) ([]entities.Training
 }
 
 func (r TrainingRepository) EndExercise(id string, endTime time.Time) (entities.TrainingExercise, error) {
-	return entities.TrainingExercise{}, fmt.Errorf("not implemented yet")
+	teOID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return entities.TrainingExercise{}, fmt.Errorf("end exercise: %v", err)
+	}
+
+	filter := bson.M{"exercises._id": teOID}
+	update := bson.M{"$set": bson.M{"exercises.$.end_time": endTime.UTC()}}
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
+	result := r.col.FindOneAndUpdate(context.Background(), filter, update, opts)
+	if err = result.Err(); err != nil {
+		return entities.TrainingExercise{}, fmt.Errorf("end exercise: %v", err)
+	}
+
+	var td trainingData
+	err = result.Decode(&td)
+	if err != nil {
+		return entities.TrainingExercise{}, fmt.Errorf("end exercise: %v", err)
+	}
+	te := mapExerciseToEntity(td.Exercises[0])
+	return te, nil
 }
