@@ -166,7 +166,7 @@ func TestAddExercise(t *testing.T) {
 		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	exId := "6070007dac9cb6e543aba500" // @todo: exId from db
 	mockedStartedExercise.StartTime = now
 	mockedStartedExercise.ExerciseID = exId
@@ -209,7 +209,7 @@ func TestAddSet(t *testing.T) {
 		t.Run("create new started exercise by 'TestAddExercise'", TestAddExercise)
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	reps := rand.New(rand.NewSource(time.Now().Unix())).Intn(30)
 	mockedSet.Time = now
 	mockedSet.Reps = reps
@@ -240,7 +240,7 @@ func TestGetTrainingExercises(t *testing.T) {
 		t.Run("create new started exercise by 'TestAddSet'", TestAddSet)
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	reps := 12
 	mockedSet.Time = now
 	mockedSet.Reps = reps
@@ -288,14 +288,15 @@ func TestEndExercise(t *testing.T) {
 		t.Run("create new started exercise by 'TestAddExercise'", TestAddExercise)
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	var te entities.TrainingExercise
 	te, err := trainingRepo.EndExercise(mockedStartedExercise.ID, now)
 	if err != nil {
 		t.Errorf("expect to end exercise, got error: %v", err)
+		return
 	}
 
-	if testhelpers.TimesEqual(te.EndTime, now) {
+	if !testhelpers.TimesEqual(te.EndTime, now) {
 		t.Errorf("expect exercise end time to be: %s, got %s", now, te.EndTime)
 	}
 }
@@ -305,7 +306,7 @@ func TestEndTraining(t *testing.T) {
 		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	tr, err := trainingRepo.EndTraining(mockedStartedTraining.ID, now)
 	if err != nil {
 		t.Errorf("expected to end training (%s), got error: %v", mockedStartedTraining.ID, err)
