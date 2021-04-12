@@ -75,12 +75,6 @@ func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.
 		return nil, repositories.NewErrorInvalidID(ex.ID)
 	}
 
-	// data := ExerciseData{
-	// 	Name:        ex.Name,
-	// 	Description: ex.Description,
-	// 	SetUnit:     ex.SetUnit,
-	// }
-
 	filter := bson.M{
 		"_id": exOID,
 	}

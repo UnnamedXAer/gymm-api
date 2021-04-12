@@ -2,6 +2,7 @@ package exercises
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -106,6 +107,7 @@ func TestGetExerciseByID(t *testing.T) {
 
 func TestCreateExercise(t *testing.T) {
 	want := mockedExercise
+	want.Name += fmt.Sprintf("-> %d", time.Now().UnixNano())
 	ex, err := exerciseRepo.CreateExercise(want.Name, want.Description, want.SetUnit, want.CreatedBy)
 	if err != nil {
 		t.Error(err)
