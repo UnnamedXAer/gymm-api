@@ -5,12 +5,14 @@ import (
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/mocks"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/testhelpers"
+	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -19,7 +21,7 @@ const (
 )
 
 var (
-	exerciseRepo   *ExerciseRepository
+	exerciseRepo   usecases.ExerciseRepo
 	mockedExercise entities.Exercise
 )
 
@@ -69,34 +71,145 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetExerciseByID(t *testing.T) {
-	ex, err := exerciseRepo.GetExerciseByID(mockedExercise.ID)
+	want := mockedExercise
+	ex, err := exerciseRepo.GetExerciseByID(want.ID)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if ex.ID != want.ID {
+		t.Errorf("want 'ID' to be %q, got %q", want.ID, ex.ID)
+	}
+
+	if ex.Name != want.Name {
+		t.Errorf("want 'Name' to be %q, got %q", want.Name, ex.Name)
+	}
+
+	if ex.Description != want.Description {
+		t.Errorf("want 'Description' to be %q, got %q", want.Description, ex.Description)
+	}
+
+	if !testhelpers.TimesEqual(ex.CreatedAt, want.CreatedAt) {
+		t.Errorf("want 'CreateAt' to be %s, got %s", want.CreatedAt, ex.CreatedAt)
+	}
+
+	if ex.CreatedBy != want.CreatedBy {
+		t.Errorf("want 'CreateBy' to be %q, got %q", want.CreatedBy, ex.CreatedBy)
+	}
+
+	if ex.SetUnit != want.SetUnit {
+		t.Errorf("want 'SetUnit' to be Time (%d), got %d", want.SetUnit, ex.SetUnit)
+	}
+	mockedExercise = *ex
+}
+
+func TestCreateExercise(t *testing.T) {
+	want := mockedExercise
+	ex, err := exerciseRepo.CreateExercise(want.Name, want.Description, want.SetUnit, want.CreatedBy)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
 	if ex.ID == "" {
-		t.Error("expect 'ID' not to be zero value")
+		t.Error("want 'ID' not to be zero value")
 		return
 	}
 
-	if ex.Name != mockedExercise.Name {
-		t.Errorf("expect 'Name' to be %q, got %q", mockedExercise.Name, ex.Name)
+	if ex.Name != want.Name {
+		t.Errorf("want 'Name' to be %q, got %q", want.Name, ex.Name)
 	}
 
-	if ex.Description != mockedExercise.Description {
-		t.Errorf("expect 'Description' to be %q, got %q", mockedExercise.Description, ex.Description)
+	if ex.Description != want.Description {
+		t.Errorf("want 'Description' to be %q, got %q", want.Description, ex.Description)
 	}
 
 	if ex.CreatedAt.IsZero() {
-		t.Error("expect 'CreateAt' NOT to be zero value")
+		t.Error("want 'CreateAt' NOT to be zero value")
 	}
 
-	if ex.CreatedBy == "" {
-		t.Error("expect 'CreateBy' NOT to be zero value")
+	if ex.CreatedBy != want.CreatedBy {
+		t.Errorf("want 'CreateBy' to be %q, got %q", want.CreatedBy, ex.CreatedBy)
 	}
 
-	if ex.SetUnit == 0 {
-		t.Error("expect 'SetUnit' NOT to be zero value")
+	if ex.SetUnit != want.SetUnit {
+		t.Errorf("want 'SetUnit' to be Time (%d), got %d", want.SetUnit, ex.SetUnit)
 	}
+	mockedExercise = *ex
+}
+
+func TestUpdateExercise(t *testing.T) {
+	want := mockedExercise
+	want.Description += "\n-> updated at " + time.Now().String()
+	want.SetUnit = entities.Time
+	ex, err := exerciseRepo.UpdateExercise(&want)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if ex.ID != want.ID {
+		t.Errorf("want 'ID' to be %q, got %q", want.ID, ex.ID)
+	}
+
+	if ex.Name != want.Name {
+		t.Errorf("want 'Name' to be %q, got %q", want.Name, ex.Name)
+	}
+
+	if ex.Description != want.Description {
+		t.Errorf("want 'Description' to be %q, got %q", want.Description, ex.Description)
+	}
+
+	if !testhelpers.TimesEqual(ex.CreatedAt, want.CreatedAt) {
+		t.Errorf("want 'CreateAt' to be %s, got %s", want.CreatedAt, ex.CreatedAt)
+	}
+
+	if ex.CreatedBy != want.CreatedBy {
+		t.Errorf("want 'CreateBy' to be %q, got %q", want.CreatedBy, ex.CreatedBy)
+	}
+
+	if ex.SetUnit != want.SetUnit {
+		t.Errorf("want 'SetUnit' to be Time (%d), got %d", want.SetUnit, ex.SetUnit)
+	}
+	mockedExercise = *ex
+}
+
+func TestUpdateExerciseOneProp(t *testing.T) {
+	input := entities.Exercise{
+		ID:      mockedExercise.ID,
+		SetUnit: entities.Time,
+	}
+	want := mockedExercise
+	want.SetUnit = input.SetUnit
+	ex, err := exerciseRepo.UpdateExercise(&input)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if ex.ID != want.ID {
+		t.Errorf("want 'ID' to be %q, got %q", want.ID, ex.ID)
+	}
+
+	if ex.Name != want.Name {
+		t.Errorf("want 'Name' to be %q, got %q", want.Name, ex.Name)
+	}
+
+	if ex.Description != want.Description {
+		t.Errorf("want 'Description' to be %q, got %q", want.Description, ex.Description)
+	}
+
+	if !testhelpers.TimesEqual(ex.CreatedAt, want.CreatedAt) {
+		t.Errorf("want 'CreateAt' to be %s, got %s", want.CreatedAt, ex.CreatedAt)
+	}
+
+	if ex.CreatedBy != want.CreatedBy {
+		t.Errorf("want 'CreateBy' to be %q, got %q", want.CreatedBy, ex.CreatedBy)
+	}
+
+	if ex.SetUnit != want.SetUnit {
+		t.Errorf("want 'SetUnit' to be Time (%d), got %d", want.SetUnit, ex.SetUnit)
+	}
+	mockedExercise = *ex
 }

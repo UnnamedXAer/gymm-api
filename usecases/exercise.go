@@ -3,9 +3,9 @@ package usecases
 import "github.com/unnamedxaer/gymm-api/entities"
 
 type ExerciseRepo interface {
-	CreateExercise(name, description string, setUnit entities.SetUnit) (*entities.Exercise, error)
+	CreateExercise(name, description string, setUnit entities.SetUnit, createdBy string) (*entities.Exercise, error)
 	GetExerciseByID(id string) (*entities.Exercise, error)
-	UpdateExercise(id string, name, description string, setUnit uint8) (*entities.Exercise, error)
+	UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error)
 }
 
 type ExerciseUseCases struct {
@@ -15,7 +15,7 @@ type ExerciseUseCases struct {
 type IExerciseUseCases interface {
 	CreateExercise(name, description string, setUnit uint8) (*entities.Exercise, error)
 	GetExerciseByID(id string) (*entities.Exercise, error)
-	UpdateExercise(id string, name, description string, setUnit uint8) (*entities.Exercise, error)
+	UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error)
 }
 
 func (eu *ExerciseUseCases) CreateExercise(name, description string, setUnit uint8) (*entities.Exercise, error) {
@@ -26,7 +26,7 @@ func (eu *ExerciseUseCases) GetExerciseByID(id string) (*entities.Exercise, erro
 	panic("not implemented yet")
 }
 
-func (eu *ExerciseUseCases) UpdateExercise(id string, name, description string, setUnit uint8) (*entities.Exercise, error) {
+func (eu *ExerciseUseCases) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
 	panic("not implemented yet")
 }
 
