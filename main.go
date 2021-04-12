@@ -35,7 +35,7 @@ func main() {
 		panic(err)
 	}
 	repositories.CreateCollections(&logger, db)
-	usersColl := repositories.GetCollection(&logger, db, "users")
+	usersColl := repositories.GetCollection(&logger, db, repositories.UsersCollectionName)
 	usersRepo := users.NewRepository(&logger, usersColl)
 	validate := validation.New()
 	app := http.NewServer(&logger, usersRepo, validate)

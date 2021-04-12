@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	usersCollectionName     = "users"
-	trainingsCollectionName = "trainings"
+	UsersCollectionName     = "users"
+	TrainingsCollectionName = "trainings"
+	ExercisesCollectionName = "exercises"
 )
 
 // GetDatabase connects to mongodb and returns database
@@ -39,9 +40,11 @@ func GetDatabase(l *zerolog.Logger, uri, dbName string) (*mongo.Database, error)
 
 func GetCollection(l *zerolog.Logger, db *mongo.Database, collName string) *mongo.Collection {
 	switch collName {
-	case usersCollectionName:
+	// case exercisesCollectionName:
+	// fallthrough
+	case UsersCollectionName:
 		fallthrough
-	case trainingsCollectionName:
+	case TrainingsCollectionName:
 		return db.Collection(collName)
 	default:
 		panic(fmt.Sprintf("unknown collection name '%s'", collName))
@@ -54,20 +57,31 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 	if err != nil {
 		return err
 	}
-	if helpers.StrSliceIndexOf(collections, usersCollectionName) == -1 {
-		err = createUsersCollection(l, db, usersCollectionName)
+	colName := UsersCollectionName
+	if helpers.StrSliceIndexOf(collections, colName) == -1 {
+		err = createUsersCollection(l, db, colName)
 		if err != nil {
 			return err
 		}
 	} else {
-		l.Info().Msgf("collection '%s' already exists - skipped", usersCollectionName)
+		l.Info().Msgf("collection '%s' already exists - skipped", colName)
 	}
-	if helpers.StrSliceIndexOf(collections, trainingsCollectionName) == -1 {
-		err = createTrainingCollection(l, db, trainingsCollectionName)
-		return err
-	}
-	l.Info().Msgf("collection '%s' already exists - skipped", trainingsCollectionName)
 
+	colName = TrainingsCollectionName
+	if helpers.StrSliceIndexOf(collections, colName) == -1 {
+		err = createTrainingsCollection(l, db, colName)
+		return err
+	} else {
+		l.Info().Msgf("collection '%s' already exists - skipped", colName)
+	}
+
+	colName = ExercisesCollectionName
+	if helpers.StrSliceIndexOf(collections, colName) == -1 {
+		err = createExercisesCollection(l, db, colName)
+		return err
+	} else {
+		l.Info().Msgf("collection '%s' already exists - skipped", colName)
+	}
 	return nil
 }
 
@@ -100,11 +114,40 @@ func createUsersCollection(l *zerolog.Logger, db *mongo.Database, collectionName
 	return nil
 }
 
-func createTrainingCollection(l *zerolog.Logger, db *mongo.Database, collectionName string) error {
+func createTrainingsCollection(l *zerolog.Logger, db *mongo.Database, collectionName string) error {
 	err := db.CreateCollection(context.Background(), collectionName)
 	if err != nil {
 		return errors.WithMessagef(err, "create '%s' collection", collectionName)
 	}
 	l.Info().Msgf("collection '%s' created", collectionName)
+	return nil
+}
+
+func createExercisesCollection(l *zerolog.Logger, db *mongo.Database, collectionName string) error {
+	err := db.CreateCollection(context.Background(), collectionName, &options.CreateCollectionOptions{
+		Collation: &options.Collation{
+			Strength: 2,
+			Locale:   "en",
+		},
+	})
+	if err != nil {
+		return errors.WithMessagef(err, "create %q collection", collectionName)
+	}
+	l.Info().Msgf("collection %q created", collectionName)
+
+	col := db.Collection(collectionName)
+
+	emailIndexName := "name-set_unit"
+	indexModel := mongo.IndexModel{
+		Keys:    bson.D{{Key: "name", Value: 1}, {Key: "time", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName(emailIndexName),
+	}
+
+	indexName, err := col.Indexes().CreateOne(context.Background(), indexModel)
+	if err != nil {
+		return errors.WithMessagef(err, "create index %q on %q collection", emailIndexName, collectionName)
+	}
+
+	l.Info().Msgf("index %q on collection %q created", indexName, collectionName)
 	return nil
 }
