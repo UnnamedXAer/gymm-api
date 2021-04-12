@@ -44,7 +44,8 @@ func DisconnectDB(l *zerolog.Logger, db *mongo.Database) {
 }
 
 func TimesEqual(t1, t2 time.Time) bool {
-
+	t1 = t1.UTC()
+	t2 = t2.UTC()
 	return t1.Year() == t2.Year() &&
 		t1.Month() == t2.Month() &&
 		t1.Day() == t2.Day() &&
