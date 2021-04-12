@@ -13,8 +13,10 @@ func TestMain(m *testing.M) {
 	testhelpers.EnsureTestEnv()
 
 	var ur usecases.UserRepo = mocks.MockUserRepo{}
+	userUC = usecases.NewUserUseCases(ur)
 
-	uc = usecases.NewUserUseCases(ur)
+	var er usecases.ExerciseRepo = &mocks.MockExerciseRepo{}
+	exerciseUC = usecases.NewExerciseUseCases(er)
 
 	code := m.Run()
 	os.Exit(code)
