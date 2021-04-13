@@ -44,6 +44,9 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/users/{id:[0-9a-zA-Z]+}", app.GetUserById).Methods("GET")
 	app.Router.HandleFunc("/users", app.CreateUser).Methods("POST")
 
+	app.Router.HandleFunc("/exercises/{id:[0-9a-zA-Z]+}", app.GetExeriseByID).Methods(http.MethodGet)
+	app.Router.HandleFunc("/exercises", app.CreateExercise).Methods(http.MethodPost)
+
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
 		app.l.Debug().Msg("[" + r.Method + "/] -> URL: " + r.RequestURI)
 		rw.WriteHeader(http.StatusMethodNotAllowed)
