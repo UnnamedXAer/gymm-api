@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/unnamedxaer/gymm-api/mocks"
+	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
@@ -42,7 +44,7 @@ func TestCreateExercise(t *testing.T) {
 				SetUnit:     mocks.ExampleExercise.SetUnit,
 				CreatedBy:   mocks.UserID,
 			},
-			want: http.StatusUnprocessableEntity,
+			want: http.StatusBadRequest,
 		},
 		{
 			desc: "exercise without SetUnit",
@@ -51,7 +53,7 @@ func TestCreateExercise(t *testing.T) {
 				Description: mocks.ExampleExercise.Description,
 				CreatedBy:   mocks.UserID,
 			},
-			want: http.StatusUnprocessableEntity,
+			want: http.StatusBadRequest,
 		},
 		{
 			desc: "exercise with wring SetUnit",
@@ -61,7 +63,7 @@ func TestCreateExercise(t *testing.T) {
 				SetUnit:     123,
 				CreatedBy:   mocks.UserID,
 			},
-			want: http.StatusUnprocessableEntity,
+			want: http.StatusBadRequest,
 		},
 		{
 			desc: "exercise without UserID",
@@ -95,12 +97,12 @@ func TestCreateExercise(t *testing.T) {
 func TestCreateExerciseMalformedData(t *testing.T) {
 	payload := []byte(`{"name:"Deadlift","description":"The deadlift is a weight training exercise in which a loaded barbell or bar is lifted off the ground to the level of the hips, torso perpendicular to the floor, before being placed back on the ground. It is one of the three powerlifting exercises, along with the squat and bench press.","setUnit":1}`)
 
-	req, _ := http.NewRequest("POST", "/users", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest(http.MethodPost, "/exercises", bytes.NewBuffer(payload))
 	req.Header.Set("Content-Type", "application/json")
 
-	response := executeRequest(req)
+	res := executeRequest(req)
 
-	checkResponseCode(t, http.StatusUnprocessableEntity, response.Code)
+	checkResponseCode(t, http.StatusBadRequest, res.Code)
 }
 
 func TestGetExerciseByID(t *testing.T) {
@@ -146,4 +148,89 @@ func TestGetExerciseByID(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdateExercise(t *testing.T) {
+	payload := []byte(`{"name":"DL"}`)
+
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	res := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, res.Code)
+}
+
+func TestUpdateExerciseUnauthorized(t *testing.T) {
+	payload := []byte(`{"name":"DL"}`)
+
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	res := executeRequest(req)
+
+	checkResponseCode(t, http.StatusUnauthorized, res.Code)
+}
+
+func TestUpdateExerciseMalformedData(t *testing.T) {
+	payload := []byte(`{"name:"DL"}`)
+
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	res := executeRequest(req)
+
+	checkResponseCode(t, http.StatusBadRequest, res.Code)
+}
+
+func TestUpdateExerciseIncorrectID(t *testing.T) {
+	payload := []byte(`{"name":"DL"}`)
+
+	incorrectID := "124356789012345678901234"
+
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+incorrectID, bytes.NewBuffer(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	res := executeRequest(req)
+
+	checkResponseCode(t, http.StatusBadRequest, res.Code)
+
+	wantResponse := repositories.NewErrorInvalidID(incorrectID).Error()
+	if !strings.Contains(res.Body.String(), wantResponse) {
+		t.Fatalf("want to get response like %q, got %q", wantResponse, res.Body.String())
+	}
+}
+
+func TestEndExercise(t *testing.T) {
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID+"/end", nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	res := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, res.Code)
+}
+
+func TestEndExerciseIncorrectID(t *testing.T) {
+	incorrectID := "124356789012345678901234"
+
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+incorrectID+"/end", nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	res := executeRequest(req)
+
+	checkResponseCode(t, http.StatusBadRequest, res.Code)
+
+	wantResponse := repositories.NewErrorInvalidID(incorrectID).Error()
+	if !strings.Contains(res.Body.String(), wantResponse) {
+		t.Fatalf("want to get response like %q, got %q", wantResponse, res.Body.String())
+	}
+}
+
+func TestEndExerciseAlreadyEnded(t *testing.T) {
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID+"/end", nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	res := executeRequest(req)
+
+	checkResponseCode(t, http.StatusConflict, res.Code)
 }
