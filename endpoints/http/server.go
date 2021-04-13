@@ -10,23 +10,32 @@ import (
 )
 
 type App struct {
-	l        *zerolog.Logger
-	Usecases usecases.IUserUseCases
-	Router   *mux.Router
-	Validate *validator.Validate
+	l                *zerolog.Logger
+	userUsecases     usecases.IUserUseCases
+	exerciseUsecases usecases.IExerciseUseCases
+	trainingUsecases usecases.ITrainingUsecases
+	Router           *mux.Router
+	Validate         *validator.Validate
 }
 
 func NewServer(
 	logger *zerolog.Logger,
 	userRepo usecases.UserRepo,
+	exerciseRepo usecases.ExerciseRepo,
+	trainingRepo usecases.TrainingRepo,
 	validate *validator.Validate) *App {
-	userUsecases := usecases.NewUserUseCases(userRepo)
+	var userUsecases usecases.IUserUseCases = usecases.NewUserUseCases(userRepo)
+	var exerciseUsecases usecases.IExerciseUseCases = usecases.NewExerciseUseCases(exerciseRepo)
+	var trainingUsecases usecases.ITrainingUsecases = usecases.NewTrainingUseCases(trainingRepo)
+
 	router := mux.NewRouter()
 	app := App{
-		l:        logger,
-		Usecases: userUsecases,
-		Router:   router,
-		Validate: validate,
+		l:                logger,
+		userUsecases:     userUsecases,
+		exerciseUsecases: exerciseUsecases,
+		trainingUsecases: trainingUsecases,
+		Router:           router,
+		Validate:         validate,
 	}
 	return &app
 }
@@ -36,7 +45,7 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/users", app.CreateUser).Methods("POST")
 
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		app.l.Info().Msg("[" + r.Method + "/] -> URL: " + r.RequestURI)
+		app.l.Debug().Msg("[" + r.Method + "/] -> URL: " + r.RequestURI)
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 	})
 }

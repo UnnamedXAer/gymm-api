@@ -40,8 +40,8 @@ func GetDatabase(l *zerolog.Logger, uri, dbName string) (*mongo.Database, error)
 
 func GetCollection(l *zerolog.Logger, db *mongo.Database, collName string) *mongo.Collection {
 	switch collName {
-	// case exercisesCollectionName:
-	// fallthrough
+	case ExercisesCollectionName:
+		fallthrough
 	case UsersCollectionName:
 		fallthrough
 	case TrainingsCollectionName:

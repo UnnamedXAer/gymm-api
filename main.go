@@ -8,6 +8,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/endpoints/http"
 	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/repositories/exercises"
+	"github.com/unnamedxaer/gymm-api/repositories/trainings"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
@@ -35,10 +37,20 @@ func main() {
 		panic(err)
 	}
 	repositories.CreateCollections(&logger, db)
-	usersColl := repositories.GetCollection(&logger, db, repositories.UsersCollectionName)
-	usersRepo := users.NewRepository(&logger, usersColl)
+
+	usersCol := repositories.GetCollection(&logger, db, repositories.UsersCollectionName)
+	usersRepo := users.NewRepository(&logger, usersCol)
+
+	exercisesCol := repositories.GetCollection(&logger, db, repositories.ExercisesCollectionName)
+	exercisesRepo := exercises.NewRepository(&logger, exercisesCol)
+
+	trainingsCol := repositories.GetCollection(&logger, db, repositories.TrainingsCollectionName)
+	trainingsRepo := trainings.NewRepository(&logger, trainingsCol)
+
 	validate := validation.New()
-	app := http.NewServer(&logger, usersRepo, validate)
+
+	app := http.NewServer(&logger, usersRepo, exercisesRepo, trainingsRepo, validate)
+
 	app.AddHandlers()
 
 	app.Run(":" + os.Getenv("PORT"))

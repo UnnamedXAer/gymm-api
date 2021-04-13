@@ -35,8 +35,10 @@ func TestMain(m *testing.M) {
 	validate = validation.New()
 	l := &zerolog.Logger{}
 	l.Level(zerolog.Disabled)
-	mockRepo := &mocks.MockUserRepo{}
-	app = NewServer(l, mockRepo, validate)
+	uMockRepo := &mocks.MockUserRepo{}
+	eMockRepo := &mocks.MockExerciseRepo{}
+	tMockRepo := &mocks.MockTrainingRepo{}
+	app = NewServer(l, uMockRepo, eMockRepo, tMockRepo, validate)
 	app.AddHandlers()
 	code := m.Run()
 	os.Exit(code)

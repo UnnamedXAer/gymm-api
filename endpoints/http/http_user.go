@@ -35,7 +35,7 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user, err := app.Usecases.CreateUser(&u)
+	user, err := app.userUsecases.CreateUser(&u)
 	if err != nil {
 		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
 			responseWithErrorMsg(w, http.StatusConflict, err)
@@ -59,7 +59,7 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	u, err := app.Usecases.GetUserByID(id)
+	u, err := app.userUsecases.GetUserByID(id)
 	if err != nil {
 		if errors.Is(err, repositories.NewErrorNotFoundRecord()) {
 			responseWithJSON(w, http.StatusOK, nil)
