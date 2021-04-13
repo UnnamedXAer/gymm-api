@@ -91,7 +91,7 @@ func TestMain(m *testing.M) {
 
 func TestStartTraining(t *testing.T) {
 	gotTraining, err := trainingRepo.StartTraining(trainingdata.UserID.Hex(), trainingdata.StartTime)
-	mockedStartedTraining = gotTraining
+	mockedStartedTraining = *gotTraining
 	if err != nil {
 		t.Errorf("expect to start training, got error: %v", err)
 		return
@@ -170,8 +170,8 @@ func TestAddExercise(t *testing.T) {
 	exId := "6070007dac9cb6e543aba500" // @todo: exId from db
 	mockedStartedExercise.StartTime = now
 	mockedStartedExercise.ExerciseID = exId
-	var te entities.TrainingExercise
-	te, err := trainingRepo.AddExercise(mockedStartedTraining.ID, mockedStartedExercise)
+	var te *entities.TrainingExercise
+	te, err := trainingRepo.AddExercise(mockedStartedTraining.ID, &mockedStartedExercise)
 	if err != nil {
 		t.Errorf("expect to add exercise, got error: %v", err)
 		return
@@ -201,7 +201,7 @@ func TestAddExercise(t *testing.T) {
 		t.Errorf("expected 'Sets' to be empty, got %v", te.Sets)
 	}
 
-	mockedStartedExercise = te
+	mockedStartedExercise = *te
 }
 
 func TestAddSet(t *testing.T) {
@@ -213,8 +213,8 @@ func TestAddSet(t *testing.T) {
 	reps := rand.New(rand.NewSource(time.Now().Unix())).Intn(30)
 	mockedSet.Time = now
 	mockedSet.Reps = reps
-	var ts entities.TrainingSet
-	ts, err := trainingRepo.AddSet(mockedStartedExercise.ID, mockedSet)
+	var ts *entities.TrainingSet
+	ts, err := trainingRepo.AddSet(mockedStartedExercise.ID, &mockedSet)
 	if err != nil {
 		t.Errorf("expect to add set, got error: %v", err)
 		return
@@ -232,7 +232,7 @@ func TestAddSet(t *testing.T) {
 		t.Errorf("expect reps to be %d, got %d", reps, ts.Reps)
 	}
 
-	mockedSet = ts
+	mockedSet = *ts
 }
 
 func TestGetTrainingExercises(t *testing.T) {
@@ -289,7 +289,7 @@ func TestEndExercise(t *testing.T) {
 	}
 
 	now := time.Now().UTC()
-	var te entities.TrainingExercise
+	var te *entities.TrainingExercise
 	te, err := trainingRepo.EndExercise(mockedStartedExercise.ID, now)
 	if err != nil {
 		t.Errorf("expect to end exercise, got error: %v", err)
