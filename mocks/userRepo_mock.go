@@ -8,6 +8,15 @@ import (
 	"github.com/unnamedxaer/gymm-api/repositories"
 )
 
+var (
+	ExampleUser = entities.User{
+		ID:           UserID,
+		Username:     "John Silver",
+		EmailAddress: "johnsilver@email.com",
+		CreatedAt:    time.Now(),
+	}
+)
+
 type MockUserRepo struct {
 }
 
@@ -29,10 +38,8 @@ func (ur MockUserRepo) GetUserByID(id string) (entities.User, error) {
 
 func (ur MockUserRepo) CreateUser(username, email string, passwordHash []byte) (entities.User, error) {
 	// mock storage insert new user
-
-	return entities.User{
-		Username:     username,
-		EmailAddress: email,
-		CreatedAt:    time.Now(),
-	}, nil
+	u := ExampleUser
+	u.Username = username
+	u.EmailAddress = email
+	return ExampleUser, nil
 }

@@ -8,12 +8,12 @@ import (
 // InsertMockUser inserts mocked user to repository with use of the repo functionality
 func InsertMockUser(ur usecases.UserRepo) (entities.User, error) {
 	return ur.CreateUser(
-		"John Silver",
-		"johnsilver@email.com",
+		ExampleUser.Username,
+		ExampleUser.EmailAddress,
 		[]byte("TheSecretestPasswordEver123$%^"),
 	)
 }
 
-func StartMockTraining(tr usecases.TrainingRepo) (entities.Training, error) {
-	return tr.StartTraining()
+func StartMockTraining(tr usecases.TrainingRepo) (*entities.Training, error) {
+	return tr.StartTraining(ExampleTraining.UserID, ExampleTraining.StartTime)
 }

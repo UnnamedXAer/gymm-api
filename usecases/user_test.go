@@ -3,17 +3,17 @@ package usecases_test
 import (
 	"testing"
 
+	"github.com/unnamedxaer/gymm-api/mocks"
 	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
 var (
 	userUC usecases.IUserUseCases
 	ui     usecases.UserInput = usecases.UserInput{
-		Username:     "John Silver",
-		EmailAddress: "johnsilver@email.com",
+		Username:     mocks.ExampleUser.Username,
+		EmailAddress: mocks.ExampleUser.EmailAddress,
 		Password:     "TheSecretestPasswordEver123$%^",
 	}
-	userID string = "6072d3206144644984a54fa1"
 )
 
 func TestCreateUser(t *testing.T) {
@@ -25,9 +25,9 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-	u, _ := userUC.GetUserByID(userID)
+	u, _ := userUC.GetUserByID(mocks.UserID)
 
-	if u.ID != userID {
-		t.Fatalf("Expected UserRepo.GetUserByID to be called and 'ID' to be '%s', got %s", userID, u.ID)
+	if u.ID != mocks.UserID {
+		t.Fatalf("Expected UserRepo.GetUserByID to be called and 'ID' to be '%s', got %s", mocks.UserID, u.ID)
 	}
 }

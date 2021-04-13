@@ -18,6 +18,9 @@ func TestMain(m *testing.M) {
 	var er usecases.ExerciseRepo = &mocks.MockExerciseRepo{}
 	exerciseUC = usecases.NewExerciseUseCases(er)
 
+	var tr usecases.TrainingRepo = &mocks.MockTrainingRepo{}
+	trainingUC = usecases.NewTrainingUseCases(tr)
+
 	code := m.Run()
 	os.Exit(code)
 }

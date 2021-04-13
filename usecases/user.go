@@ -1,7 +1,7 @@
 package usecases
 
 import (
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
@@ -43,7 +43,7 @@ func (uc *UserUseCases) GetUserByID(id string) (entities.User, error) {
 func (uc *UserUseCases) CreateUser(u *UserInput) (entities.User, error) {
 	passwordHash, err := hashPassword(u.Password)
 	if err != nil {
-		return entities.User{}, errors.New("incorrect password, cannot hash")
+		return entities.User{}, fmt.Errorf("incorrect password, cannot hash: %v", err)
 	}
 
 	return uc.repo.CreateUser(u.Username, u.EmailAddress, passwordHash)

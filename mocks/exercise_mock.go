@@ -8,13 +8,13 @@ import (
 	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
-var ExampleExercise = &entities.Exercise{
+var ExampleExercise = entities.Exercise{
 	ID:          "6072d3206144644984a54fa0",
 	Name:        "Deadlift",
 	Description: "The deadlift is a weight training exercise in which a loaded barbell or bar is lifted off the ground to the level of the hips, torso perpendicular to the floor, before being placed back on the ground. It is one of the three powerlifting exercises, along with the squat and bench press.",
 	SetUnit:     entities.Weight,
 	CreatedAt:   time.Now().UTC(),
-	CreatedBy:   "607000e83db4e97a55229bf2",
+	CreatedBy:   UserID,
 }
 
 func InsertMockExercise(er usecases.ExerciseRepo) (*entities.Exercise, error) {
@@ -43,7 +43,8 @@ func (er *MockExerciseRepo) CreateExercise(name, description string, setUnit ent
 
 func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, error) {
 	if ExampleExercise.ID == id {
-		return ExampleExercise, nil
+		out := ExampleExercise
+		return &out, nil
 	}
 
 	return nil, repositories.NewErrorNotFoundRecord()
@@ -54,7 +55,7 @@ func (er *MockExerciseRepo) UpdateExercise(ex *entities.Exercise) (*entities.Exe
 		return nil, repositories.NewErrorInvalidID(ex.ID)
 	}
 
-	out := *ExampleExercise
+	out := ExampleExercise
 	out.ID = ex.ID
 	if ex.Description != "" {
 		out.Description = ex.Description
