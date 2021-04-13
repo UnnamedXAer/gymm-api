@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -47,6 +48,24 @@ func TestValidatePassword(t *testing.T) {
 		}
 		if got != wanted {
 			t.Errorf("password: '%s', want: %t, got: %t", given, wanted, got)
+		}
+	}
+}
+
+func TestValidateSetUnit(t *testing.T) {
+
+	givenWanted := map[interface{}]bool{
+		-1: false,
+		0:  false,
+		1:  true,
+		2:  true,
+		3:  false,
+	}
+
+	for input, want := range givenWanted {
+		got := validateSetUnit(reflect.ValueOf(input))
+		if got != want {
+			t.Errorf("set unit: %v, want: %t, got: %t", input, want, got)
 		}
 	}
 }

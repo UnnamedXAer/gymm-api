@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/unnamedxaer/gymm-api/entities"
 )
 
 // StructValidError represents an error for the struct validation
@@ -40,10 +41,31 @@ func NewStructValidError(errsMap map[string]string, errTxt ...string) *StructVal
 func New() *validator.Validate {
 	var validate *validator.Validate
 	validate = validator.New()
+
+	// @todo: use snake case
 	validate.RegisterValidation("pwdStrength", pwdStrengthValidateFunc)
 	validate.RegisterAlias("pwd", "pwdStrength")
 
+	validate.RegisterValidation("set_unit", setUnitValidateFunc)
+
 	return validate
+}
+
+func setUnitValidateFunc(fldLev validator.FieldLevel) bool {
+	fld := fldLev.Field()
+	return validateSetUnit(fld)
+}
+
+func validateSetUnit(fld reflect.Value) bool {
+	switch fld.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		fldValue := fld.Int()
+		if fldValue == int64(entities.Weight) || fldValue == int64(entities.Time) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func pwdStrengthValidateFunc(fdl validator.FieldLevel) bool {
