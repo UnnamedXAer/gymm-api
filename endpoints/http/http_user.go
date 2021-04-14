@@ -25,6 +25,8 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	}
 	defer req.Body.Close()
 
+	trimWhitespacesOnUserInput(&u)
+
 	err = validateUserInput(app.Validate, &u)
 	if err != nil {
 		if svErr, ok := err.(*validation.StructValidError); ok {

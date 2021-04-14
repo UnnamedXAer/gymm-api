@@ -29,6 +29,8 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	app.l.Debug().Msgf("[POST / CreateExercise] -> body: %v", e)
 
+	trimWhitespacesOnExerciseInput(&e)
+
 	err = validateExerciseInput(app.Validate, &e)
 	if err != nil {
 		if svErr, ok := err.(*validation.StructValidError); ok {
