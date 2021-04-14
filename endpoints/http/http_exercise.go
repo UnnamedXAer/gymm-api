@@ -2,36 +2,34 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
+	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
 
 func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
-	var e usecases.ExerciseInput
+	var input usecases.ExerciseInput
 
-	err := json.NewDecoder(req.Body).Decode(&e)
+	err := json.NewDecoder(req.Body).Decode(&input)
 	if err != nil {
-		app.l.Debug().Msgf("[POST / CreateExercise] -> body: %v, error: %v", e, err)
-		excludedTags := make([]string, 2)
-		tag, _ := validation.GetFieldJSONTag(&e, "CreatedBy")
-		excludedTags[0] = tag
-		tag, _ = validation.GetFieldJSONTag(&e, "CreatedAt")
-		excludedTags[1] = tag
-		errText := getErrOfMalformedInput(&e, excludedTags)
+		app.l.Debug().Msgf("[POST / CreateExercise] -> body: %v, error: %v", input, err)
+		excludedTags := getExerciseExcludeTags(&input)
+		errText := getErrOfMalformedInput(&input, excludedTags)
 		responseWithErrorMsg(w, http.StatusBadRequest, errors.New(errText))
 		return
 	}
 	defer req.Body.Close()
-	app.l.Debug().Msgf("[POST / CreateExercise] -> body: %v", e)
+	app.l.Debug().Msgf("[POST / CreateExercise] -> body: %v", input)
 
-	trimWhitespacesOnExerciseInput(&e)
+	trimWhitespacesOnExerciseInput(&input)
 
-	err = validateExerciseInput(app.Validate, &e)
+	err = validateExerciseInput(app.Validate, &input)
 	if err != nil {
 		if svErr, ok := err.(*validation.StructValidError); ok {
 			responseWithErrorJSON(w, http.StatusNotAcceptable, svErr.ValidationErrors())
@@ -41,7 +39,7 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	exercise, err := app.exerciseUsecases.CreateExercise(e.Name, e.Description, e.SetUnit, e.CreatedBy)
+	exercise, err := app.exerciseUsecases.CreateExercise(input.Name, input.Description, input.SetUnit, input.CreatedBy)
 	if err != nil {
 		if repositories.IsDuplicatedError(err) {
 			responseWithErrorMsg(w, http.StatusConflict, err)
@@ -78,4 +76,55 @@ func (app *App) GetExeriseByID(w http.ResponseWriter, req *http.Request) {
 	}
 
 	responseWithJSON(w, http.StatusOK, e)
+}
+
+func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
+
+	responseWithErrorMsg(w, http.StatusNotImplemented, fmt.Errorf(http.StatusText(http.StatusNotImplemented)))
+	return
+
+	id := req.URL.Query().Get("id")
+
+	var input usecases.ExerciseInput
+	err := json.NewDecoder(req.Body).Decode(&input)
+	if err != nil {
+		app.l.Debug().Msgf("[POST / UpdateExercise] -> body: %v, error: %v", input, err)
+		excludedTags := getExerciseExcludeTags(&input)
+		errText := getErrOfMalformedInput(&input, excludedTags)
+		responseWithErrorMsg(w, http.StatusBadRequest, errors.New(errText))
+		return
+	}
+	defer req.Body.Close()
+	app.l.Debug().Msgf("[POST / UpdateExercise] -> body: %v", input)
+
+	trimWhitespacesOnExerciseInput(&input)
+
+	err = validateExerciseInput(app.Validate, &input)
+	// err = validateExerciseInput(app.Validate, &input)
+	if err != nil {
+		if svErr, ok := err.(*validation.StructValidError); ok {
+			responseWithErrorJSON(w, http.StatusNotAcceptable, svErr.ValidationErrors())
+			return
+		}
+		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	exercise, err := app.exerciseUsecases.UpdateExercise(&entities.Exercise{
+		ID:          id,
+		Name:        input.Name,
+		Description: input.Description,
+		SetUnit:     input.SetUnit,
+	})
+	if err != nil {
+		if repositories.IsDuplicatedError(err) {
+			responseWithErrorMsg(w, http.StatusConflict, err)
+			return
+		}
+
+		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	responseWithJSON(w, http.StatusCreated, exercise)
 }
