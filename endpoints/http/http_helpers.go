@@ -2,8 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"reflect"
 
@@ -11,12 +9,12 @@ import (
 )
 
 func responseWithErrorMsg(w http.ResponseWriter, code int, err error) {
-	log.Println(fmt.Sprintf("[responseWithErrorMsg] code: %d, err: %#v", code, err))
+	// log.Println(fmt.Sprintf("[responseWithErrorMsg] code: %d, err: %#v", code, err))
 	responseWithJSON(w, code, map[string]string{"error": err.Error()})
 }
 
 func responseWithErrorJSON(w http.ResponseWriter, code int, errObj interface{}) {
-	log.Println(fmt.Sprintf("[responseWithErrorJSON] code: %d, err: %#v", code, errObj))
+	// log.Println(fmt.Sprintf("[responseWithErrorJSON] code: %d, err: %#v", code, errObj))
 	responseWithJSON(w, code, errObj)
 }
 

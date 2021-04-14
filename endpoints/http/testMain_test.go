@@ -51,8 +51,8 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 	return rr
 }
 
-func checkResponseCode(t *testing.T, expectedcode, actualCode int) {
-	if expectedcode != actualCode {
-		t.Errorf("Expected response code %d. Got %d", expectedcode, actualCode)
+func checkResponseCode(t *testing.T, want, got int) {
+	if want != got {
+		t.Errorf("want response code %d, got %d", want, got)
 	}
 }

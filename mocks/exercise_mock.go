@@ -11,7 +11,7 @@ import (
 var ExampleExercise = entities.Exercise{
 	ID:          "6072d3206144644984a54fa0",
 	Name:        "Deadlift",
-	Description: "The deadlift is a weight training exercise in which a loaded barbell or bar is lifted off the ground to the level of the hips, torso perpendicular to the floor, before being placed back on the ground. It is one of the three powerlifting exercises, along with the squat and bench press.",
+	Description: "The deadlift is an exercise in which a loaded bar is lifted off the ground to the level of the hips.",
 	SetUnit:     entities.Weight,
 	CreatedAt:   time.Now().UTC(),
 	CreatedBy:   UserID,
