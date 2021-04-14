@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/unnamedxaer/gymm-api/entities"
@@ -47,6 +48,7 @@ func New() *validator.Validate {
 	validate.RegisterAlias("pwd", "pwdStrength")
 
 	validate.RegisterValidation("set_unit", setUnitValidateFunc)
+	validate.RegisterValidation("ex_name_chars", exerciseNameCharsValidateFunc)
 
 	return validate
 }
@@ -54,6 +56,25 @@ func New() *validator.Validate {
 func setUnitValidateFunc(fldLev validator.FieldLevel) bool {
 	fld := fldLev.Field()
 	return validateSetUnit(fld)
+}
+
+func exerciseNameCharsValidateFunc(fldLev validator.FieldLevel) bool {
+	fld := fldLev.Field()
+	return validateExerciseNameCharacters(fld)
+}
+
+func validateExerciseNameCharacters(fld reflect.Value) bool {
+	switch fld.Kind() {
+	case reflect.String:
+		fldValue := fld.String()
+		ok, err := regexp.MatchString(`^[a-zA-Z0-9\s+]*$`, fldValue)
+		if err != nil {
+			panic("validate exercise characters: " + err.Error())
+		}
+		return ok
+	}
+
+	return false
 }
 
 func validateSetUnit(fld reflect.Value) bool {
