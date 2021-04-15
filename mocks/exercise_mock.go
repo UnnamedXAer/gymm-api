@@ -6,6 +6,7 @@ import (
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/usecases"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var ExampleExercise = entities.Exercise{
@@ -42,6 +43,11 @@ func (er *MockExerciseRepo) CreateExercise(name, description string, setUnit ent
 }
 
 func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, error) {
+	_, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, repositories.NewErrorInvalidID(id)
+	}
+
 	if ExampleExercise.ID == id {
 		out := ExampleExercise
 		return &out, nil
@@ -51,7 +57,8 @@ func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, erro
 }
 
 func (er *MockExerciseRepo) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
-	if ex.ID == "" {
+	_, err := primitive.ObjectIDFromHex(ex.ID)
+	if err != nil {
 		return nil, repositories.NewErrorInvalidID(ex.ID)
 	}
 
