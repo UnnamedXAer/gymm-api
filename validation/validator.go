@@ -25,6 +25,15 @@ func (err *StructValidError) ValidationErrors() map[string]string {
 	return err.errs
 }
 
+// Format returns map of errors for use as a response
+func (err *StructValidError) Format() map[string]interface{} {
+
+	return map[string]interface{}{
+		"error":  err.s,
+		"errors": err.errs,
+	}
+}
+
 // NewStructValidError creates new structValidError with given map of errors and optional error text
 func NewStructValidError(errsMap map[string]string, errTxt ...string) *StructValidError {
 	err := StructValidError{
@@ -33,7 +42,7 @@ func NewStructValidError(errsMap map[string]string, errTxt ...string) *StructVal
 	if errTxt != nil {
 		err.s = errTxt[0]
 	} else {
-		err.s = "Validation failed"
+		err.s = "validation failed"
 	}
 	return &err
 }
