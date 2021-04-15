@@ -45,6 +45,7 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/users", app.CreateUser).Methods("POST")
 
 	app.Router.HandleFunc("/exercises/{id:[0-9a-zA-Z]+}", app.GetExeriseByID).Methods(http.MethodGet)
+	app.Router.HandleFunc("/exercises/{id:[0-9a-zA-Z]+}", app.UpdateExercise).Methods(http.MethodPatch)
 	app.Router.HandleFunc("/exercises", app.CreateExercise).Methods(http.MethodPost)
 
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
