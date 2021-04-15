@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -80,10 +79,13 @@ func (app *App) GetExeriseByID(w http.ResponseWriter, req *http.Request) {
 
 func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 
-	responseWithErrorMsg(w, http.StatusNotImplemented, fmt.Errorf(http.StatusText(http.StatusNotImplemented)))
-	return
+	vars := mux.Vars(req)
 
-	id := req.URL.Query().Get("id")
+	id, ok := vars["id"]
+	if !ok {
+		responseWithErrorMsg(w, http.StatusBadRequest, errors.New("missign query parameter 'ID'"))
+		return
+	}
 
 	var input usecases.ExerciseInput
 	err := json.NewDecoder(req.Body).Decode(&input)
@@ -99,8 +101,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 
 	trimWhitespacesOnExerciseInput(&input)
 
-	err = validateExerciseInput(app.Validate, &input)
-	// err = validateExerciseInput(app.Validate, &input)
+	err = validateExerciseInput4Update(app.Validate, &input)
 	if err != nil {
 		if svErr, ok := err.(*validation.StructValidError); ok {
 			responseWithErrorJSON(w, http.StatusNotAcceptable, svErr.ValidationErrors())
@@ -126,5 +127,5 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	responseWithJSON(w, http.StatusCreated, exercise)
+	responseWithJSON(w, http.StatusOK, exercise)
 }
