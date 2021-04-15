@@ -30,8 +30,7 @@ func validateExerciseInput(validate *validator.Validate, exercise *usecases.Exer
 		formattedErrors[fieldName] += getErrorTranslation(&err, fieldName)
 	}
 	if len(formattedErrors) > 0 {
-		errText := concatErrors(formattedErrors)
-		return validation.NewStructValidError(formattedErrors, errText)
+		return validation.NewStructValidError(formattedErrors)
 	}
 	return nil
 }
@@ -44,8 +43,7 @@ func validateExerciseInput4Update(validate *validator.Validate, exercise *usecas
 	}
 
 	if len(formattedErrors) > 0 {
-		errText := concatErrors(formattedErrors)
-		return validation.NewStructValidError(formattedErrors, errText)
+		return validation.NewStructValidError(formattedErrors)
 	}
 	return nil
 }
@@ -138,13 +136,4 @@ func getErrorTranslation(err *validator.FieldError, fieldName string) string {
 	default:
 		return fmt.Sprintf("The '%s' field failed on the '%s' tag validation. ", fieldName, (*err).Tag())
 	}
-}
-
-func concatErrors(formattedErrors map[string]string) string {
-	var s string
-	for _, v := range formattedErrors {
-		s += v
-	}
-
-	return s
 }
