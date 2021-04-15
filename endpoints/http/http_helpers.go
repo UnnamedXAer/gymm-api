@@ -24,7 +24,7 @@ func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 	output, err := json.Marshal(payload)
 	if err != nil {
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithErrorMsg(w, http.StatusInternalServerError, err) // @todo: sent status text message instead of err
 	}
 	w.Write(output)
 }
