@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"go.mongodb.org/mongo-driver/bson"
@@ -24,13 +25,16 @@ type ExerciseData struct {
 func (repo ExerciseRepository) GetExerciseByID(id string) (*entities.Exercise, error) {
 	exOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, fmt.Errorf("get exercise by id: %v", err)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id), "get exercise by id")
 	}
 
 	filter := bson.M{"_id": exOID}
 
 	result := repo.col.FindOne(context.Background(), filter)
 	if err = result.Err(); err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return nil, nil //repositories.NewErrorNotFoundRecord()
+		}
 		return nil, fmt.Errorf("get exercise by id: %v", err)
 	}
 
@@ -55,7 +59,7 @@ func (repo ExerciseRepository) CreateExercise(name, description string, setUnit 
 
 	result, err := repo.col.InsertOne(context.Background(), &data)
 	if err != nil {
-		return nil, fmt.Errorf("create exercise: %v", err)
+		return nil, errors.WithMessage(err, "create exercise") // err //fmt.Errorf("create exercise: %v", err)
 	}
 
 	var ok bool
@@ -94,6 +98,9 @@ func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.
 
 	result := repo.col.FindOneAndUpdate(context.Background(), filter, update, options.FindOneAndUpdate().SetReturnDocument(options.After))
 	if err = result.Err(); err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return nil, nil //repositories.NewErrorNotFoundRecord()
+		}
 		return nil, fmt.Errorf("update exercise: %v", err)
 	}
 	var data ExerciseData

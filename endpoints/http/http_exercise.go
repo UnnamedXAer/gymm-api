@@ -21,28 +21,15 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		app.l.Debug().Msgf("[POST / CreateExercise] -> body: %v, error: %v", input, err)
 
-		syntaxErr, ok := err.(*json.SyntaxError)
+		ok, err := formatParseErrors(err)
 		if ok {
-			responseWithErrorMsg(w, http.StatusBadRequest, syntaxErr)
+			responseWithErrorMsg(w, http.StatusBadRequest, err)
 			return
 		}
 
-		invalidUnmarshalErr, ok := err.(*json.InvalidUnmarshalError)
-		if ok {
-			responseWithErrorMsg(w, http.StatusBadRequest, invalidUnmarshalErr)
-			return
-		}
+		errText := getErrOfMalformedInput(&input, exerciseExcludedFields)
 
-		unmarshalTypeErr, ok := err.(*json.UnmarshalTypeError)
-		if ok {
-			responseWithErrorMsg(w, http.StatusBadRequest, unmarshalTypeErr)
-			return
-		}
-
-		excludedTags := getExerciseExcludeTags(&input)
-		errText := getErrOfMalformedInput(&input, excludedTags)
-
-		responseWithErrorMsg(w, http.StatusBadRequest, errors.New(errText))
+		responseWithErrorMsgTxt(w, http.StatusBadRequest, errText)
 		return
 	}
 	defer req.Body.Close()
@@ -53,17 +40,19 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 	err = validateExerciseInput(app.Validate, &input)
 	if err != nil {
 		if svErr, ok := err.(*validation.StructValidError); ok {
-			responseWithErrorJSON(w, http.StatusNotAcceptable, svErr.Format())
+			responseWithJSON(w, http.StatusNotAcceptable, svErr.Format())
 			return
 		}
 		responseWithErrorMsg(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	exercise, err := app.exerciseUsecases.CreateExercise(input.Name, input.Description, input.SetUnit, input.CreatedBy)
+	exercise, err := app.exerciseUsecases.CreateExercise(input.Name, input.Description, input.SetUnit, mocks.UserID) // @todo: logged user
 	if err != nil {
 		if repositories.IsDuplicatedError(err) {
-			responseWithErrorMsg(w, http.StatusConflict, err)
+			responseWithErrorMsg(w, http.StatusConflict,
+				fmt.Errorf("exercise with name: %q and set unit: %d already exists",
+					input.Name, input.SetUnit))
 			return
 		}
 
@@ -82,12 +71,7 @@ func (app *App) GetExeriseByID(w http.ResponseWriter, req *http.Request) {
 
 	e, err := app.exerciseUsecases.GetExerciseByID(id)
 	if err != nil {
-		if errors.Is(err, repositories.NewErrorNotFoundRecord()) {
-			responseWithJSON(w, http.StatusOK, nil)
-			return
-		}
-
-		if errors.Is(err, repositories.NewErrorInvalidID(id)) {
+		if errors.As(err, repositories.NewErrorInvalidID(id)) {
 			responseWithErrorMsg(w, http.StatusBadRequest, err)
 			return
 		}
@@ -115,8 +99,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 	var input usecases.ExerciseInput
 	err := json.NewDecoder(req.Body).Decode(&input)
 	if err != nil {
-		excludedTags := getExerciseExcludeTags(&input)
-		errText := getErrOfMalformedInput(&input, excludedTags)
+		errText := getErrOfMalformedInput(&input, exerciseExcludedFields)
 
 		err = errors.New(errText)
 		app.l.Debug().Msgf("update exercise: %v", err.Error())
@@ -133,7 +116,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		app.l.Debug().Msgf("update exercise: %v", err.Error())
 
 		if svErr, ok := err.(*validation.StructValidError); ok {
-			responseWithErrorJSON(w, http.StatusNotAcceptable, svErr.Format())
+			responseWithJSON(w, http.StatusNotAcceptable, svErr.Format())
 			return
 		}
 		responseWithErrorMsg(w, http.StatusInternalServerError, err)
@@ -148,10 +131,10 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		// @improvement: logging purposes
 		if !errors.Is(err, repositories.NewErrorNotFoundRecord()) {
 			if errors.Is(err, repositories.NewErrorInvalidID(id)) {
-				responseWithErrorJSON(w, http.StatusBadRequest, err)
+				responseWithJSON(w, http.StatusBadRequest, err)
 				return
 			}
-			responseWithErrorJSON(w, http.StatusInternalServerError,
+			responseWithJSON(w, http.StatusInternalServerError,
 				http.StatusText(http.StatusInternalServerError))
 			return
 		}

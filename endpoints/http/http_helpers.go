@@ -2,55 +2,119 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 
 	"github.com/unnamedxaer/gymm-api/helpers"
 )
 
+// sends error response with given code and error's text as a response
 func responseWithErrorMsg(w http.ResponseWriter, code int, err error) {
-	// log.Println(fmt.Sprintf("[responseWithErrorMsg] code: %d, err: %#v", code, err))
 	responseWithJSON(w, code, map[string]string{"error": err.Error()})
 }
 
-func responseWithErrorJSON(w http.ResponseWriter, code int, errObj interface{}) {
-	// log.Println(fmt.Sprintf("[responseWithErrorJSON] code: %d, err: %#v", code, errObj))
-	responseWithJSON(w, code, errObj)
+// sends error response with given code and message as a response
+func responseWithErrorMsgTxt(w http.ResponseWriter, code int, errTxt string) {
+	responseWithJSON(w, code, map[string]string{"error": errTxt})
 }
 
+// sends http response with given payload
 func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
 	output, err := json.Marshal(payload)
 	if err != nil {
-		responseWithErrorMsg(w, http.StatusInternalServerError, err) // @todo: sent status text message instead of err
+		responseWithErrorMsgTxt(w, http.StatusInternalServerError,
+			http.StatusText(http.StatusInternalServerError))
 	}
 	w.Write(output)
 }
 
-func getErrOfMalformedInput(u interface{}, excluded []string) string {
+// returns error message about malformed payload, message includes info about
+// correct payload structure
+//
+// Parameter excludedFields can contain struct fields that should be not included
+// in massage.
+func getErrOfMalformedInput(v interface{}, excludedFields []string) string {
 	errInfo := make(map[string]string)
 
-	val := reflect.ValueOf(u).Elem()
+	val := reflect.ValueOf(v).Elem()
 	for i := 0; i < val.NumField(); i++ {
+
 		fld := val.Type().Field(i)
 
-		if helpers.StrSliceIndexOf(excluded, fld.Name) == -1 {
+		if helpers.StrSliceIndexOf(excludedFields, fld.Name) == -1 {
 			jsonFldName := fld.Tag.Get("json")
 			if jsonFldName == "" {
 				jsonFldName = fld.Name
 			}
 
-			errInfo[jsonFldName] = fld.Type.Name()
+			// errInfo[jsonFldName] = fld.Type.Kind().String()
+
+			errInfo[jsonFldName] = getSimpleType(fld.Type)
 		}
 	}
 	/**/
 	resErrText := "Malformed payload."
-	errInfoTxt, err := json.MarshalIndent(errInfo, "", "  ")
+	errInfoTxt, err := json.Marshal(errInfo)
 	if err == nil {
 		return resErrText + " The payload should look like: \n" + string(errInfoTxt)
 	}
 
 	return resErrText
+}
+
+func getSimpleType(fld reflect.Type) string {
+	switch fld.Kind() {
+	case reflect.Invalid:
+		return "-invalid-"
+	case reflect.Ptr:
+		return getSimpleType(fld.Elem())
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return "int"
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return " positive int"
+	case reflect.Float32, reflect.Float64:
+		return "float"
+	case reflect.Complex64, reflect.Complex128:
+		return "complex"
+	case reflect.String:
+		return "string"
+	case reflect.Map, reflect.Struct:
+		return "object"
+	case reflect.Array, reflect.Slice:
+		return "array"
+	case reflect.Bool:
+		return "bool"
+	}
+	return "???"
+}
+
+// unmarTypeErrorFormat creates new  error from json.UnmarshalTypeError
+// for use as http response
+func unmarTypeErrorFormat(unmarshalTypeErr *json.UnmarshalTypeError) error {
+	return fmt.Errorf("%q has to be of type %s, got %s",
+		unmarshalTypeErr.Field, getSimpleType(unmarshalTypeErr.Type), unmarshalTypeErr.Value)
+}
+
+// check if error is one of json errors and create new one
+// with more usefull message for client, otherwise return false and original error
+func formatParseErrors(err error) (bool, error) {
+	syntaxErr, ok := err.(*json.SyntaxError)
+	if ok {
+		return true, syntaxErr
+	}
+
+	invalidUnmarshalErr, ok := err.(*json.InvalidUnmarshalError)
+	if ok {
+		return true, invalidUnmarshalErr
+	}
+
+	unmarshalTypeErr, ok := err.(*json.UnmarshalTypeError)
+	if ok {
+		return true, unmarTypeErrorFormat(unmarshalTypeErr)
+	}
+	return false, err
 }

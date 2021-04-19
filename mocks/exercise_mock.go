@@ -53,7 +53,7 @@ func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, erro
 		return &out, nil
 	}
 
-	return nil, repositories.NewErrorNotFoundRecord()
+	return nil, nil //repositories.NewErrorNotFoundRecord()
 }
 
 func (er *MockExerciseRepo) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {

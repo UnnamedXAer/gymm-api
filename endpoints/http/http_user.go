@@ -30,7 +30,7 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	err = validateUserInput(app.Validate, &u)
 	if err != nil {
 		if svErr, ok := err.(*validation.StructValidError); ok {
-			responseWithErrorJSON(w, http.StatusNotAcceptable, svErr.ValidationErrors())
+			responseWithJSON(w, http.StatusNotAcceptable, svErr.ValidationErrors())
 			return
 		}
 		responseWithErrorMsg(w, http.StatusInternalServerError, err)
