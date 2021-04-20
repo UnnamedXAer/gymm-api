@@ -132,10 +132,10 @@ func TestGetUserByIDNotExisting(t *testing.T) {
 	uID := "60108393da81e60598d5347f"
 
 	gotUser, err := ur.GetUserByID(uID)
-	if err == nil || errors.Is(err, repositories.NewErrorNotFoundRecord()) == false {
-		t.Fatalf("Expected to get error: %q, got: %v", repositories.NewErrorNotFoundRecord(), err)
+	if err != nil {
+		t.Fatalf("Expected to get nil error, got: %v", err)
 	}
-	if gotUser.ID != "" || gotUser.EmailAddress != "" {
+	if gotUser.EmailAddress != "" || gotUser.ID != "" { // gotUser != nil {
 		t.Errorf("Expect to NOT get any user for _id: %q, but got: %v", uID, gotUser)
 	}
 }

@@ -80,7 +80,7 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 		} else if strings.Contains(err.Error(), "") {
 			//
 		} else if errors.Is(err, mongo.ErrNoDocuments) {
-			return t, repositories.NewErrorNotFoundRecord()
+			return t, nil // @todo: return nil, nil
 		}
 		return t, fmt.Errorf("end training: %v", err)
 	}

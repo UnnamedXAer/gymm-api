@@ -19,7 +19,7 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 
 	err := json.NewDecoder(req.Body).Decode(&input)
 	if err != nil {
-		app.l.Debug().Msgf("[POST / CreateExercise] -> body: %v, error: %v", input, err)
+		logDebugError(app.l, req, err)
 
 		ok, err := formatParseErrors(err)
 		if ok {
@@ -39,16 +39,18 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 
 	err = validateExerciseInput(app.Validate, &input)
 	if err != nil {
+		logDebugError(app.l, req, err)
 		if svErr, ok := err.(*validation.StructValidError); ok {
 			responseWithJSON(w, http.StatusNotAcceptable, svErr.Format())
 			return
 		}
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithInternalError(w)
 		return
 	}
 
 	exercise, err := app.exerciseUsecases.CreateExercise(input.Name, input.Description, input.SetUnit, mocks.UserID) // @todo: logged user
 	if err != nil {
+		logDebugError(app.l, req, err)
 		if repositories.IsDuplicatedError(err) {
 			responseWithErrorMsg(w, http.StatusConflict,
 				fmt.Errorf("exercise with name: %q and set unit: %d already exists",
@@ -56,7 +58,7 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithInternalError(w)
 		return
 	}
 
@@ -69,18 +71,20 @@ func (app *App) GetExeriseByID(w http.ResponseWriter, req *http.Request) {
 	id := vars["id"]
 	app.l.Debug().Msg("[GET / GetExeriseByID] -> id: " + id)
 
-	e, err := app.exerciseUsecases.GetExerciseByID(id)
+	exercise, err := app.exerciseUsecases.GetExerciseByID(id)
 	if err != nil {
-		if errors.As(err, repositories.NewErrorInvalidID(id)) {
-			responseWithErrorMsg(w, http.StatusBadRequest, err)
+		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithErrorMsg(w, http.StatusBadRequest, e)
 			return
 		}
 
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithInternalError(w)
 		return
 	}
 
-	responseWithJSON(w, http.StatusOK, e)
+	responseWithJSON(w, http.StatusOK, exercise)
 }
 
 func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
@@ -90,7 +94,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 	id, ok := vars["id"]
 	if !ok {
 		err := errors.New("missign query parameter 'ID'")
-		app.l.Debug().Msgf("update exercise: %v", err.Error())
+		logDebugError(app.l, req, err)
 
 		responseWithErrorMsg(w, http.StatusBadRequest, err)
 		return
@@ -102,7 +106,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		errText := getErrOfMalformedInput(&input, exerciseExcludedFields)
 
 		err = errors.New(errText)
-		app.l.Debug().Msgf("update exercise: %v", err.Error())
+		logDebugError(app.l, req, err)
 		responseWithErrorMsg(w, http.StatusBadRequest, err)
 		return
 	}
@@ -113,36 +117,31 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 
 	err = validateExerciseInput4Update(app.Validate, &input)
 	if err != nil {
-		app.l.Debug().Msgf("update exercise: %v", err.Error())
+		logDebugError(app.l, req, err)
 
 		if svErr, ok := err.(*validation.StructValidError); ok {
 			responseWithJSON(w, http.StatusNotAcceptable, svErr.Format())
 			return
 		}
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithInternalError(w)
 		return
 	}
 
 	curExercise, err := app.exerciseUsecases.GetExerciseByID(id)
 	if err != nil {
-		app.l.Debug().Msgf("update exercise: %v", err.Error())
-
-		// @improvement: we could wrap original error with new one for
-		// @improvement: logging purposes
-		if !errors.Is(err, repositories.NewErrorNotFoundRecord()) {
-			if errors.Is(err, repositories.NewErrorInvalidID(id)) {
-				responseWithJSON(w, http.StatusBadRequest, err)
-				return
-			}
-			responseWithJSON(w, http.StatusInternalServerError,
-				http.StatusText(http.StatusInternalServerError))
+		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithErrorMsg(w, http.StatusBadRequest, e)
 			return
 		}
+		responseWithInternalError(w)
+		return
 	}
 
 	if curExercise == nil || (curExercise.CreatedBy != mocks.UserID) { // @todo: authenticated user !!!
-		err = fmt.Errorf("unauthorized: you do not have permissons to modify exercise with id %q", id)
-		app.l.Debug().Msgf("update exercise: %v", err.Error())
+		err = fmt.Errorf("unauthorized: you do not have permissons to modify exercise (%s)", id)
+		logDebugError(app.l, req, err)
 
 		responseWithErrorMsg(w, http.StatusUnauthorized, err)
 		return
@@ -155,17 +154,17 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		SetUnit:     input.SetUnit,
 	})
 	if err != nil {
-		app.l.Debug().Msgf("update exercise: %v", err.Error())
+		logDebugError(app.l, req, err)
 
 		if repositories.IsDuplicatedError(err) {
 			responseWithErrorMsg(w, http.StatusConflict, err) // @todo: create new error type
 			return
 		}
 
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithInternalError(w)
 		return
 	}
 
-	app.l.Trace().Msgf("[PATH /exercise] -> response: %v", exercise)
+	app.l.Trace().Msgf("[PATCH /exercise] -> response: %v", exercise)
 	responseWithJSON(w, http.StatusOK, exercise)
 }

@@ -32,7 +32,7 @@ func (r *UserRepository) GetUserByID(id string) (entities.User, error) {
 	err = r.col.FindOne(context.Background(), bson.M{"_id": oID}).Decode(&ud)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return u, repositories.NewErrorNotFoundRecord()
+			return u, nil // @todo: nil, nil
 		}
 		return u, err
 	}

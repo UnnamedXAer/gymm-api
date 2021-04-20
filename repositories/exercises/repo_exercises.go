@@ -59,13 +59,16 @@ func (repo ExerciseRepository) CreateExercise(name, description string, setUnit 
 
 	result, err := repo.col.InsertOne(context.Background(), &data)
 	if err != nil {
-		return nil, errors.WithMessage(err, "create exercise") // err //fmt.Errorf("create exercise: %v", err)
+		return nil, errors.WithMessage(err, "create exercise")
 	}
 
 	var ok bool
 	data.ID, ok = result.InsertedID.(primitive.ObjectID)
 	if !ok {
-		return nil, fmt.Errorf("create exercise: %v", fmt.Errorf("type assertion: InsertedID is not of type primitive.ObjectID"))
+		// @todo: should we return nil, error or go with incorrect ID?
+		// this scenario should not happen as long as long we use driver
+		// created ids
+		repo.l.Error().Msgf("repo.CreateExercise: id type assertion failed, id: %v", result.InsertedID)
 	}
 
 	ex := mapExerciseToEntity(&data)
@@ -76,7 +79,8 @@ func (repo ExerciseRepository) CreateExercise(name, description string, setUnit 
 func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
 	exOID, err := primitive.ObjectIDFromHex(ex.ID)
 	if err != nil {
-		return nil, repositories.NewErrorInvalidID(ex.ID)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(ex.ID),
+			"update exercise")
 	}
 
 	filter := bson.M{
@@ -101,12 +105,12 @@ func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.
 		if err.Error() == "mongo: no documents in result" {
 			return nil, nil //repositories.NewErrorNotFoundRecord()
 		}
-		return nil, fmt.Errorf("update exercise: %v", err)
+		return nil, errors.WithMessage(err, "update exercise")
 	}
 	var data ExerciseData
 	err = result.Decode(&data)
 	if err != nil {
-		return nil, fmt.Errorf("update exercise: %v", err)
+		return nil, errors.WithMessage(err, "update exercise")
 	}
 
 	updatedEx := mapExerciseToEntity(&data)

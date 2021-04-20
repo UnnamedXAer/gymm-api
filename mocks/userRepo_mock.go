@@ -24,7 +24,7 @@ func (ur MockUserRepo) GetUserByID(id string) (entities.User, error) {
 	// mock storage get where ID = id
 
 	if strings.Contains(id, "notfound") {
-		return entities.User{}, repositories.NewErrorNotFoundRecord()
+		return entities.User{}, nil
 	}
 
 	if strings.Contains(id, "INVALIDID") {

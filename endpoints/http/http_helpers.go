@@ -6,12 +6,19 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/helpers"
 )
 
 // sends error response with given code and error's text as a response
 func responseWithErrorMsg(w http.ResponseWriter, code int, err error) {
 	responseWithJSON(w, code, map[string]string{"error": err.Error()})
+}
+
+// sends error response with code 500 - Internal Server Error
+func responseWithInternalError(w http.ResponseWriter) {
+	responseWithJSON(w, http.StatusInternalServerError,
+		map[string]string{"error": http.StatusText(http.StatusInternalServerError)})
 }
 
 // sends error response with given code and message as a response
@@ -117,4 +124,8 @@ func formatParseErrors(err error) (bool, error) {
 		return true, unmarTypeErrorFormat(unmarshalTypeErr)
 	}
 	return false, err
+}
+
+func logDebugError(l *zerolog.Logger, req *http.Request, err error) {
+	l.Debug().Msgf("[%s %s]: %v", req.Method, req.RequestURI, err)
 }
