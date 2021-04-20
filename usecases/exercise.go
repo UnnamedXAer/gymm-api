@@ -9,9 +9,9 @@ import (
 type ExerciseInput struct {
 	Name        string           `json:"name" validate:"required,min=2,max=50,ex_name_chars,printascii"`
 	Description string           `json:"description" validate:"required,min=10,max=500,printascii"`
-	SetUnit     entities.SetUnit `json:"setUnit" validate:"set_unit,required"`
-	CreatedAt   time.Time        `json:"createdAt"`
-	CreatedBy   string           `json:"createdBy"`
+	SetUnit     entities.SetUnit `json:"setUnit" validate:"set_unit,required,oneof=1 2"`
+	CreatedAt   time.Time        `json:"createdAt" validate:"-"`
+	CreatedBy   string           `json:"createdBy" validate:"-"`
 }
 
 type ExerciseRepo interface {
