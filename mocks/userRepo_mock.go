@@ -20,26 +20,26 @@ var (
 type MockUserRepo struct {
 }
 
-func (ur MockUserRepo) GetUserByID(id string) (entities.User, error) {
+func (ur MockUserRepo) GetUserByID(id string) (*entities.User, error) {
 	// mock storage get where ID = id
 
 	if strings.Contains(id, "notfound") {
-		return entities.User{}, nil
+		return nil, nil
 	}
 
 	if strings.Contains(id, "INVALIDID") {
-		return entities.User{}, repositories.NewErrorInvalidID(id)
+		return nil, repositories.NewErrorInvalidID(id)
 	}
 
-	return entities.User{
+	return &entities.User{
 		ID: id,
 	}, nil
 }
 
-func (ur MockUserRepo) CreateUser(username, email string, passwordHash []byte) (entities.User, error) {
+func (ur MockUserRepo) CreateUser(username, email string, passwordHash []byte) (*entities.User, error) {
 	// mock storage insert new user
 	u := ExampleUser
 	u.Username = username
 	u.EmailAddress = email
-	return ExampleUser, nil
+	return &u, nil
 }

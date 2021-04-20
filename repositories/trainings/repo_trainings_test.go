@@ -22,7 +22,7 @@ var (
 	userRepo     *users.UserRepository
 	// db                    *mongo.Database
 	trainingdata          trainingData
-	mockedUser            entities.User
+	mockedUser            *entities.User
 	mockedStartedTraining entities.Training
 	mockedStartedExercise entities.TrainingExercise
 	mockedSet             entities.TrainingSet

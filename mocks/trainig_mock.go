@@ -6,7 +6,7 @@ import (
 )
 
 // InsertMockUser inserts mocked user to repository with use of the repo functionality
-func InsertMockUser(ur usecases.UserRepo) (entities.User, error) {
+func InsertMockUser(ur usecases.UserRepo) (*entities.User, error) {
 	return ur.CreateUser(
 		ExampleUser.Username,
 		ExampleUser.EmailAddress,

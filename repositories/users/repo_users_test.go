@@ -69,21 +69,26 @@ func TestCreateUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	if gotUser == nil {
+		t.Fatalf("want to get user base on data: %v, got nil", u)
+	}
+
 	if u.EmailAddress != gotUser.EmailAddress ||
 		u.Username != gotUser.Username {
-		t.Fatalf("Expect to get user base on data: %v, got: %v",
+		t.Fatalf("want user base on data: %v, got: %v",
 			u,
 			gotUser)
 	}
 
 	if gotUser.ID == "" {
-		t.Fatalf("Expected 'ID' to NOT be zero value, got %q for email: %q",
+		t.Fatalf("want 'ID' to NOT be zero value, got %q for email: %q",
 			gotUser.ID,
 			u.EmailAddress)
 	}
 
 	if gotUser.CreatedAt.IsZero() {
-		t.Fatalf("Expected 'CreateAt' to NOT be zero value, got %q for email: %q",
+		t.Fatalf("want 'CreateAt' to NOT be zero value, got %q for email: %q",
 			gotUser.CreatedAt,
 			u.EmailAddress)
 	}
@@ -99,10 +104,11 @@ func TestCreateUserDuplicatedEmail(t *testing.T) {
 		}
 		t.Fatal(err)
 	}
-	t.Fatalf("Expected to get error %q for email addres: %q, got new user with ID: %q",
+
+	t.Fatalf("want error %q for email addres: %q, got %v",
 		repositories.NewErrorEmailAddressInUse(),
 		u.EmailAddress,
-		gotUser.ID)
+		gotUser)
 }
 
 func TestGetUserByID(t *testing.T) {
@@ -116,14 +122,14 @@ func TestGetUserByID(t *testing.T) {
 
 	gotUser, err := ur.GetUserByID(uID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("want user, got %v", err)
 	}
 
-	if testhelpers.TimesEqual(u.CreatedAt, gotUser.CreatedAt) == false ||
+	if gotUser == nil || (testhelpers.TimesEqual(u.CreatedAt, gotUser.CreatedAt) == false ||
 		u.EmailAddress != gotUser.EmailAddress ||
 		u.Username != gotUser.Username ||
-		uID != gotUser.ID {
-		t.Errorf("Expect to get user like: %v, got: %v", u, gotUser)
+		uID != gotUser.ID) {
+		t.Errorf("want user like: %v, got: %v", u, gotUser)
 	}
 }
 
@@ -133,10 +139,11 @@ func TestGetUserByIDNotExisting(t *testing.T) {
 
 	gotUser, err := ur.GetUserByID(uID)
 	if err != nil {
-		t.Fatalf("Expected to get nil error, got: %v", err)
+		t.Fatalf("want nil error, got: %v", err)
 	}
-	if gotUser.EmailAddress != "" || gotUser.ID != "" { // gotUser != nil {
-		t.Errorf("Expect to NOT get any user for _id: %q, but got: %v", uID, gotUser)
+
+	if gotUser != nil {
+		t.Fatalf("want nil user, got %v", gotUser)
 	}
 }
 
@@ -145,11 +152,13 @@ func TestGetUserByIDInvalidID(t *testing.T) {
 	uID := "6s108393da81e60598d5347f"
 
 	gotUser, err := ur.GetUserByID(uID)
-	if err == nil || errors.Is(err, repositories.NewErrorInvalidID(uID)) == false {
-		t.Fatalf("Expected to get error: %q, got: %v", repositories.NewErrorInvalidID(uID), err)
+	var e *repositories.InvalidIDError
+	if !errors.As(err, &e) {
+		t.Fatalf("want error: %q, got: %v", repositories.NewErrorInvalidID(uID), err)
 	}
-	if gotUser.ID != "" || gotUser.EmailAddress != "" {
-		t.Errorf("Expect to NOT get any user for _id: %q, but got: %v", uID, gotUser)
+
+	if gotUser != nil {
+		t.Fatalf("want nil user, got %v", err)
 	}
 }
 

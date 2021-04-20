@@ -1,9 +1,9 @@
 package usecases
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,8 +23,8 @@ type UserRepo interface {
 
 	// GetUserByID it is signature of repo method
 	// it's here to not couple both packages
-	GetUserByID(id string) (entities.User, error)
-	CreateUser(username, email string, passwordHash []byte) (entities.User, error)
+	GetUserByID(id string) (*entities.User, error)
+	CreateUser(username, email string, passwordHash []byte) (*entities.User, error)
 }
 
 type UserUseCases struct {
@@ -32,18 +32,18 @@ type UserUseCases struct {
 }
 
 type IUserUseCases interface {
-	GetUserByID(id string) (entities.User, error)
-	CreateUser(u *UserInput) (entities.User, error)
+	GetUserByID(id string) (*entities.User, error)
+	CreateUser(u *UserInput) (*entities.User, error)
 }
 
-func (uc *UserUseCases) GetUserByID(id string) (entities.User, error) {
+func (uc *UserUseCases) GetUserByID(id string) (*entities.User, error) {
 	return uc.repo.GetUserByID(id)
 }
 
-func (uc *UserUseCases) CreateUser(u *UserInput) (entities.User, error) {
+func (uc *UserUseCases) CreateUser(u *UserInput) (*entities.User, error) {
 	passwordHash, err := hashPassword(u.Password)
 	if err != nil {
-		return entities.User{}, fmt.Errorf("incorrect password, cannot hash: %v", err)
+		return nil, errors.WithMessage(err, "incorrect password, cannot hash")
 	}
 
 	return uc.repo.CreateUser(u.Username, u.EmailAddress, passwordHash)

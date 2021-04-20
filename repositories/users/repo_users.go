@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,37 +21,35 @@ type userData struct {
 }
 
 // GetUserByID retrieves user info from storage
-func (r *UserRepository) GetUserByID(id string) (entities.User, error) {
+func (r *UserRepository) GetUserByID(id string) (*entities.User, error) {
 	var ud userData
-	var u entities.User
 	oID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		r.l.Error().Msg(err.Error())
-		return u, repositories.NewErrorInvalidID(id)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id), "repo.GetUserByID")
 	}
 
 	err = r.col.FindOne(context.Background(), bson.M{"_id": oID}).Decode(&ud)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return u, nil // @todo: nil, nil
+			return nil, nil
 		}
-		return u, err
+		return nil, errors.WithMessage(err, "repo.GetUserByID")
 	}
 
-	u = entities.User{
+	u := entities.User{
 		ID:           ud.ID.Hex(),
 		EmailAddress: ud.EmailAddress,
 		Username:     ud.Username,
 		CreatedAt:    ud.CreatedAt,
 	}
-	return u, nil
+	return &u, nil
 }
 
 // CreateUser inserts newly registered user into storage
 func (r *UserRepository) CreateUser(
 	username,
 	emailAddress string,
-	passwordHash []byte) (u entities.User, err error) {
+	passwordHash []byte) (*entities.User, error) {
 
 	now := time.Now().UTC()
 
@@ -61,20 +60,26 @@ func (r *UserRepository) CreateUser(
 		CreatedAt:    now,
 	}
 
-	results, err := r.col.InsertOne(context.Background(), ud)
+	result, err := r.col.InsertOne(context.Background(), ud)
 	if err != nil {
 		if repositories.IsDuplicatedError(err) {
-			return u, repositories.NewErrorEmailAddressInUse()
+			return nil, errors.WithMessage(
+				repositories.NewErrorEmailAddressInUse(), "repo.GetUserByID")
 		}
 
-		return u, err
+		return nil, errors.WithMessage(err, "repo.GetUserByID")
 	}
 
-	u = entities.User{
-		ID:           results.InsertedID.(primitive.ObjectID).Hex(),
+	id, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		r.l.Error().Msgf("repo.CreateUser: id type assertion failed, id: %v", result.InsertedID)
+	}
+
+	u := entities.User{
+		ID:           id.Hex(),
 		Username:     username,
 		EmailAddress: emailAddress,
 		CreatedAt:    now,
 	}
-	return u, nil
+	return &u, nil
 }

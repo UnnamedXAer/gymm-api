@@ -94,7 +94,7 @@ func TestGetUserByIDInvalidID(t *testing.T) {
 
 	b, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		t.Fatalf("Expected response to be %v, got error: %v", expectedErr, err)
+		t.Fatalf("want response to be %v, got error: %v", expectedErr, err)
 	}
 	var data map[string]interface{}
 
@@ -102,7 +102,8 @@ func TestGetUserByIDInvalidID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if data["error"] != expectedErr.Error() {
-		t.Fatalf("Expected response to be error: %q, got %v", expectedErr.Error(), data)
+		t.Fatalf("want response to be like {\"error\": \"%s\"}, got %s", expectedErr.Error(), string(b))
 	}
 }
