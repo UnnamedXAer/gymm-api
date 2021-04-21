@@ -20,7 +20,7 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	app.l.Debug().Msg("[POST / CreateUser] -> body: " + fmt.Sprintf("%v", u))
 	if err != nil {
 		resErrText := getErrOfMalformedInput(&u, []string{"ID", "CreatedAt"})
-		responseWithErrorMsg(w, http.StatusUnprocessableEntity, errors.New(resErrText))
+		responseWithError(w, http.StatusUnprocessableEntity, errors.New(resErrText))
 		return
 	}
 	defer req.Body.Close()
@@ -33,18 +33,18 @@ func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 			responseWithJSON(w, http.StatusNotAcceptable, svErr.ValidationErrors())
 			return
 		}
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	user, err := app.userUsecases.CreateUser(&u)
 	if err != nil {
 		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
-			responseWithErrorMsg(w, http.StatusConflict, err)
+			responseWithError(w, http.StatusConflict, err)
 			return
 		}
 
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -57,7 +57,7 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 	id := vars["id"]
 	app.l.Debug().Msg("[GET / GetUserById] -> id: " + id)
 	if id == "" {
-		responseWithErrorMsg(w, http.StatusUnprocessableEntity, errors.New("missign 'ID'"))
+		responseWithError(w, http.StatusUnprocessableEntity, errors.New("missign 'ID'"))
 		return
 	}
 
@@ -65,11 +65,11 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		var e *repositories.InvalidIDError
 		if errors.As(err, &e) {
-			responseWithErrorMsg(w, http.StatusBadRequest, err)
+			responseWithError(w, http.StatusBadRequest, err)
 			return
 		}
 
-		responseWithErrorMsg(w, http.StatusInternalServerError, err)
+		responseWithError(w, http.StatusInternalServerError, err)
 		return
 	}
 

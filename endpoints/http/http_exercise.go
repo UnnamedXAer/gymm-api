@@ -23,13 +23,13 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 
 		ok, err := formatParseErrors(err)
 		if ok {
-			responseWithErrorMsg(w, http.StatusBadRequest, err)
+			responseWithError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		errText := getErrOfMalformedInput(&input, exerciseExcludedFields)
 
-		responseWithErrorMsgTxt(w, http.StatusBadRequest, errText)
+		responseWithErrorTxt(w, http.StatusBadRequest, errText)
 		return
 	}
 	defer req.Body.Close()
@@ -52,7 +52,7 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		logDebugError(app.l, req, err)
 		if repositories.IsDuplicatedError(err) {
-			responseWithErrorMsg(w, http.StatusConflict,
+			responseWithError(w, http.StatusConflict,
 				fmt.Errorf("exercise with name: %q and set unit: %d already exists",
 					input.Name, input.SetUnit))
 			return
@@ -76,7 +76,7 @@ func (app *App) GetExeriseByID(w http.ResponseWriter, req *http.Request) {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
 		if errors.As(err, &e) {
-			responseWithErrorMsg(w, http.StatusBadRequest, e)
+			responseWithError(w, http.StatusBadRequest, e)
 			return
 		}
 
@@ -96,7 +96,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		err := errors.New("missign query parameter 'ID'")
 		logDebugError(app.l, req, err)
 
-		responseWithErrorMsg(w, http.StatusBadRequest, err)
+		responseWithError(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 
 		err = errors.New(errText)
 		logDebugError(app.l, req, err)
-		responseWithErrorMsg(w, http.StatusBadRequest, err)
+		responseWithError(w, http.StatusBadRequest, err)
 		return
 	}
 	defer req.Body.Close()
@@ -132,7 +132,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
 		if errors.As(err, &e) {
-			responseWithErrorMsg(w, http.StatusBadRequest, e)
+			responseWithError(w, http.StatusBadRequest, e)
 			return
 		}
 		responseWithInternalError(w)
@@ -143,7 +143,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		err = fmt.Errorf("unauthorized: you do not have permissons to modify exercise (%s)", id)
 		logDebugError(app.l, req, err)
 
-		responseWithErrorMsg(w, http.StatusUnauthorized, err)
+		responseWithError(w, http.StatusUnauthorized, err)
 		return
 	}
 
@@ -157,7 +157,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		logDebugError(app.l, req, err)
 
 		if repositories.IsDuplicatedError(err) {
-			responseWithErrorMsg(w, http.StatusConflict, err) // @todo: create new error type
+			responseWithError(w, http.StatusConflict, err) // @todo: create new error type
 			return
 		}
 

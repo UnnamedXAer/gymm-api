@@ -11,6 +11,7 @@ import (
 
 type App struct {
 	l                *zerolog.Logger
+	authUsecases     usecases.IAuthUsecases
 	userUsecases     usecases.IUserUseCases
 	exerciseUsecases usecases.IExerciseUseCases
 	trainingUsecases usecases.ITrainingUsecases
@@ -20,10 +21,12 @@ type App struct {
 
 func NewServer(
 	logger *zerolog.Logger,
+	authRepo usecases.AuthRepo,
 	userRepo usecases.UserRepo,
 	exerciseRepo usecases.ExerciseRepo,
 	trainingRepo usecases.TrainingRepo,
 	validate *validator.Validate) *App {
+	var authUsecases usecases.IAuthUsecases = usecases.NewAuthUsecases(authRepo)
 	var userUsecases usecases.IUserUseCases = usecases.NewUserUseCases(userRepo)
 	var exerciseUsecases usecases.IExerciseUseCases = usecases.NewExerciseUseCases(exerciseRepo)
 	var trainingUsecases usecases.ITrainingUsecases = usecases.NewTrainingUseCases(trainingRepo)
@@ -31,6 +34,7 @@ func NewServer(
 	router := mux.NewRouter()
 	app := App{
 		l:                logger,
+		authUsecases:     authUsecases,
 		userUsecases:     userUsecases,
 		exerciseUsecases: exerciseUsecases,
 		trainingUsecases: trainingUsecases,
@@ -41,6 +45,9 @@ func NewServer(
 }
 
 func (app *App) AddHandlers() {
+
+	app.Router.HandleFunc("/login", app.Login).Methods("POST")
+
 	app.Router.HandleFunc("/users/{id:[0-9a-zA-Z]+}", app.GetUserById).Methods("GET")
 	app.Router.HandleFunc("/users", app.CreateUser).Methods("POST")
 

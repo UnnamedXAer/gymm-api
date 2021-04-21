@@ -17,7 +17,7 @@ import (
 var (
 	ur *UserRepository
 	// db *mongo.Database
-	u userData
+	u UserData
 )
 
 func TestMain(m *testing.M) {
@@ -52,7 +52,7 @@ func TestMain(m *testing.M) {
 	ur = NewRepository(&zerolog.Logger{}, usersCol)
 
 	// password := []byte("TheSecretestPasswordEver123$%^")
-	u = userData{
+	u = UserData{
 		Username:     "John Silver",
 		EmailAddress: "johnsilver@email.com",
 		Password:     []byte("TheSecretestPasswordEver123$%^"),

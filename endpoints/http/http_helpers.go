@@ -11,7 +11,7 @@ import (
 )
 
 // sends error response with given code and error's text as a response
-func responseWithErrorMsg(w http.ResponseWriter, code int, err error) {
+func responseWithError(w http.ResponseWriter, code int, err error) {
 	responseWithJSON(w, code, map[string]string{"error": err.Error()})
 }
 
@@ -22,7 +22,7 @@ func responseWithInternalError(w http.ResponseWriter) {
 }
 
 // sends error response with given code and message as a response
-func responseWithErrorMsgTxt(w http.ResponseWriter, code int, errTxt string) {
+func responseWithErrorTxt(w http.ResponseWriter, code int, errTxt string) {
 	responseWithJSON(w, code, map[string]string{"error": errTxt})
 }
 
@@ -33,7 +33,7 @@ func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 	output, err := json.Marshal(payload)
 	if err != nil {
-		responseWithErrorMsgTxt(w, http.StatusInternalServerError,
+		responseWithErrorTxt(w, http.StatusInternalServerError,
 			http.StatusText(http.StatusInternalServerError))
 	}
 	w.Write(output)

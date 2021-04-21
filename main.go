@@ -8,6 +8,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/endpoints/http"
 	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/repositories/auth"
 	"github.com/unnamedxaer/gymm-api/repositories/exercises"
 	"github.com/unnamedxaer/gymm-api/repositories/trainings"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
@@ -41,6 +42,8 @@ func main() {
 	usersCol := repositories.GetCollection(&logger, db, repositories.UsersCollectionName)
 	usersRepo := users.NewRepository(&logger, usersCol)
 
+	authRepo := auth.NewRepository(&logger, usersCol)
+
 	exercisesCol := repositories.GetCollection(&logger, db, repositories.ExercisesCollectionName)
 	exercisesRepo := exercises.NewRepository(&logger, exercisesCol)
 
@@ -49,7 +52,7 @@ func main() {
 
 	validate := validation.New()
 
-	app := http.NewServer(&logger, usersRepo, exercisesRepo, trainingsRepo, validate)
+	app := http.NewServer(&logger, authRepo, usersRepo, exercisesRepo, trainingsRepo, validate)
 
 	app.AddHandlers()
 

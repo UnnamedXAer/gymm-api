@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// userData is used only to push data to db
-type userData struct {
+// UserData is used only to push data to db
+type UserData struct {
 	ID           primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	Username     string             `json:"username,omitempty" bson:"username,omitempty"`
 	EmailAddress string             `json:"emailAddress,omitempty" bson:"email_address,omitempty"`
@@ -22,7 +22,7 @@ type userData struct {
 
 // GetUserByID retrieves user info from storage
 func (r *UserRepository) GetUserByID(id string) (*entities.User, error) {
-	var ud userData
+	var ud UserData
 	oID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id), "repo.GetUserByID")
@@ -53,7 +53,7 @@ func (r *UserRepository) CreateUser(
 
 	now := time.Now().UTC()
 
-	ud := userData{
+	ud := UserData{
 		Username:     username,
 		EmailAddress: emailAddress,
 		Password:     passwordHash,

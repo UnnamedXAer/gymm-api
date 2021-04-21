@@ -10,7 +10,7 @@ func InsertMockUser(ur usecases.UserRepo) (*entities.User, error) {
 	return ur.CreateUser(
 		ExampleUser.Username,
 		ExampleUser.EmailAddress,
-		[]byte("TheSecretestPasswordEver123$%^"),
+		[]byte(Password),
 	)
 }
 
