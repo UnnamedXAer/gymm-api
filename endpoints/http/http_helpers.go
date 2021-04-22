@@ -127,5 +127,8 @@ func formatParseErrors(err error) (bool, error) {
 }
 
 func logDebugError(l *zerolog.Logger, req *http.Request, err error) {
-	l.Debug().Msgf("[%s %s]: %v", req.Method, req.RequestURI, err)
+	l.Debug().Msgf("[%s %s]: error: %v", req.Method, req.RequestURI, err)
+}
+func logDebug(l *zerolog.Logger, req *http.Request, v interface{}) {
+	l.Debug().Msgf("[%s %s]: %v", req.Method, req.RequestURI, v)
 }

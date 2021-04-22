@@ -32,6 +32,10 @@ func main() {
 	if mongoURI == "" {
 		panic("environment variable 'MONGO_URI' is not set")
 	}
+	jwtKey := []byte(os.Getenv("JWT_KEY"))
+	if len(jwtKey) < 10 {
+		panic("environment variable 'JWT_KEY' is not set or is too short")
+	}
 
 	db, err := repositories.GetDatabase(&logger, mongoURI, dbName)
 	if err != nil {
@@ -52,9 +56,16 @@ func main() {
 
 	validate := validation.New()
 
-	app := http.NewServer(&logger, authRepo, usersRepo, exercisesRepo, trainingsRepo, validate)
+	app := http.NewServer(
+		&logger,
+		authRepo,
+		usersRepo,
+		exercisesRepo,
+		trainingsRepo,
+		validate,
+		jwtKey)
 
 	app.AddHandlers()
 
-	app.Run(":" + os.Getenv("PORT"))
+	app.Run("localhost:" + os.Getenv("PORT"))
 }

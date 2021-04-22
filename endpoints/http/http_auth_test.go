@@ -23,7 +23,7 @@ func TestLogin(t *testing.T) {
 		t.Fatalf("could not marshal login payload: %v", err)
 	}
 
-	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(uJSON))
+	req, _ := http.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(uJSON))
 	req.Header.Set("Content-Type", "application/json")
 	response := executeRequest(req)
 
@@ -65,4 +65,42 @@ func TestLogin(t *testing.T) {
 		t.Errorf("want authenticated user and no error, got %#v", got)
 	}
 
+}
+
+func TestRegister(t *testing.T) {
+	u := correctUser
+
+	uJSON, _ := json.Marshal(u)
+
+	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(uJSON))
+	req.Header.Set("Content-Type", "application/json")
+
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusCreated, response.Code)
+}
+
+func TestRegisterMalformedData(t *testing.T) {
+	uStr := `{"userName: "Al", "emailAddress" : "al@mymeil.com", "password":"pwd123"}`
+	uJSON := []byte(uStr)
+
+	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(uJSON))
+	req.Header.Set("Content-Type", "application/json")
+
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusUnprocessableEntity, response.Code)
+}
+
+func TestRegisterValidationFail(t *testing.T) {
+	u := wrongUser
+
+	uJSON, _ := json.Marshal(u)
+
+	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(uJSON))
+	req.Header.Set("Content-Type", "application/json")
+
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusNotAcceptable, response.Code)
 }

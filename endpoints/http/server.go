@@ -2,7 +2,6 @@ package http
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -27,12 +26,8 @@ func NewServer(
 	userRepo usecases.UserRepo,
 	exerciseRepo usecases.ExerciseRepo,
 	trainingRepo usecases.TrainingRepo,
-	validate *validator.Validate) *App {
-
-	jwtKey := []byte(os.Getenv("JWT_KEY"))
-	if len(jwtKey) < 10 {
-		logger.Panic().Msg("missing or too short jwt key")
-	}
+	validate *validator.Validate,
+	jwtKey []byte) *App {
 
 	var authUsecases usecases.IAuthUsecases = usecases.NewAuthUsecases(authRepo)
 	var userUsecases usecases.IUserUseCases = usecases.NewUserUseCases(userRepo)
@@ -55,17 +50,20 @@ func NewServer(
 
 func (app *App) AddHandlers() {
 
-	app.Router.HandleFunc("/login", app.Login).Methods("POST")
+	app.Router.HandleFunc("/login", app.Login).Methods(http.MethodPost)
+	app.Router.HandleFunc("/logout", app.Logout).Methods(http.MethodGet)
+	app.Router.HandleFunc("/register", app.Register).Methods(http.MethodPost)
 
 	app.Router.HandleFunc("/users/{id:[0-9a-zA-Z]+}", app.GetUserById).Methods("GET")
-	app.Router.HandleFunc("/users", app.CreateUser).Methods("POST")
 
 	app.Router.HandleFunc("/exercises/{id:[0-9a-zA-Z]+}", app.GetExeriseByID).Methods(http.MethodGet)
 	app.Router.HandleFunc("/exercises/{id:[0-9a-zA-Z]+}", app.UpdateExercise).Methods(http.MethodPatch)
 	app.Router.HandleFunc("/exercises", app.CreateExercise).Methods(http.MethodPost)
 
+	app.Router.HandleFunc("/heath", app.Health).Methods(http.MethodGet)
+
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
-		app.l.Debug().Msg("[" + r.Method + "/] -> URL: " + r.RequestURI)
+		logDebug(app.l, r, nil)
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 	})
 }
