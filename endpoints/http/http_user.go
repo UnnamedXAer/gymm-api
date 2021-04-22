@@ -14,8 +14,8 @@ import (
 
 func (app *App) CreateUser(w http.ResponseWriter, req *http.Request) {
 	var u usecases.UserInput
-	f, ff := validation.GetFieldJSONTag(&u, "Username")
-	fmt.Println(f, ff)
+	// f, ff := validation.GetFieldJSONTag(&u, "Username")
+	// fmt.Println(f, ff)
 	err := json.NewDecoder(req.Body).Decode(&u)
 	app.l.Debug().Msg("[POST / CreateUser] -> body: " + fmt.Sprintf("%v", u))
 	if err != nil {

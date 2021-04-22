@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 
@@ -144,21 +143,21 @@ func validatePassword(pwd string) bool {
 	return false
 }
 
-// PrintValidationErrorInfo prints `err` info to the console
-func PrintValidationErrorInfo(err validator.FieldError) {
-	fmt.Println("Error: ", err.Error())
-	fmt.Println("Namespace: ", err.Namespace()) // can differ when a custom TagNameFunc is registered or
-	fmt.Println("Field: ", err.Field())         // by passing alt name to ReportError like below
-	fmt.Println("StructNamespace: ", err.StructNamespace())
-	fmt.Println("StructField: ", err.StructField())
-	fmt.Println("Tag: ", err.Tag())
-	fmt.Println("ActualTag: ", err.ActualTag())
-	fmt.Println("Kind: ", err.Kind())
-	fmt.Println("Type: ", err.Type())
-	fmt.Println("Value: ", err.Value())
-	fmt.Println("Param: ", err.Param())
-	fmt.Println("")
-}
+// // PrintValidationErrorInfo prints `err` info to the console
+// func PrintValidationErrorInfo(err validator.FieldError) {
+// 	fmt.Println("Error: ", err.Error())
+// 	fmt.Println("Namespace: ", err.Namespace()) // can differ when a custom TagNameFunc is registered or
+// 	fmt.Println("Field: ", err.Field())         // by passing alt name to ReportError like below
+// 	fmt.Println("StructNamespace: ", err.StructNamespace())
+// 	fmt.Println("StructField: ", err.StructField())
+// 	fmt.Println("Tag: ", err.Tag())
+// 	fmt.Println("ActualTag: ", err.ActualTag())
+// 	fmt.Println("Kind: ", err.Kind())
+// 	fmt.Println("Type: ", err.Type())
+// 	fmt.Println("Value: ", err.Value())
+// 	fmt.Println("Param: ", err.Param())
+// 	fmt.Println("")
+// }
 
 // GetFieldJSONTag returns field's `json` tag name
 func GetFieldJSONTag(u interface{}, fldName string) (string, bool) {
