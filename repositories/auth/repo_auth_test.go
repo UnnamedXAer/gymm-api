@@ -109,6 +109,6 @@ func TestGetUserByIDNotExists(t *testing.T) {
 	}
 
 	if got != nil {
-		t.Errorf("want nil, got: %v", mockedUser, got)
+		t.Errorf("want nil, got: %v", got)
 	}
 }
