@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -17,6 +18,7 @@ type App struct {
 	trainingUsecases usecases.ITrainingUsecases
 	Router           *mux.Router
 	Validate         *validator.Validate
+	jwtKey           []byte
 }
 
 func NewServer(
@@ -26,6 +28,12 @@ func NewServer(
 	exerciseRepo usecases.ExerciseRepo,
 	trainingRepo usecases.TrainingRepo,
 	validate *validator.Validate) *App {
+
+	jwtKey := []byte(os.Getenv("JWT_KEY"))
+	if len(jwtKey) < 10 {
+		logger.Panic().Msg("missing or too short jwt key")
+	}
+
 	var authUsecases usecases.IAuthUsecases = usecases.NewAuthUsecases(authRepo)
 	var userUsecases usecases.IUserUseCases = usecases.NewUserUseCases(userRepo)
 	var exerciseUsecases usecases.IExerciseUseCases = usecases.NewExerciseUseCases(exerciseRepo)
@@ -40,6 +48,7 @@ func NewServer(
 		trainingUsecases: trainingUsecases,
 		Router:           router,
 		Validate:         validate,
+		jwtKey:           jwtKey,
 	}
 	return &app
 }

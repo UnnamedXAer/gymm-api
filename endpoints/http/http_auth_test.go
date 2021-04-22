@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/mocks"
@@ -28,6 +29,29 @@ func TestLogin(t *testing.T) {
 
 	checkResponseCode(t, http.StatusOK, response.Code)
 
+	res := response.Result()
+	cookies := res.Cookies()
+
+	var tokenCookie *http.Cookie
+	for _, c := range cookies {
+		if c.Name == cookieJwtTokenName {
+			tokenCookie = c
+		}
+	}
+
+	if tokenCookie == nil {
+		t.Errorf("want token cookie, got nil")
+	} else {
+
+		if !tokenCookie.HttpOnly {
+			t.Errorf("want token cookie to be HttpOnly")
+		}
+
+		if time.Until(tokenCookie.Expires) < 0 {
+			t.Errorf("want token expire time to be in the future")
+		}
+	}
+
 	var got struct {
 		Error string
 		User  *entities.User
@@ -38,7 +62,7 @@ func TestLogin(t *testing.T) {
 	}
 
 	if got.User == nil || got.Error != "" {
-		t.Fatalf("want authenticated user and no error, got %#v", got)
+		t.Errorf("want authenticated user and no error, got %#v", got)
 	}
 
 }
