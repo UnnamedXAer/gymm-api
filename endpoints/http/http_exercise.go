@@ -15,6 +15,14 @@ import (
 )
 
 func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
+
+	ctx := req.Context()
+	userID, ok := ctx.Value(contextKeyUserID).(string)
+	if !ok {
+		responseWithUnauthorized(w)
+		return
+	}
+
 	var input usecases.ExerciseInput
 
 	err := json.NewDecoder(req.Body).Decode(&input)
@@ -48,7 +56,7 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	exercise, err := app.exerciseUsecases.CreateExercise(input.Name, input.Description, input.SetUnit, mocks.UserID) // @todo: logged user
+	exercise, err := app.exerciseUsecases.CreateExercise(input.Name, input.Description, input.SetUnit /*mocks.UserID*/, userID) // @todo: logged user
 	if err != nil {
 		logDebugError(app.l, req, err)
 		if repositories.IsDuplicatedError(err) {
