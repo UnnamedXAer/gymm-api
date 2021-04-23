@@ -21,6 +21,18 @@ func responseWithInternalError(w http.ResponseWriter) {
 		map[string]string{"error": http.StatusText(http.StatusInternalServerError)})
 }
 
+// sends error response with code 401 - Unauthorized, and optional v as a error message otherwise status text will be used
+func responseWithUnauthorized(w http.ResponseWriter, v ...interface{}) {
+	var errTxt string
+	if len(v) > 0 {
+		errTxt = fmt.Sprintf("%v", v[0])
+	} else {
+		errTxt = http.StatusText(http.StatusUnauthorized)
+	}
+	responseWithJSON(w, http.StatusUnauthorized,
+		map[string]string{"error": errTxt})
+}
+
 // sends error response with given code and message as a response
 func responseWithErrorTxt(w http.ResponseWriter, code int, errTxt string) {
 	responseWithJSON(w, code, map[string]string{"error": errTxt})
