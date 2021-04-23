@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -59,8 +58,8 @@ func (app *App) Register(w http.ResponseWriter, req *http.Request) {
 	var u usecases.UserInput
 
 	err := json.NewDecoder(req.Body).Decode(&u)
-	app.l.Debug().Msg("[POST / CreateUser] -> body: " + fmt.Sprintf("%v", u))
 	if err != nil {
+		logDebugError(app.l, req, err)
 		resErrText := getErrOfMalformedInput(&u, []string{"ID", "CreatedAt"})
 		responseWithError(w, http.StatusUnprocessableEntity, errors.New(resErrText))
 		return
@@ -71,6 +70,7 @@ func (app *App) Register(w http.ResponseWriter, req *http.Request) {
 
 	err = validateUserInput(app.Validate, &u)
 	if err != nil {
+		logDebugError(app.l, req, err)
 		if svErr, ok := err.(*validation.StructValidError); ok {
 			responseWithJSON(w, http.StatusNotAcceptable, svErr.ValidationErrors())
 			return
@@ -81,6 +81,7 @@ func (app *App) Register(w http.ResponseWriter, req *http.Request) {
 
 	user, err := app.userUsecases.CreateUser(&u)
 	if err != nil {
+		logDebugError(app.l, req, err)
 		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
 			responseWithError(w, http.StatusConflict, err)
 			return
