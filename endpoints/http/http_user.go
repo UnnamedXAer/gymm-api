@@ -12,7 +12,7 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 	id := vars["id"]
-	app.l.Debug().Msg("[GET / GetUserById] -> id: " + id)
+	logDebug(app.l, req, id)
 	if id == "" {
 		responseWithError(w, http.StatusUnprocessableEntity, errors.New("missign 'ID'"))
 		return
