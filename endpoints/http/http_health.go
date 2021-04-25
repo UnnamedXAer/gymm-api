@@ -42,7 +42,7 @@ func (app *App) Health(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if claims.ExpiresAt <= time.Now().Unix() {
+	if claims.StandardClaims.ExpiresAt <= time.Now().Unix() {
 		output["token"] = "expired"
 		output["error"] = "token expired"
 		responseWithJSON(w, http.StatusUnauthorized, &output)

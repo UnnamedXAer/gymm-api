@@ -14,9 +14,11 @@ import (
 )
 
 const (
-	UsersCollectionName     = "users"
-	TrainingsCollectionName = "trainings"
-	ExercisesCollectionName = "exercises"
+	UsersCollectionName         = "users"
+	TokensCollectionName        = "tokens"
+	RefreshTokensCollectionName = "refreshTokens"
+	TrainingsCollectionName     = "trainings"
+	ExercisesCollectionName     = "exercises"
 )
 
 // GetDatabase connects to mongodb and returns database
@@ -40,6 +42,8 @@ func GetDatabase(l *zerolog.Logger, uri, dbName string) (*mongo.Database, error)
 
 func GetCollection(l *zerolog.Logger, db *mongo.Database, collName string) *mongo.Collection {
 	switch collName {
+	case TokensCollectionName, RefreshTokensCollectionName:
+		fallthrough
 	case ExercisesCollectionName:
 		fallthrough
 	case UsersCollectionName:
@@ -57,7 +61,27 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 	if err != nil {
 		return err
 	}
-	colName := UsersCollectionName
+	colName := TokensCollectionName
+	if helpers.StrSliceIndexOf(collections, colName) == -1 {
+		err = createTokensCollection(l, db, colName)
+		if err != nil {
+			return err
+		}
+	} else {
+		l.Info().Msgf("collection '%s' already exists - skipped", colName)
+	}
+
+	colName = RefreshTokensCollectionName
+	if helpers.StrSliceIndexOf(collections, colName) == -1 {
+		err = createTokensCollection(l, db, colName)
+		if err != nil {
+			return err
+		}
+	} else {
+		l.Info().Msgf("collection '%s' already exists - skipped", colName)
+	}
+
+	colName = UsersCollectionName
 	if helpers.StrSliceIndexOf(collections, colName) == -1 {
 		err = createUsersCollection(l, db, colName)
 		if err != nil {
@@ -146,6 +170,64 @@ func createExercisesCollection(l *zerolog.Logger, db *mongo.Database, collection
 	indexName, err := col.Indexes().CreateOne(context.Background(), indexModel)
 	if err != nil {
 		return errors.WithMessagef(err, "create index %q on %q collection", emailIndexName, collectionName)
+	}
+
+	l.Info().Msgf("index %q on collection %q created", indexName, collectionName)
+	return nil
+}
+
+func createTokensCollection(l *zerolog.Logger, db *mongo.Database, collectionName string) error {
+	err := db.CreateCollection(context.Background(), collectionName, &options.CreateCollectionOptions{
+		Collation: &options.Collation{
+			Strength: 2,
+			Locale:   "en",
+		},
+	})
+	if err != nil {
+		return errors.WithMessagef(err, "create %q collection", collectionName)
+	}
+	l.Info().Msgf("collection %q created", collectionName)
+
+	col := db.Collection(collectionName)
+
+	tokenIndexName := "token"
+	indexModel := mongo.IndexModel{
+		Keys:    bson.D{{Key: "token", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName(tokenIndexName),
+	}
+
+	indexName, err := col.Indexes().CreateOne(context.Background(), indexModel)
+	if err != nil {
+		return errors.WithMessagef(err, "create index %q on %q collection", tokenIndexName, collectionName)
+	}
+
+	l.Info().Msgf("index %q on collection %q created", indexName, collectionName)
+	return nil
+}
+
+func createRefreshTokensCollection(l *zerolog.Logger, db *mongo.Database, collectionName string) error {
+	err := db.CreateCollection(context.Background(), collectionName, &options.CreateCollectionOptions{
+		Collation: &options.Collation{
+			Strength: 2,
+			Locale:   "en",
+		},
+	})
+	if err != nil {
+		return errors.WithMessagef(err, "create %q collection", collectionName)
+	}
+	l.Info().Msgf("collection %q created", collectionName)
+
+	col := db.Collection(collectionName)
+
+	tokenIndexName := "token"
+	indexModel := mongo.IndexModel{
+		Keys:    bson.D{{Key: "token", Value: 1}},
+		Options: options.Index().SetUnique(true).SetName(tokenIndexName),
+	}
+
+	indexName, err := col.Indexes().CreateOne(context.Background(), indexModel)
+	if err != nil {
+		return errors.WithMessagef(err, "create index %q on %q collection", tokenIndexName, collectionName)
 	}
 
 	l.Info().Msgf("index %q on collection %q created", indexName, collectionName)

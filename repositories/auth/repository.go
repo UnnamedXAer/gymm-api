@@ -6,13 +6,19 @@ import (
 )
 
 type AuthRepository struct {
-	col *mongo.Collection
-	l   *zerolog.Logger
+	usersCol     *mongo.Collection
+	tokensCol    *mongo.Collection
+	refTokensCol *mongo.Collection
+	l            *zerolog.Logger
 }
 
-func NewRepository(logger *zerolog.Logger, col *mongo.Collection) *AuthRepository {
+func NewRepository(
+	logger *zerolog.Logger,
+	usersCol, tokensCol, refTokensCol *mongo.Collection) *AuthRepository {
 	return &AuthRepository{
-		col: col,
-		l:   logger,
+		usersCol:     usersCol,
+		tokensCol:    tokensCol,
+		refTokensCol: refTokensCol,
+		l:            logger,
 	}
 }

@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	collectionName   = "users"
-	nonexistingEmail = "notfound@example.com"
+	usersCollectionName  = "users"
+	tokensCollectionName = "tokens"
+	nonexistingEmail     = "notfound@example.com"
 )
 
 var (
@@ -52,7 +53,9 @@ func TestMain(m *testing.M) {
 	}
 	defer testhelpers.DisconnectDB(&logger, db)
 
-	usersCol := db.Collection(collectionName)
+	tokensCol := db.Collection(usersCollectionName)
+	refTokensCol := db.Collection(usersCollectionName)
+	usersCol := db.Collection(usersCollectionName)
 	_, err = usersCol.DeleteOne(context.TODO(), bson.M{"emailAddress": nonexistingEmail})
 	if err != nil && err != mongo.ErrNoDocuments {
 		log.Fatalln(err)
@@ -82,7 +85,7 @@ func TestMain(m *testing.M) {
 		}
 	}
 
-	authRepo = NewRepository(&logger, usersCol)
+	authRepo = NewRepository(&logger, usersCol, tokensCol, refTokensCol)
 
 	os.Exit(m.Run())
 }

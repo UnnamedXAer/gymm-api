@@ -44,9 +44,11 @@ func main() {
 	repositories.CreateCollections(&logger, db)
 
 	usersCol := repositories.GetCollection(&logger, db, repositories.UsersCollectionName)
+	tokensCol := repositories.GetCollection(&logger, db, repositories.TokensCollectionName)
+	refTokensCol := repositories.GetCollection(&logger, db, repositories.TokensCollectionName)
 	usersRepo := users.NewRepository(&logger, usersCol)
 
-	authRepo := auth.NewRepository(&logger, usersCol)
+	authRepo := auth.NewRepository(&logger, usersCol, tokensCol, refTokensCol)
 
 	exercisesCol := repositories.GetCollection(&logger, db, repositories.ExercisesCollectionName)
 	exercisesRepo := exercises.NewRepository(&logger, exercisesCol)

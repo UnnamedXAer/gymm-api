@@ -1,6 +1,8 @@
 package usecases
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"golang.org/x/crypto/bcrypt"
@@ -8,6 +10,12 @@ import (
 
 type AuthRepo interface {
 	GetUserByEmailAddress(emailAddress string) (*entities.AuthUser, error)
+	SaveJWT(userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
+	GetUserJWTs(userID string, expired bool) ([]entities.UserToken, error)
+	DeleteJWT(userID string, device string, token string) error
+	SaveRefreshToken(userID string, token string, expiresAt time.Time) (*entities.RefreshToken, error)
+	GetRefreshToken(userID string) (*entities.RefreshToken, error)
+	DeleteRefreshToken(userID string) error
 }
 
 type AuthUsecases struct {
@@ -15,7 +23,21 @@ type AuthUsecases struct {
 }
 
 type IAuthUsecases interface {
+	// Login checks given credentials against registered users
 	Login(u *UserInput) (*entities.User, error)
+	// SaveJWT saves jwt for given user and device name
+	SaveJWT(userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
+	// GetUserJWTs returns user jwt tokens
+	// if expired is true it returns only expired tokens
+	GetUserJWTs(userID string, expired bool) ([]entities.UserToken, error)
+	// DeleteJWT removes jwt token
+	DeleteJWT(userID string, device string, token string) error
+	// SaveRefreshToken creates new or override existing entry in storage with given refresh token for the user.
+	SaveRefreshToken(userID string, token string, expiresAt time.Time) (*entities.RefreshToken, error)
+	// GetRefreshToken reads refresh token for given user.
+	GetRefreshToken(userID string) (*entities.RefreshToken, error)
+	// DeleteRefreshToken removes refresh token for given user id
+	DeleteRefreshToken(userID string) error
 }
 
 type IncorrectCredentialsError struct{}
@@ -24,7 +46,6 @@ func (err IncorrectCredentialsError) Error() string {
 	return "incorrect credentials"
 }
 
-// Login checks given credentials against registered users
 func (au *AuthUsecases) Login(u *UserInput) (*entities.User, error) {
 	user, err := au.repo.GetUserByEmailAddress(u.EmailAddress)
 	if err != nil {
@@ -45,6 +66,31 @@ func (au *AuthUsecases) Login(u *UserInput) (*entities.User, error) {
 	}
 
 	return &user.User, nil
+}
+
+func (au *AuthUsecases) SaveJWT(userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error) {
+	// @todo: drop previous token(s) for this device
+	return au.repo.SaveJWT(userID, device, token, expiresAt)
+}
+
+func (au *AuthUsecases) DeleteJWT(userID string, device string, token string) error {
+	return au.repo.DeleteJWT(userID, device, token)
+}
+
+func (au *AuthUsecases) GetUserJWTs(userID string, expired bool) ([]entities.UserToken, error) {
+	return au.repo.GetUserJWTs(userID, expired)
+}
+
+func (au *AuthUsecases) SaveRefreshToken(userID string, token string, expiresAt time.Time) (*entities.RefreshToken, error) {
+	return au.repo.SaveRefreshToken(userID, token, expiresAt)
+}
+
+func (au *AuthUsecases) GetRefreshToken(userID string) (*entities.RefreshToken, error) {
+	return au.repo.GetRefreshToken(userID)
+}
+
+func (au *AuthUsecases) DeleteRefreshToken(userID string) error {
+	return au.repo.DeleteRefreshToken(userID)
 }
 
 // NewAuthUsecases creates auth usecases
