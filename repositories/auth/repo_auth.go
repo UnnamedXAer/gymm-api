@@ -13,20 +13,20 @@ import (
 )
 
 type tokenData struct {
-	ID        string    `bson:"_id,omitempty"`
-	UserID    string    `bson:"user_id"`
-	Token     string    `bson:"token"`
-	Device    string    `bson:"device"`
-	CreatedAt time.Time `bson:"created_at"`
-	ExpiresAt time.Time `bson:"expires_at"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	UserID    primitive.ObjectID `bson:"user_id,omitempty"`
+	Token     string             `bson:"token,omitempty"`
+	Device    string             `bson:"device,omitempty"`
+	CreatedAt time.Time          `bson:"created_at,omitempty"`
+	ExpiresAt time.Time          `bson:"expires_at,omitempty"`
 }
 
 type refreshTokenData struct {
-	ID        string    `bson:"_id,omitempty"`
-	UserID    string    `bson:"user_id"`
-	Token     string    `bson:"token"`
-	CreatedAt time.Time `bson:"created_at"`
-	ExpiresAt time.Time `bson:"expires_at"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	UserID    primitive.ObjectID `bson:"user_id,omitempty"`
+	Token     string             `bson:"token,omitempty"`
+	CreatedAt time.Time          `bson:"created_at,omitempty"`
+	ExpiresAt time.Time          `bson:"expires_at,omitempty"`
 }
 
 func (repo *AuthRepository) GetUserByEmailAddress(emailAddress string) (*entities.AuthUser, error) {
@@ -60,8 +60,13 @@ func (repo *AuthRepository) GetUserJWTs(
 	expired bool,
 ) ([]entities.UserToken, error) {
 
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "authRepo.GetUserJWTs")
+	}
+
 	filter := bson.M{
-		"user_id": userID,
+		"user_id": uOID,
 	}
 
 	if expired {
@@ -92,8 +97,13 @@ func (repo *AuthRepository) SaveJWT(
 	token string,
 	expiresAt time.Time) (*entities.UserToken, error) {
 
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "authRepo.SaveJWT")
+	}
+
 	data := tokenData{
-		UserID:    userID,
+		UserID:    uOID,
 		Token:     token,
 		Device:    device,
 		CreatedAt: time.Now(),
@@ -123,17 +133,24 @@ func (repo *AuthRepository) DeleteJWT(userID string, device string, token string
 	if token != "" {
 		filter.Token = token
 	} else {
-		filter.UserID = userID
+
+		uOID, err := primitive.ObjectIDFromHex(userID)
+		if err != nil {
+			return errors.WithMessage(err, "authRepo.DeleteJWT")
+		}
+		filter.UserID = uOID
 		filter.Device = device
 	}
 
-	_, err := repo.tokensCol.DeleteMany(context.Background(), &filter)
+	result, err := repo.tokensCol.DeleteMany(context.Background(), &filter)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return nil
 		}
 		return errors.WithMessage(err, "authRepo.DeleteJWT")
 	}
+
+	repo.l.Debug().Msgf("authRepo.DeleteJWT userID: %q, deleteCnt: %d", userID, result.DeletedCount)
 	return nil
 }
 
@@ -141,35 +158,44 @@ func (repo *AuthRepository) SaveRefreshToken(
 	userID string,
 	token string,
 	expiresAt time.Time) (*entities.RefreshToken, error) {
-	var err error
-	data := refreshTokenData{
-		UserID:    userID,
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "authRepo.SaveRefreshToken")
+	}
+
+	filter := bson.M{"user_id": uOID}
+	update := bson.M{"$set": refreshTokenData{
+		UserID:    uOID,
 		Token:     token,
 		CreatedAt: time.Now(),
 		ExpiresAt: expiresAt,
-	}
+	}}
 
-	opts := options.FindOneAndUpdate().SetUpsert(true)
+	opts := options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After)
 
-	result := repo.refTokensCol.FindOneAndUpdate(context.Background(), &data, opts)
+	result := repo.refTokensCol.FindOneAndUpdate(context.Background(), &filter, &update, opts)
 	if err = result.Err(); err != nil {
 		return nil, errors.WithMessage(err, "authRepo.SaveRefreshToken")
 	}
 
-	var rt *entities.RefreshToken
-
-	err = result.Decode(rt)
+	data := &refreshTokenData{}
+	err = result.Decode(data)
 	if err != nil {
 		return nil, errors.WithMessage(err, "authRepo.SaveRefreshToken: decode")
 	}
 
+	rt := mapRefreshTokenToEntity(data)
 	return rt, nil
 }
 
 func (repo *AuthRepository) GetRefreshToken(userID string) (*entities.RefreshToken, error) {
-	var err error
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, errors.WithMessage(err, "authRepo.GetRefreshToken")
+	}
+
 	filter := refreshTokenData{
-		UserID: userID,
+		UserID: uOID,
 	}
 
 	result := repo.refTokensCol.FindOne(context.Background(), &filter)
@@ -180,19 +206,23 @@ func (repo *AuthRepository) GetRefreshToken(userID string) (*entities.RefreshTok
 		return nil, errors.WithMessage(err, "authRepo.GetRefreshToken")
 	}
 
-	var rt *entities.RefreshToken
-	err = result.Decode(rt)
+	data := &refreshTokenData{}
+	err = result.Decode(data)
 	if err != nil {
 		return nil, errors.WithMessage(err, "authRepo.GetRefreshToken: decode")
 	}
 
+	rt := mapRefreshTokenToEntity(data)
 	return rt, nil
 }
 
 func (repo *AuthRepository) DeleteRefreshToken(userID string) error {
-
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return errors.WithMessage(err, "authRepo.DeleteRefreshToken")
+	}
 	filter := refreshTokenData{
-		UserID: userID,
+		UserID: uOID,
 	}
 
 	result, err := repo.tokensCol.DeleteMany(context.Background(), &filter)
@@ -203,9 +233,7 @@ func (repo *AuthRepository) DeleteRefreshToken(userID string) error {
 		return errors.WithMessage(err, "authRepo.DeleteRefreshToken")
 	}
 
-	if result.DeletedCount > 1 {
-		repo.l.Error().Msgf("authRepo.DeleteRefreshToken: user: %q had %d refresh tokens", userID, result.DeletedCount)
-	}
+	repo.l.Debug().Msgf("authRepo.DeleteRefreshToken userID: %q, deleteCnt: %d", userID, result.DeletedCount)
 
 	return nil
 }
