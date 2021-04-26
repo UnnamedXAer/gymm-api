@@ -181,7 +181,7 @@ func TestUpdateExerciseUnauthorized(t *testing.T) {
 	checkResponseCode(t, http.StatusUnauthorized, res.Code)
 }
 
-func TestUpdateExerciseNotExistingUserUnauthorized(t *testing.T) {
+func TestUpdateExerciseDifferentUserUnauthorized(t *testing.T) {
 	payload := []byte(`{"name":"DL"}`)
 
 	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
