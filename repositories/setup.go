@@ -42,7 +42,9 @@ func GetDatabase(l *zerolog.Logger, uri, dbName string) (*mongo.Database, error)
 
 func GetCollection(l *zerolog.Logger, db *mongo.Database, collName string) *mongo.Collection {
 	switch collName {
-	case TokensCollectionName, RefreshTokensCollectionName:
+	case TokensCollectionName:
+		fallthrough
+	case RefreshTokensCollectionName:
 		fallthrough
 	case ExercisesCollectionName:
 		fallthrough
@@ -190,7 +192,7 @@ func createTokensCollection(l *zerolog.Logger, db *mongo.Database, collectionNam
 
 	col := db.Collection(collectionName)
 
-	tokenIndexName := "token"
+	tokenIndexName := "unique_token"
 	indexModel := mongo.IndexModel{
 		Keys:    bson.D{{Key: "token", Value: 1}},
 		Options: options.Index().SetUnique(true).SetName(tokenIndexName),
@@ -219,17 +221,22 @@ func createRefreshTokensCollection(l *zerolog.Logger, db *mongo.Database, collec
 
 	col := db.Collection(collectionName)
 
-	tokenIndexName := "token"
-	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: "token", Value: 1}},
-		Options: options.Index().SetUnique(true).SetName(tokenIndexName),
+	tokenIndexName := "unique_token"
+	userIDIndexName := "unique_user_id"
+	indexModel := []mongo.IndexModel{
+		{
+			Keys:    bson.D{{Key: "token", Value: 1}},
+			Options: options.Index().SetUnique(true).SetName(tokenIndexName)},
+		{
+			Keys:    bson.D{{Key: "user_id", Value: 1}},
+			Options: options.Index().SetUnique(true).SetName(userIDIndexName)},
 	}
 
-	indexName, err := col.Indexes().CreateOne(context.Background(), indexModel)
+	indexesNames, err := col.Indexes().CreateMany(context.Background(), indexModel)
 	if err != nil {
-		return errors.WithMessagef(err, "create index %q on %q collection", tokenIndexName, collectionName)
+		return errors.WithMessagef(err, "create indexes %q on %q collection", []string{tokenIndexName, userIDIndexName}, collectionName)
 	}
 
-	l.Info().Msgf("index %q on collection %q created", indexName, collectionName)
+	l.Info().Msgf("indexes %q on collection %q created", indexesNames, collectionName)
 	return nil
 }
