@@ -17,6 +17,7 @@ import (
 var (
 	app       *App
 	validate  *validator.Validate
+	jwtCookie *http.Cookie
 	wrongUser usecases.UserInput = usecases.UserInput{
 		Username:     "1",
 		EmailAddress: "email.at.no.address",
@@ -47,11 +48,29 @@ func TestMain(m *testing.M) {
 	tMockRepo := &mocks.MockTrainingRepo{}
 	app = NewServer(l, aMockRepo, uMockRepo, eMockRepo, tMockRepo, validate, jwtKey)
 	app.AddHandlers()
-	code := m.Run()
-	os.Exit(code)
+
+	jwtCookie = &http.Cookie{
+		Name:     cookieJwtTokenName,
+		Value:    mocks.ExampleUserToken.Token,
+		Expires:  mocks.ExampleUserToken.ExpiresAt,
+		HttpOnly: true,
+	}
+
+	os.Exit(m.Run())
 }
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
+	req.AddCookie(jwtCookie)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	app.Router.ServeHTTP(rr, req)
+
+	return rr
+}
+
+// uses to check if checkAuth middleware is applayed to the tested endpoint
+func executeRequestWithoutJWT(req *http.Request) *httptest.ResponseRecorder {
+	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 	app.Router.ServeHTTP(rr, req)
 

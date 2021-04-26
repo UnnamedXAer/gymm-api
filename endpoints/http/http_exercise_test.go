@@ -89,11 +89,20 @@ func TestCreateExercise(t *testing.T) {
 	}
 }
 
+func TestCreateExerciseUnauthorized(t *testing.T) {
+	payload := []byte(`{"name":"DL"}`)
+
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
+
+	res := executeRequestWithoutJWT(req)
+
+	checkResponseCode(t, http.StatusUnauthorized, res.Code)
+}
+
 func TestCreateExerciseMalformedData(t *testing.T) {
 	payload := []byte(`{"name:"Deadlift","description":"The deadlift is a ...","setUnit":1}`)
 
 	req, _ := http.NewRequest(http.MethodPost, "/exercises", bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	res := executeRequest(req)
 
@@ -127,7 +136,6 @@ func TestGetExerciseByID(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			req.Header.Set("Content-Type", "application/json")
 			res := executeRequest(req)
 			checkResponseCode(t, http.StatusOK, res.Code)
 
@@ -145,11 +153,18 @@ func TestGetExerciseByID(t *testing.T) {
 	}
 }
 
+func TestGetExerciseUnauthorized(t *testing.T) {
+	req, _ := http.NewRequest(http.MethodGet, "/exercises/"+mocks.ExampleExercise.ID, nil)
+
+	res := executeRequestWithoutJWT(req)
+
+	checkResponseCode(t, http.StatusUnauthorized, res.Code)
+}
+
 func TestUpdateExercise(t *testing.T) {
 	payload := []byte(`{"name":"DL"}`)
 
 	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	res := executeRequest(req)
 
@@ -160,10 +175,20 @@ func TestUpdateExerciseUnauthorized(t *testing.T) {
 	payload := []byte(`{"name":"DL"}`)
 
 	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
-	mocks.UserID += "1"
+
+	res := executeRequestWithoutJWT(req)
+
+	checkResponseCode(t, http.StatusUnauthorized, res.Code)
+}
+
+func TestUpdateExerciseNotExistingUserUnauthorized(t *testing.T) {
+	payload := []byte(`{"name":"DL"}`)
+
+	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
+
+	mocks.ExampleExercise.CreatedBy += "1"
 	res := executeRequest(req)
-	mocks.UserID = mocks.UserID[:len(mocks.UserID)-1]
+	mocks.ExampleExercise.CreatedBy = mocks.UserID[:len(mocks.UserID)-1]
 	checkResponseCode(t, http.StatusUnauthorized, res.Code)
 }
 
@@ -171,7 +196,6 @@ func TestUpdateExerciseMalformedData(t *testing.T) {
 	payload := []byte(`{"name:"DL"}`)
 
 	req, _ := http.NewRequest(http.MethodPatch, "/exercises/"+mocks.ExampleExercise.ID, bytes.NewBuffer(payload))
-	req.Header.Set("Content-Type", "application/json")
 
 	res := executeRequest(req)
 
@@ -188,8 +212,6 @@ func TestUpdateExerciseIncorrectID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	req.Header.Set("Content-Type", "application/json")
 
 	res := executeRequest(req)
 
