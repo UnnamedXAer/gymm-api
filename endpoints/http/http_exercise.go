@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/mocks"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"github.com/unnamedxaer/gymm-api/validation"
@@ -98,13 +97,19 @@ func (app *App) GetExeriseByID(w http.ResponseWriter, req *http.Request) {
 func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
-
 	id, ok := vars["id"]
 	if !ok {
 		err := errors.New("missign query parameter 'ID'")
 		logDebugError(app.l, req, err)
 
 		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	ctx := req.Context()
+	userID, ok := ctx.Value(contextKeyUserID).(string)
+	if !ok {
+		responseWithUnauthorized(w)
 		return
 	}
 
@@ -147,8 +152,8 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if curExercise == nil || (curExercise.CreatedBy != mocks.UserID) { // @todo: authenticated user !!!
-		err = fmt.Errorf("unauthorized: you do not have permissons to modify exercise (%s)", id)
+	if curExercise == nil || (curExercise.CreatedBy != userID) {
+		err = fmt.Errorf("unauthorized: you do not have permissons to modify this exercise")
 		logDebugError(app.l, req, err)
 
 		responseWithError(w, http.StatusUnauthorized, err)
@@ -165,7 +170,8 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		logDebugError(app.l, req, err)
 
 		if repositories.IsDuplicatedError(err) {
-			responseWithError(w, http.StatusConflict, err) // @todo: create new error type
+			responseWithErrorTxt(w, http.StatusConflict, fmt.Sprintf("exercise with name: %q and set unit: %d already exists",
+				input.Name, input.SetUnit))
 			return
 		}
 
