@@ -72,7 +72,7 @@ func (app *App) AddHandlers() {
 		chainMiddlewares(app.UpdateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
 	app.Router.HandleFunc(
 		"/exercises",
-		chainMiddlewares(app.CreateExercise, app.checkAuthenticated))
+		chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
 
 	app.Router.HandleFunc("/heath", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
 
