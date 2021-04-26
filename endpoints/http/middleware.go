@@ -28,6 +28,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(cookieJwtTokenName)
 		if err != nil {
+			logDebugError(app.l, r, err)
 			if err == http.ErrNoCookie {
 				responseWithUnauthorized(w, "no token provided")
 				return
@@ -37,10 +38,13 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		claims := &Claims{}
-		token, err := jwt.ParseWithClaims(cookie.Value, claims, func(t *jwt.Token) (interface{}, error) {
-			return app.jwtKey, nil
-		})
+		token, err := jwt.ParseWithClaims(
+			cookie.Value, claims,
+			func(t *jwt.Token) (interface{}, error) {
+				return app.jwtKey, nil
+			})
 		if err != nil {
+			logDebugError(app.l, r, err)
 			responseWithUnauthorized(w, err)
 			return
 		}
@@ -61,37 +65,34 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			// if refresh token not exists, expired or is different then provided by client the user must login again
+			// if refresh token not exists, expired or is different than
+			// provided by client the user must login again
 
 			err = validateRefreshToken(rt, claims.Token)
 			if err != nil {
-				app.authUsecases.DeleteRefreshToken(claims.ID)
+				logDebugError(app.l, r, err)
+				err = app.authUsecases.DeleteRefreshToken(claims.ID)
+				if err != nil {
+					logDebugError(app.l, r, err)
+				}
+				responseWithUnauthorized(w, err)
 				return
 			}
 
-			newToken, err := createJWTAuth(claims.ID, device, rt, app.jwtKey)
+			newToken, err := createJWTAuth(claims.ID, device, rt, app.jwtKey, app.authUsecases.SaveJWT)
 			if err != nil {
 				logDebugError(app.l, r, err)
 				responseWithInternalError(w)
 				return
 			}
-			newToken, err = app.authUsecases.SaveJWT(
-				newToken.UserID,
-				newToken.Device,
-				newToken.Token,
-				newToken.ExpiresAt)
-			if err != nil {
-				logDebugError(app.l, r, err)
-				responseWithInternalError(w)
+			setCookieJWTAuthToken(w, newToken.Token, newToken.ExpiresAt)
+		} else {
+			if err = token.Claims.Valid(); err != nil {
+				responseWithUnauthorized(w, err)
 				return
 			}
-			app.setCookieJWTAuthToken(w, newToken.Token, newToken.ExpiresAt)
 		}
 
-		if err = token.Claims.Valid(); err != nil {
-			responseWithUnauthorized(w, err)
-			return
-		}
 		ctx := context.WithValue(r.Context(), contextKeyUserID, claims.ID)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
