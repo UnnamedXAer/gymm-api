@@ -75,7 +75,7 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 
 	colName = RefreshTokensCollectionName
 	if helpers.StrSliceIndexOf(collections, colName) == -1 {
-		err = createTokensCollection(l, db, colName)
+		err = createRefreshTokensCollection(l, db, colName)
 		if err != nil {
 			return err
 		}
