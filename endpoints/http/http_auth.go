@@ -117,7 +117,7 @@ func (app *App) Register(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	responseWithJSON(w, http.StatusOK, output)
+	responseWithJSON(w, http.StatusCreated, output)
 }
 
 // Logout logouts the user, removes token from cookies & storage
