@@ -60,13 +60,21 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/logout", app.Logout).Methods(http.MethodGet)
 	app.Router.HandleFunc("/register", app.Register).Methods(http.MethodPost)
 
-	app.Router.HandleFunc("/users/{id:[0-9a-zA-Z]+}", app.GetUserById).Methods("GET")
+	app.Router.HandleFunc(
+		"/users/{id:[0-9a-zA-Z]+}",
+		chainMiddlewares(app.GetUserById, app.checkAuthenticated)).Methods(http.MethodGet)
 
-	app.Router.HandleFunc("/exercises/{id:[0-9a-zA-Z]+}", app.GetExeriseByID).Methods(http.MethodGet)
-	app.Router.HandleFunc("/exercises/{id:[0-9a-zA-Z]+}", app.UpdateExercise).Methods(http.MethodPatch)
-	app.Router.HandleFunc("/exercises", chainMiddlewares(app.CreateExercise, app.checkAuthenticated))
+	app.Router.HandleFunc(
+		"/exercises/{id:[0-9a-zA-Z]+}",
+		chainMiddlewares(app.GetExeriseByID, app.checkAuthenticated)).Methods(http.MethodGet)
+	app.Router.HandleFunc(
+		"/exercises/{id:[0-9a-zA-Z]+}",
+		chainMiddlewares(app.UpdateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
+	app.Router.HandleFunc(
+		"/exercises",
+		chainMiddlewares(app.CreateExercise, app.checkAuthenticated))
 
-	app.Router.HandleFunc("/heath", app.Health).Methods(http.MethodGet)
+	app.Router.HandleFunc("/heath", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
 
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
 		logDebug(app.l, r, nil)
