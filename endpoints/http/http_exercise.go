@@ -97,16 +97,11 @@ func (app *App) GetExerciseByID(w http.ResponseWriter, req *http.Request) {
 
 func (app *App) GetExercisesByName(w http.ResponseWriter, req *http.Request) {
 
-	vars := mux.Vars(req)
-	name, ok := vars["n"]
-	if !ok {
+	name := req.URL.Query().Get("n")
+	name = strings.TrimSpace(name)
+	if name == "" {
 		responseWithErrorTxt(w, http.StatusBadRequest, "missing name (&n=...) parameter")
 		return
-	}
-	name = strings.TrimSpace(name)
-
-	if name == "" {
-		responseWithErrorTxt(w, http.StatusBadRequest, "missing value for name (&n) parameter")
 	}
 
 	exercises, err := app.exerciseUsecases.GetExercisesByName(name)
