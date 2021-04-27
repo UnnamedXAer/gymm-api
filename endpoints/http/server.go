@@ -60,9 +60,23 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/logout", app.Logout).Methods(http.MethodGet)
 	app.Router.HandleFunc("/register", app.Register).Methods(http.MethodPost)
 
-	app.Router.HandleFunc(
-		"/users/{id:[0-9a-zA-Z]+}",
-		chainMiddlewares(app.GetUserById, app.checkAuthenticated)).Methods(http.MethodGet)
+	// app.Router.HandleFunc(
+	// 	"/users/{id:[0-9a-zA-Z]+}",
+	// 	chainMiddlewares(app.GetUserById, app.checkAuthenticated)).Methods(http.MethodGet)
+
+	// exercisesRouter := app.Router.PathPrefix("/exercises").Subrouter()
+	// exercisesRouter.HandleFunc(
+	// 	"/{id:[0-9a-zA-Z]+}",
+	// 	chainMiddlewares(app.GetExerciseByID, app.checkAuthenticated)).Methods(http.MethodGet)
+	// exercisesRouter.HandleFunc(
+	// 	"/",
+	// 	chainMiddlewares(app.GetExercisesByName, app.checkAuthenticated)).Methods(http.MethodGet)
+	// exercisesRouter.HandleFunc(
+	// 	"/{id:[0-9a-zA-Z]+}",
+	// 	chainMiddlewares(app.UpdateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
+	// exercisesRouter.HandleFunc(
+	// 	"",
+	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
 
 	app.Router.HandleFunc(
 		"/exercises/{id:[0-9a-zA-Z]+}",
@@ -76,6 +90,29 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc(
 		"/exercises",
 		chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
+
+	// // training
+	// app.Router.HandleFunc(
+	// 	"/trainings",
+	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodGet)
+	// app.Router.HandleFunc(
+	// 	"/trainings",
+	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
+	// app.Router.HandleFunc(
+	// 	"/trainings/{id:[0-9a-zA-Z]+}",
+	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodGet)
+	// app.Router.HandleFunc(
+	// 	"/trainings/{id:[0-9a-zA-Z]+}/end",
+	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
+	// app.Router.HandleFunc(
+	// 	"/trainings/{id:[0-9a-zA-Z]+}/exercises",
+	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
+	// app.Router.HandleFunc(
+	// 	"/trainings/{id:[0-9a-zA-Z]+}/exercises/{id:[0-9a-zA-Z]+}/end",
+	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
+	// app.Router.HandleFunc(
+	// 	"/trainings/{id:[0-9a-zA-Z]+}/exercises/{id:[0-9a-zA-Z]+}/sets",
+	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
 
 	app.Router.HandleFunc("/heath", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
 
