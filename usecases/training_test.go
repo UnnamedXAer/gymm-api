@@ -62,7 +62,7 @@ func TestEndTrainingExercise(t *testing.T) {
 	}
 }
 
-func TestAddTreiningExercise(t *testing.T) {
+func TestAddTrainingExercise(t *testing.T) {
 	tr, err := trainingUC.EndTraining(mocks.ExampleTraining.ID)
 	if err != nil {
 		t.Fatal(err)
