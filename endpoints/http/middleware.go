@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -37,16 +38,25 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		cookieVal := cookie.Value
 		claims := &Claims{}
 		token, err := jwt.ParseWithClaims(
-			cookie.Value, claims,
+			cookieVal, claims,
 			func(t *jwt.Token) (interface{}, error) {
 				return app.jwtKey, nil
 			})
 		if err != nil {
-			logDebugError(app.l, r, err)
-			responseWithUnauthorized(w, err)
-			return
+			var vErr *jwt.ValidationError
+			if !(errors.As(err, &vErr) &&
+				// verify that only expiration time is not valid
+				(vErr.Errors == jwt.ValidationErrorExpired)) ||
+				claims.ID == "" ||
+				claims.StandardClaims.ExpiresAt == 0 {
+				logDebugError(app.l, r, err)
+				clearCookieJWTAuthToken(w)
+				responseWithUnauthorized(w, err)
+				return
+			}
 		}
 
 		if claims.StandardClaims.ExpiresAt < time.Now().Add(30*time.Second).Unix() {
@@ -61,6 +71,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 			rt, err := app.authUsecases.GetRefreshToken(claims.ID)
 			if err != nil {
 				logDebugError(app.l, r, err)
+				clearCookieJWTAuthToken(w)
 				responseWithInternalError(w)
 				return
 			}
@@ -75,6 +86,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 				if err != nil {
 					logDebugError(app.l, r, err)
 				}
+				clearCookieJWTAuthToken(w)
 				responseWithUnauthorized(w, err)
 				return
 			}
@@ -88,6 +100,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 			setCookieJWTAuthToken(w, newToken.Token, newToken.ExpiresAt)
 		} else {
 			if err = token.Claims.Valid(); err != nil {
+				clearCookieJWTAuthToken(w)
 				responseWithUnauthorized(w, err)
 				return
 			}

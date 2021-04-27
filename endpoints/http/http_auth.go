@@ -167,9 +167,9 @@ func (app *App) login(w http.ResponseWriter, userID, device, method, reqURI stri
 // sets a cookie with jwt
 func setCookieJWTAuthToken(w http.ResponseWriter, token string, expTime time.Time) {
 	http.SetCookie(w, &http.Cookie{
-		Name:     cookieJwtTokenName,
-		Value:    token,
-		Expires:  expTime,
+		Name:  cookieJwtTokenName,
+		Value: token,
+		// Expires:  expTime,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 		// Secure:   true,
