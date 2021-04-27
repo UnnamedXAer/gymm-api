@@ -116,7 +116,7 @@ func TestCreateUsersCollection(t *testing.T) {
 
 func TestCreateExercisesCollection(t *testing.T) {
 	colName := ExercisesCollectionName + colSuffix
-	err := createExercisesCollection(&logger, db, colName)
+	err := createExercisesCollection(&logger, db, colName, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,6 +166,15 @@ func TestCreateExercisesCollection(t *testing.T) {
 	wantCnt := int64(n - 1)
 	if result != wantCnt {
 		t.Fatalf("want %d documents in collection, got %d", wantCnt, result)
+	}
+
+	filter := bson.M{"$text": bson.M{"$search": "OHP"}}
+	_, err = exCol.Find(context.Background(), filter)
+	if err != nil {
+		if err.Error() == "text index required for $text query" {
+			t.Fatalf("want text index to exists on exercise collection")
+		}
+		t.Fatal(err)
 	}
 }
 
