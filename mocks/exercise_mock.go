@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"strings"
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
@@ -54,6 +55,16 @@ func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, erro
 	}
 
 	return nil, nil //repositories.NewErrorNotFoundRecord()
+}
+
+func (er *MockExerciseRepo) GetExercisesByName(name string) ([]entities.Exercise, error) {
+
+	if strings.Contains(ExampleExercise.Name, name) {
+		out := []entities.Exercise{ExampleExercise}
+		return out, nil
+	}
+
+	return nil, nil
 }
 
 func (er *MockExerciseRepo) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {

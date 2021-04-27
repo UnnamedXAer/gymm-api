@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -214,4 +215,38 @@ func TestUpdateExerciseOneProp(t *testing.T) {
 		t.Errorf("want 'SetUnit' to be Time (%d), got %d", want.SetUnit, ex.SetUnit)
 	}
 	mockedExercise = *ex
+}
+
+func TestGetExercisesByName(t *testing.T) {
+	want := mockedExercise
+	name := strings.ToLower(want.Name[:len(mockedExercise.Name)-1])
+	exercises, err := exerciseRepo.GetExercisesByName(name)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	var found bool
+	for _, ex := range exercises {
+		if ex.ID == want.ID {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Errorf("want find exercise with ID %q for name %q, got %v", want.ID, name, exercises)
+	}
+}
+
+func TestGetExercisesByNameNotExisting(t *testing.T) {
+	name := "notfound"
+	exercises, err := exerciseRepo.GetExercisesByName(name)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(exercises) > 0 {
+		t.Errorf("want get 0 exercises, got %v", exercises)
+	}
 }
