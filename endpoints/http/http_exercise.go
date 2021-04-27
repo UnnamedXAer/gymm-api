@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -72,7 +73,7 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 	responseWithJSON(w, http.StatusCreated, exercise)
 }
 
-func (app *App) GetExeriseByID(w http.ResponseWriter, req *http.Request) {
+func (app *App) GetExerciseByID(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 	id := vars["id"]
@@ -92,6 +93,30 @@ func (app *App) GetExeriseByID(w http.ResponseWriter, req *http.Request) {
 	}
 
 	responseWithJSON(w, http.StatusOK, exercise)
+}
+
+func (app *App) GetExercisesByName(w http.ResponseWriter, req *http.Request) {
+
+	vars := mux.Vars(req)
+	name, ok := vars["n"]
+	if !ok {
+		responseWithErrorTxt(w, http.StatusBadRequest, "missing name (&n=...) parameter")
+		return
+	}
+	name = strings.TrimSpace(name)
+
+	if name == "" {
+		responseWithErrorTxt(w, http.StatusBadRequest, "missing value for name (&n) parameter")
+	}
+
+	exercises, err := app.exerciseUsecases.GetExercisesByName(name)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		responseWithInternalError(w)
+		return
+	}
+
+	responseWithJSON(w, http.StatusOK, exercises)
 }
 
 func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {

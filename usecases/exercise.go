@@ -17,6 +17,7 @@ type ExerciseInput struct {
 type ExerciseRepo interface {
 	CreateExercise(name, description string, setUnit entities.SetUnit, createdBy string) (*entities.Exercise, error)
 	GetExerciseByID(id string) (*entities.Exercise, error)
+	GetExercisesByName(name string) ([]entities.Exercise, error)
 	UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error)
 }
 
@@ -27,6 +28,7 @@ type ExerciseUseCases struct {
 type IExerciseUseCases interface {
 	CreateExercise(name, description string, setUnit entities.SetUnit, loggedUserID string) (*entities.Exercise, error)
 	GetExerciseByID(id string) (*entities.Exercise, error)
+	GetExercisesByName(name string) ([]entities.Exercise, error)
 	UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error)
 }
 
@@ -36,6 +38,9 @@ func (eu *ExerciseUseCases) CreateExercise(name, description string, setUnit ent
 
 func (eu *ExerciseUseCases) GetExerciseByID(id string) (*entities.Exercise, error) {
 	return eu.repo.GetExerciseByID(id)
+}
+func (eu *ExerciseUseCases) GetExercisesByName(name string) ([]entities.Exercise, error) {
+	return eu.repo.GetExercisesByName(name)
 }
 
 func (eu *ExerciseUseCases) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {

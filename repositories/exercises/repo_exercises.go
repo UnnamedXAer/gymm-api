@@ -44,7 +44,7 @@ func (repo ExerciseRepository) GetExerciseByID(id string) (*entities.Exercise, e
 		return nil, fmt.Errorf("get exercise by id: %v", err)
 	}
 	ex := mapExerciseToEntity(&data)
-	return ex, nil
+	return &ex, nil
 }
 
 func (repo ExerciseRepository) CreateExercise(name, description string, setUnit entities.SetUnit, createdBy string) (*entities.Exercise, error) {
@@ -73,7 +73,7 @@ func (repo ExerciseRepository) CreateExercise(name, description string, setUnit 
 
 	ex := mapExerciseToEntity(&data)
 
-	return ex, nil
+	return &ex, nil
 }
 
 func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
@@ -115,5 +115,32 @@ func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.
 
 	updatedEx := mapExerciseToEntity(&data)
 
-	return updatedEx, nil
+	return &updatedEx, nil
+}
+
+func (repo ExerciseRepository) GetExercisesByName(name string) ([]entities.Exercise, error) {
+
+	filter := bson.M{"$text": bson.M{"$search": name}}
+
+	cursor, err := repo.col.Find(context.Background(), filter)
+	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get exercises by name: %v", err)
+	}
+
+	data := make([]ExerciseData, cursor.RemainingBatchLength())
+
+	err = cursor.All(context.Background(), &data)
+	if err != nil {
+		return nil, fmt.Errorf("get exercises by name: %v", err)
+	}
+
+	if err = cursor.Err(); err != nil {
+		return nil, fmt.Errorf("get exercises by name: %v", err)
+	}
+
+	ex := mapExercisesToEntity(data)
+	return ex, nil
 }

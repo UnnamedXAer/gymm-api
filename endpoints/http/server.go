@@ -66,7 +66,10 @@ func (app *App) AddHandlers() {
 
 	app.Router.HandleFunc(
 		"/exercises/{id:[0-9a-zA-Z]+}",
-		chainMiddlewares(app.GetExeriseByID, app.checkAuthenticated)).Methods(http.MethodGet)
+		chainMiddlewares(app.GetExerciseByID, app.checkAuthenticated)).Methods(http.MethodGet)
+	app.Router.HandleFunc(
+		"/exercises/",
+		chainMiddlewares(app.GetExercisesByName, app.checkAuthenticated)).Methods(http.MethodGet)
 	app.Router.HandleFunc(
 		"/exercises/{id:[0-9a-zA-Z]+}",
 		chainMiddlewares(app.UpdateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
