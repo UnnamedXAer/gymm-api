@@ -84,7 +84,7 @@ func (app *App) AddHandlers() {
 	trainingRouter := app.Router.PathPrefix("/trainings").Subrouter()
 	trainingRouter.HandleFunc(
 		"",
-		chainMiddlewares(app.GetTrainings, app.checkAuthenticated)).Methods(http.MethodGet)
+		chainMiddlewares(app.GetUserTrainings, app.checkAuthenticated)).Methods(http.MethodGet)
 	trainingRouter.HandleFunc(
 		"",
 		chainMiddlewares(app.StartTraining, app.checkAuthenticated)).Methods(http.MethodPost)
