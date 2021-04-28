@@ -1,12 +1,15 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/repositories"
 )
 
 // StartTraining is a handler that trigger starting of a new training for logged in user.
@@ -22,6 +25,12 @@ func (app *App) StartTraining(w http.ResponseWriter, req *http.Request) {
 	tr, err := app.trainingUsecases.StartTraining(userID)
 	if err != nil {
 		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
 		responseWithInternalError(w)
 		return
 	}
@@ -40,10 +49,16 @@ func (app *App) EndTraining(w http.ResponseWriter, req *http.Request) {
 	}
 
 	vars := mux.Vars(req)
-	trainingID := vars["trainingId"]
+	trainingID := vars["trainingID"]
 	tr, err := app.trainingUsecases.GetTrainingByID(trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
 		responseWithInternalError(w)
 		return
 	}
@@ -63,6 +78,12 @@ func (app *App) EndTraining(w http.ResponseWriter, req *http.Request) {
 	tr, err = app.trainingUsecases.EndTraining(trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
 		responseWithInternalError(w)
 		return
 	}
@@ -81,10 +102,16 @@ func (app *App) GetTrainingByID(w http.ResponseWriter, req *http.Request) {
 	}
 
 	vars := mux.Vars(req)
-	trainingID := vars["trainingId"]
+	trainingID := vars["trainingID"]
 	tr, err := app.trainingUsecases.GetTrainingByID(trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
 		responseWithInternalError(w)
 		return
 	}
@@ -111,6 +138,12 @@ func (app *App) GetUserTrainings(w http.ResponseWriter, req *http.Request) {
 	tr, err := app.trainingUsecases.GetUserTrainings(userID, false)
 	if err != nil {
 		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
 		responseWithInternalError(w)
 		return
 	}
@@ -128,9 +161,17 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	vars := mux.Vars(req)
+	body := make(map[string]string, 1)
 
-	exerciseID, ok := vars["exerciseId"]
+	err := json.NewDecoder(req.Body).Decode(&body)
+	if err != nil {
+		err := fmt.Errorf("missing %q property", "exerciseId1")
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	exerciseID, ok := body["exerciseId"]
 	if !ok {
 		err := fmt.Errorf("missing %q property", "exerciseId")
 		logDebugError(app.l, req, err)
@@ -138,10 +179,17 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	trainingID := vars["trainingId"]
+	vars := mux.Vars(req)
+	trainingID := vars["trainingID"]
 	tr, err := app.trainingUsecases.GetTrainingByID(trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
 		responseWithInternalError(w)
 		return
 	}
@@ -150,36 +198,120 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 		err = formatUnauthorizedError("training")
 		logDebugError(app.l, req, err)
 		responseWithError(w, http.StatusUnauthorized, err)
+		return
 	}
 
-	// @todo: verify if exercise with such id exists.
-	responseWithErrorTxt(w, http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-	return
+	exercise, err := app.exerciseUsecases.GetExerciseByID(exerciseID)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
+		responseWithInternalError(w)
+		return
+	}
+
+	if exercise == nil {
+		err = fmt.Errorf("exercise with id %q does not exist", exerciseID)
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+
 	te := &entities.TrainingExercise{
 		StartTime:  time.Now(),
 		ExerciseID: exerciseID,
 	}
 
-	te, err = app.trainingUsecases.AddExercise(tr.ID, te)
+	te, err = app.trainingUsecases.StartExercise(tr.ID, te)
 	if err != nil {
 		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
 		responseWithInternalError(w)
 		return
 	}
 
-	responseWithJSON(w, http.StatusCreated, &tr)
+	responseWithJSON(w, http.StatusCreated, &te)
 }
 
 // EndTrainingExercise is a handler that stops training exercise
 func (app *App) EndTrainingExercise(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
+	ctx := req.Context()
+	userID, ok := ctx.Value(contextKeyUserID).(string)
+	if !ok {
+		clearCookieJWTAuthToken(w)
+		responseWithUnauthorized(w)
+		return
+	}
 
-	w.Write([]byte(fmt.Sprintf("[%s] %s - (EndTrainingExercise) not implemented yet \n \n %v", req.Method, req.RequestURI, vars)))
+	vars := mux.Vars(req)
+	teID := vars["exerciseID"]
+
+	te, err := app.trainingUsecases.EndExercise(userID, teID, time.Now())
+	if err != nil {
+		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
+		responseWithInternalError(w)
+		return
+	}
+	if te == nil {
+		err = formatUnauthorizedError("training exercise")
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	responseWithJSON(w, http.StatusCreated, &te)
 }
 
 // AddTrainingSetExercise is a handler that adds new set to the training exercise
 func (app *App) AddTrainingSetExercise(w http.ResponseWriter, req *http.Request) {
-	vars := mux.Vars(req)
+	ctx := req.Context()
+	userID, ok := ctx.Value(contextKeyUserID).(string)
+	if !ok {
+		clearCookieJWTAuthToken(w)
+		responseWithUnauthorized(w)
+		return
+	}
 
-	w.Write([]byte(fmt.Sprintf("[%s] %s - (AddTrainingSetExercise) not implemented yet \n \n %v", req.Method, req.RequestURI, vars)))
+	set := entities.TrainingSet{}
+
+	err := json.NewDecoder(req.Body).Decode(&set)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	vars := mux.Vars(req)
+	// tID := vars["trainingID"]
+	teID := vars["exerciseID"]
+
+	ts, err := app.trainingUsecases.AddSet(userID, teID, &set)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+
+		responseWithInternalError(w)
+		return
+	}
+
+	responseWithJSON(w, http.StatusCreated, ts)
 }
