@@ -100,7 +100,7 @@ func (tr *MockTrainingRepo) StartExercise(trID string, exercise *entities.Traini
 	return &out, nil
 }
 
-func (tr *MockTrainingRepo) AddSet(teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
+func (tr *MockTrainingRepo) AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
 	out := *set
 	out.ID = ExampleTrainingSet.ID
 	out.Time = ExampleTrainingSet.Time
@@ -116,7 +116,7 @@ func (tr *MockTrainingRepo) GetTrainingExercises(id string) ([]entities.Training
 	return out, nil
 }
 
-func (tr *MockTrainingRepo) EndExercise(id string, endTime time.Time) (*entities.TrainingExercise, error) {
+func (tr *MockTrainingRepo) EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error) {
 	out := ExampleTrainingExercise
 	out.ID = id
 	out.EndTime = endTime

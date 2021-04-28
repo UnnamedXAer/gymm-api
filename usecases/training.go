@@ -24,9 +24,9 @@ type TrainingRepo interface {
 	EndTraining(trainingID string, endTime time.Time) (*entities.Training, error)
 	GetUserTrainings(userID string, started bool) (t []entities.Training, err error)
 	StartExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error)
-	AddSet(teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
+	AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
 	GetTrainingExercises(id string) ([]entities.TrainingExercise, error)
-	EndExercise(id string, endTime time.Time) (*entities.TrainingExercise, error)
+	EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error)
 }
 
 type TrainingUsecases struct {
@@ -39,9 +39,9 @@ type ITrainingUsecases interface {
 	EndTraining(id string) (*entities.Training, error)
 	GetUserTrainings(userID string, started bool) (t []entities.Training, err error)
 	StartExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error)
-	AddSet(teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
+	AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
 	GetTrainingExercises(id string) ([]entities.TrainingExercise, error)
-	EndExercise(id string, endTime time.Time) (*entities.TrainingExercise, error)
+	EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error)
 }
 
 // GetTrainingByID returns training for given id
@@ -67,16 +67,16 @@ func (tu *TrainingUsecases) StartExercise(trID string, exercise *entities.Traini
 	return tu.repo.StartExercise(trID, exercise)
 }
 
-func (tu *TrainingUsecases) AddSet(teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
-	return tu.repo.AddSet(teID, set)
+func (tu *TrainingUsecases) AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
+	return tu.repo.AddSet(userID, teID, set)
 }
 
 func (tu *TrainingUsecases) GetTrainingExercises(id string) ([]entities.TrainingExercise, error) {
 	return tu.repo.GetTrainingExercises(id)
 }
 
-func (tu *TrainingUsecases) EndExercise(id string, endTime time.Time) (*entities.TrainingExercise, error) {
-	return tu.repo.EndExercise(id, endTime)
+func (tu *TrainingUsecases) EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error) {
+	return tu.repo.EndExercise(userID, id, endTime)
 }
 
 func NewTrainingUseCases(repo TrainingRepo) ITrainingUsecases {

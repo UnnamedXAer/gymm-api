@@ -196,7 +196,7 @@ func TestGetStartedTrainings(t *testing.T) {
 	}
 }
 
-func TestAddExercise(t *testing.T) {
+func TestStartExercise(t *testing.T) {
 	if mockedStartedTraining.StartTime.IsZero() {
 		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
 	}
@@ -241,7 +241,7 @@ func TestAddExercise(t *testing.T) {
 
 func TestAddSet(t *testing.T) {
 	if mockedStartedExercise.StartTime.IsZero() {
-		t.Run("create new started exercise by 'TestAddExercise'", TestAddExercise)
+		t.Run("create new started exercise by 'TestAddExercise'", TestStartExercise)
 	}
 
 	now := time.Now().UTC()
@@ -249,7 +249,7 @@ func TestAddSet(t *testing.T) {
 	mockedSet.Time = now
 	mockedSet.Reps = reps
 	var ts *entities.TrainingSet
-	ts, err := trainingRepo.AddSet(mockedStartedExercise.ID, &mockedSet)
+	ts, err := trainingRepo.AddSet(mockedStartedTraining.UserID, mockedStartedExercise.ID, &mockedSet)
 	if err != nil {
 		t.Errorf("expect to add set, got error: %v", err)
 		return
@@ -320,12 +320,12 @@ func TestGetTrainingExercises(t *testing.T) {
 
 func TestEndExercise(t *testing.T) {
 	if mockedStartedExercise.StartTime.IsZero() {
-		t.Run("create new started exercise by 'TestAddExercise'", TestAddExercise)
+		t.Run("create new started exercise by 'TestAddExercise'", TestStartExercise)
 	}
 
 	now := time.Now().UTC()
 	var te *entities.TrainingExercise
-	te, err := trainingRepo.EndExercise(mockedStartedExercise.ID, now)
+	te, err := trainingRepo.EndExercise(mockedStartedTraining.UserID, mockedStartedExercise.ID, now)
 	if err != nil {
 		t.Errorf("expect to end exercise, got error: %v", err)
 		return

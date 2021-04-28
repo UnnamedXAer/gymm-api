@@ -41,7 +41,7 @@ func TestEndTraining(t *testing.T) {
 }
 
 func TestAddTrainingSet(t *testing.T) {
-	ts, err := trainingUC.AddSet(mocks.ExampleExercise.ID, &mocks.ExampleTrainingSet)
+	ts, err := trainingUC.AddSet(mocks.ExampleTraining.UserID, mocks.ExampleExercise.ID, &mocks.ExampleTrainingSet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +52,7 @@ func TestAddTrainingSet(t *testing.T) {
 }
 
 func TestEndTrainingExercise(t *testing.T) {
-	te, err := trainingUC.EndExercise(mocks.ExampleExercise.ID, time.Now())
+	te, err := trainingUC.EndExercise(mocks.ExampleTraining.UserID, mocks.ExampleExercise.ID, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
