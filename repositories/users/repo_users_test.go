@@ -154,7 +154,7 @@ func TestGetUserByIDInvalidID(t *testing.T) {
 	gotUser, err := ur.GetUserByID(uID)
 	var e *repositories.InvalidIDError
 	if !errors.As(err, &e) {
-		t.Fatalf("want error: %q, got: %v", repositories.NewErrorInvalidID(uID), err)
+		t.Fatalf("want error: %q, got: %v", repositories.NewErrorInvalidID(uID, "user"), err)
 	}
 
 	if gotUser != nil {

@@ -2,11 +2,11 @@ package trainings
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"go.mongodb.org/mongo-driver/bson"
@@ -45,7 +45,7 @@ type trainingSetData struct {
 func (r *TrainingRepository) GetTrainingByID(id string) (*entities.Training, error) {
 	oTID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, fmt.Errorf("get training by id: %v", err)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "training"), "get training by id")
 	}
 
 	filter := bson.M{"_id": oTID}
@@ -73,7 +73,7 @@ func (r *TrainingRepository) GetTrainingByID(id string) (*entities.Training, err
 func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (*entities.Training, error) {
 	ouID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return nil, fmt.Errorf("start training: %v", err)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(userID, "user"), "start training")
 	}
 	td := trainingData{
 		UserID:    ouID,
@@ -95,11 +95,10 @@ func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (
 	return t, nil
 }
 
-func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (*entities.Training, error) {
-	tOID, err := primitive.ObjectIDFromHex(trainingID)
+func (r *TrainingRepository) EndTraining(id string, endTime time.Time) (*entities.Training, error) {
+	tOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		r.l.Error().Msg(err.Error())
-		return nil, repositories.NewErrorInvalidID(trainingID)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "training"), "end training")
 	}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
@@ -133,7 +132,7 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 func (r *TrainingRepository) GetUserTrainings(userID string, started bool) ([]entities.Training, error) {
 	oUserID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return nil, fmt.Errorf("get user trainings: %v", err)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(userID, "user"), "get user trainings")
 	}
 
 	filter := bson.M{}
@@ -166,15 +165,15 @@ func (r *TrainingRepository) GetUserTrainings(userID string, started bool) ([]en
 	return t, nil
 }
 
-func (r TrainingRepository) AddExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error) {
+func (r TrainingRepository) StartExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error) {
 	tOID, err := primitive.ObjectIDFromHex(trID)
 	if err != nil {
-		return nil, repositories.NewErrorInvalidID(trID)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(trID, "training"), "start exercise")
 	}
 
 	exOID, err := primitive.ObjectIDFromHex(exercise.ExerciseID)
 	if err != nil {
-		return nil, repositories.NewErrorInvalidID(exercise.ExerciseID)
+		return nil, repositories.NewErrorInvalidID(exercise.ExerciseID, "exercise")
 	}
 	newExerciseData := trainingExerciseData{
 		ID:         primitive.NewObjectID(),
@@ -209,7 +208,7 @@ func (r TrainingRepository) AddExercise(trID string, exercise *entities.Training
 func (r TrainingRepository) AddSet(teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
 	teOID, err := primitive.ObjectIDFromHex(teID)
 	if err != nil {
-		return nil, repositories.NewErrorInvalidID(teID)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(teID, "training exercise"), "add set")
 	}
 
 	newSetData := trainingSetData{
@@ -246,7 +245,7 @@ func (r TrainingRepository) AddSet(teID string, set *entities.TrainingSet) (*ent
 func (r TrainingRepository) GetTrainingExercises(id string) ([]entities.TrainingExercise, error) {
 	tOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, repositories.NewErrorInvalidID(id)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "training"), "get training exercises")
 	}
 
 	filter := bson.M{"_id": tOID}
@@ -271,7 +270,7 @@ func (r TrainingRepository) GetTrainingExercises(id string) ([]entities.Training
 func (r TrainingRepository) EndExercise(id string, endTime time.Time) (*entities.TrainingExercise, error) {
 	teOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, fmt.Errorf("end exercise: %v", err)
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "training"), "end exercises")
 	}
 
 	filter := bson.M{"exercises._id": teOID}

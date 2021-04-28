@@ -20,17 +20,19 @@ func NewErrorEmailAddressInUse() *EmailAddressInUseError {
 
 // InvalidIDError is an error returned when given ID is not valid
 type InvalidIDError struct {
-	ID string
+	ID       string
+	DataName string
 }
 
 func (err InvalidIDError) Error() string {
-	return "invalid ID: " + err.ID
+	return "invalid " + err.DataName + " ID: " + err.ID
 }
 
 // NewErrorInvalidID returns a new error of type InvalidID
-func NewErrorInvalidID(id string) *InvalidIDError {
+func NewErrorInvalidID(id string, dataName string) *InvalidIDError {
 	return &InvalidIDError{
-		ID: id,
+		ID:       id,
+		DataName: dataName,
 	}
 }
 

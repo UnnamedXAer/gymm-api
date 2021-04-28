@@ -25,7 +25,7 @@ type ExerciseData struct {
 func (repo ExerciseRepository) GetExerciseByID(id string) (*entities.Exercise, error) {
 	exOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id), "get exercise by id")
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "exercise"), "get exercise by id")
 	}
 
 	filter := bson.M{"_id": exOID}
@@ -79,7 +79,7 @@ func (repo ExerciseRepository) CreateExercise(name, description string, setUnit 
 func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
 	exOID, err := primitive.ObjectIDFromHex(ex.ID)
 	if err != nil {
-		return nil, errors.WithMessage(repositories.NewErrorInvalidID(ex.ID),
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(ex.ID, "exercise"),
 			"update exercise")
 	}
 

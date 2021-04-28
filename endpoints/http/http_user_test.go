@@ -51,7 +51,7 @@ func TestGetUserByIDInvalidID(t *testing.T) {
 
 	checkResponseCode(t, http.StatusBadRequest, response.Code)
 
-	expectedErr := repositories.NewErrorInvalidID(id)
+	expectedErr := repositories.NewErrorInvalidID(id, "user")
 
 	b, err := ioutil.ReadAll(response.Body)
 	if err != nil {

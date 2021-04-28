@@ -28,7 +28,7 @@ func (ur MockUserRepo) GetUserByID(id string) (*entities.User, error) {
 	}
 
 	if strings.Contains(id, "INVALIDID") {
-		return nil, repositories.NewErrorInvalidID(id)
+		return nil, repositories.NewErrorInvalidID(id, "user")
 	}
 
 	return &entities.User{

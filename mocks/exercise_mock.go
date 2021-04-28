@@ -46,7 +46,7 @@ func (er *MockExerciseRepo) CreateExercise(name, description string, setUnit ent
 func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, error) {
 	_, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, repositories.NewErrorInvalidID(id)
+		return nil, repositories.NewErrorInvalidID(id, "exercise")
 	}
 
 	if ExampleExercise.ID == id {
@@ -70,7 +70,7 @@ func (er *MockExerciseRepo) GetExercisesByName(name string) ([]entities.Exercise
 func (er *MockExerciseRepo) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
 	_, err := primitive.ObjectIDFromHex(ex.ID)
 	if err != nil {
-		return nil, repositories.NewErrorInvalidID(ex.ID)
+		return nil, repositories.NewErrorInvalidID(ex.ID, "exercise")
 	}
 
 	out := ExampleExercise

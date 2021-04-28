@@ -25,7 +25,7 @@ func (r *UserRepository) GetUserByID(id string) (*entities.User, error) {
 	var ud UserData
 	oID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id), "repo.GetUserByID")
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "user"), "repo.GetUserByID")
 	}
 
 	err = r.col.FindOne(context.Background(), bson.M{"_id": oID}).Decode(&ud)

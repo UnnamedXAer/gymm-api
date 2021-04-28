@@ -62,7 +62,7 @@ func (tr *MockTrainingRepo) GetTrainingByID(id string) (*entities.Training, erro
 	}
 
 	if strings.Contains(id, "INVALIDID") {
-		return nil, repositories.NewErrorInvalidID(id)
+		return nil, repositories.NewErrorInvalidID(id, "training")
 	}
 
 	out := ExampleTraining
@@ -94,7 +94,7 @@ func (tr *MockTrainingRepo) GetUserTrainings(userID string, started bool) ([]ent
 	return out, nil
 }
 
-func (tr *MockTrainingRepo) AddExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error) {
+func (tr *MockTrainingRepo) StartExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error) {
 	out := ExampleTrainingExercise
 	out.EndTime = time.Time{}
 	return &out, nil
