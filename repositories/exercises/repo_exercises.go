@@ -130,7 +130,7 @@ func (repo ExerciseRepository) GetExercisesByName(name string) ([]entities.Exerc
 		return nil, fmt.Errorf("get exercises by name: %v", err)
 	}
 
-	data := make([]ExerciseData, cursor.RemainingBatchLength())
+	data := make([]ExerciseData, 0, cursor.RemainingBatchLength())
 
 	err = cursor.All(context.Background(), &data)
 	if err != nil {
