@@ -2,7 +2,7 @@ package trainings
 
 import "github.com/unnamedxaer/gymm-api/entities"
 
-func mapTrainingToEntity(td trainingData) *entities.Training {
+func mapTrainingToEntity(td *trainingData) *entities.Training {
 	return &entities.Training{
 		ID:        td.ID.Hex(),
 		UserID:    td.UserID.Hex(),

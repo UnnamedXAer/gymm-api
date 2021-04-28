@@ -125,12 +125,12 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 		return nil, fmt.Errorf("end training: %v", err)
 	}
 
-	t := mapTrainingToEntity(td)
+	t := mapTrainingToEntity(&td)
 
 	return t, nil
 }
 
-func (r *TrainingRepository) GetUserTrainings(userID string, started bool) (t []entities.Training, err error) {
+func (r *TrainingRepository) GetUserTrainings(userID string, started bool) ([]entities.Training, error) {
 	oUserID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return nil, fmt.Errorf("get user trainings: %v", err)
@@ -148,6 +148,7 @@ func (r *TrainingRepository) GetUserTrainings(userID string, started bool) (t []
 	}
 	defer cursor.Close(context.TODO())
 
+	t := make([]entities.Training, cursor.RemainingBatchLength())
 	for cursor.Next(context.Background()) {
 		var training trainingData
 		err = cursor.Decode(&training)
@@ -155,7 +156,7 @@ func (r *TrainingRepository) GetUserTrainings(userID string, started bool) (t []
 			return nil, fmt.Errorf("get user trainings: %v", err)
 		}
 
-		t = append(t, *mapTrainingToEntity(training))
+		t = append(t, *mapTrainingToEntity(&training))
 	}
 
 	if err = cursor.Err(); err != nil {
