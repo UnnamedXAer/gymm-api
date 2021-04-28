@@ -173,7 +173,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if curExercise == nil || (curExercise.CreatedBy != userID) {
-		err = fmt.Errorf("unauthorized: you do not have permissons to modify this exercise")
+		err = formatUnauthorizedError("exercise")
 		logDebugError(app.l, req, err)
 
 		responseWithError(w, http.StatusUnauthorized, err)

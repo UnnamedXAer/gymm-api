@@ -138,6 +138,18 @@ func formatParseErrors(err error) (bool, error) {
 	return false, err
 }
 
+// return new error saying user has not permissions for requested data
+//
+// dataName param can be used to pass name of requested data
+// eg.: formatUnauthorizedError("exercise") == "unauthorized: ... requested exercise"
+func formatUnauthorizedError(dataName ...string) error {
+	name := "data"
+	if len(dataName) > 0 {
+		name = dataName[0]
+	}
+	return fmt.Errorf("unauthorized: you do not have permissons to requested %s", name)
+}
+
 func logDebugError(l *zerolog.Logger, req *http.Request, err error) {
 	l.Debug().Msgf("[%s %s]: error: %v", req.Method, req.RequestURI, err)
 }
