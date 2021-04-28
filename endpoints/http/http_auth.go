@@ -20,7 +20,7 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-const cookieJwtTokenName = "__Host-token"
+const cookieJwtTokenName = "__HOST-token"
 
 // Login validates input and login the user
 func (app *App) Login(w http.ResponseWriter, req *http.Request) {
