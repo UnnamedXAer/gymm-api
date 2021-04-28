@@ -57,10 +57,10 @@ func NewServer(
 }
 
 func (app *App) AddHandlers() {
-
 	app.Router.HandleFunc("/login", app.Login).Methods(http.MethodPost)
 	app.Router.HandleFunc("/logout", app.Logout).Methods(http.MethodGet)
 	app.Router.HandleFunc("/register", app.Register).Methods(http.MethodPost)
+	app.Router.HandleFunc("/health", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
 
 	// app.Router.HandleFunc(
 	// 	"/users/{id:[0-9a-zA-Z]+}",
@@ -68,51 +68,59 @@ func (app *App) AddHandlers() {
 
 	exercisesRouter := app.Router.PathPrefix("/exercises").Subrouter()
 	exercisesRouter.HandleFunc(
-		"/{id:[0-9a-zA-Z]+}",
+		"/{exerciseID:[0-9a-zA-Z]+}",
 		chainMiddlewares(app.GetExerciseByID, app.checkAuthenticated)).Methods(http.MethodGet)
 	exercisesRouter.HandleFunc(
 		"",
 		chainMiddlewares(app.GetExercisesByName, app.checkAuthenticated)).Methods(http.MethodGet)
 	exercisesRouter.HandleFunc(
-		"/{id:[0-9a-zA-Z]+}",
+		"/{exerciseID:[0-9a-zA-Z]+}",
 		chainMiddlewares(app.UpdateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
 	exercisesRouter.HandleFunc(
 		"",
 		chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
 
-	// // training
-	// app.Router.HandleFunc(
-	// 	"/trainings",
-	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodGet)
-	// app.Router.HandleFunc(
-	// 	"/trainings",
-	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
-	// app.Router.HandleFunc(
-	// 	"/trainings/{id:[0-9a-zA-Z]+}",
-	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodGet)
-	// app.Router.HandleFunc(
-	// 	"/trainings/{id:[0-9a-zA-Z]+}/end",
-	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
-	// app.Router.HandleFunc(
-	// 	"/trainings/{id:[0-9a-zA-Z]+}/exercises",
-	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
-	// app.Router.HandleFunc(
-	// 	"/trainings/{id:[0-9a-zA-Z]+}/exercises/{id:[0-9a-zA-Z]+}/end",
-	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
-	// app.Router.HandleFunc(
-	// 	"/trainings/{id:[0-9a-zA-Z]+}/exercises/{id:[0-9a-zA-Z]+}/sets",
-	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
+	// training
+	trainingRouter := app.Router.PathPrefix("/trainings").Subrouter()
+	trainingRouter.HandleFunc(
+		"",
+		chainMiddlewares(app.GetTrainings, app.checkAuthenticated)).Methods(http.MethodGet)
+	trainingRouter.HandleFunc(
+		"",
+		chainMiddlewares(app.StartTraining, app.checkAuthenticated)).Methods(http.MethodPost)
+	trainingRouter.HandleFunc(
+		"/{trainingID:[0-9a-zA-Z]+}",
+		chainMiddlewares(app.GetTrainingByID, app.checkAuthenticated)).Methods(http.MethodGet)
+	trainingRouter.HandleFunc(
+		"/{trainingID:[0-9a-zA-Z]+}/end",
+		chainMiddlewares(app.EndTraining, app.checkAuthenticated)).Methods(http.MethodPatch)
 
-	app.Router.HandleFunc("/health", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
+	// training exercise
+	trainingExerciseRouter := trainingRouter.PathPrefix("/{trainingID:[0-9a-zA-Z]+}/exercises").Subrouter()
+	trainingExerciseRouter.HandleFunc(
+		"",
+		chainMiddlewares(app.StartTrainingExercise, app.checkAuthenticated)).Methods(http.MethodPost)
+	trainingExerciseRouter.HandleFunc(
+		"/{exerciseID:[0-9a-zA-Z]+}/end",
+		chainMiddlewares(app.EndTrainingExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
+
+	// training set
+	trainingSetRouter := trainingExerciseRouter.PathPrefix("/{exerciseID:[0-9a-zA-Z]+}/sets").Subrouter()
+	trainingSetRouter.HandleFunc(
+		"",
+		chainMiddlewares(app.AddTrainingSetExercise, app.checkAuthenticated)).Methods(http.MethodPost)
 
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
 		logDebug(app.l, r, nil)
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 	})
-
 }
 
 func (app *App) Run(addr string) {
+	srv := &http.Server{
+		Addr:    addr,
+		Handler: suffixMiddleware(app.Router),
+	}
 	app.l.Info().Msg("server is up and running at " + addr)
-	app.l.Error().Stack().Err(http.ListenAndServe(addr, suffixMiddleware(app.Router))).Msg("")
+	app.l.Error().Stack().Err(srv.ListenAndServe()).Msg("")
 }
