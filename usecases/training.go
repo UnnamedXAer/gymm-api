@@ -16,6 +16,8 @@ type TrainingInput struct {
 
 // TrainingRepo represents trainings repository
 type TrainingRepo interface {
+	// GetTrainingByID returns training for given id
+	GetTrainingByID(id string) (*entities.Training, error)
 	// StartTraining starts new training by inserting new record in training storage with start time.
 	StartTraining(userID string, startTime time.Time) (*entities.Training, error)
 	// EndTraining marks given training as completed by setting training end time.
@@ -32,6 +34,7 @@ type TrainingUsecases struct {
 }
 
 type ITrainingUsecases interface {
+	GetTrainingByID(id string) (*entities.Training, error)
 	StartTraining(userID string) (*entities.Training, error)
 	EndTraining(id string) (*entities.Training, error)
 	GetUserTrainings(userID string, started bool) (t []entities.Training, err error)
@@ -39,6 +42,11 @@ type ITrainingUsecases interface {
 	AddSet(teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
 	GetTrainingExercises(id string) ([]entities.TrainingExercise, error)
 	EndExercise(id string, endTime time.Time) (*entities.TrainingExercise, error)
+}
+
+// GetTrainingByID returns training for given id
+func (tu *TrainingUsecases) GetTrainingByID(id string) (*entities.Training, error) {
+	return tu.repo.GetTrainingByID(id)
 }
 
 // StartTraining creates a new training.

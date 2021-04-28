@@ -42,6 +42,34 @@ type trainingSetData struct {
 	CreatedAt time.Time          `bson:"created_at,omitempty"`
 }
 
+func (r *TrainingRepository) GetTrainingByID(id string) (*entities.Training, error) {
+	oTID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, fmt.Errorf("get training by id: %v", err)
+	}
+
+	filter := bson.M{"_id": oTID}
+
+	result := r.col.FindOne(context.Background(), filter)
+	if err = result.Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("get training by id: %v", err)
+	}
+
+	td := trainingData{}
+	err = result.Decode(&td)
+	if err != nil {
+		return nil, fmt.Errorf("get training by id: %v", err)
+	}
+
+	t := mapTrainingToEntity(&td)
+
+	return t, nil
+}
+
 func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (*entities.Training, error) {
 	ouID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {

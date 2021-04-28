@@ -1,9 +1,11 @@
 package mocks
 
 import (
+	"strings"
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/repositories"
 )
 
 var (
@@ -51,6 +53,21 @@ var (
 )
 
 type MockTrainingRepo struct {
+}
+
+func (tr *MockTrainingRepo) GetTrainingByID(id string) (*entities.Training, error) {
+
+	if strings.Contains(id, "notfound") {
+		return nil, nil
+	}
+
+	if strings.Contains(id, "INVALIDID") {
+		return nil, repositories.NewErrorInvalidID(id)
+	}
+
+	out := ExampleTraining
+	out.ID = id
+	return &out, nil
 }
 
 func (tr *MockTrainingRepo) StartTraining(userID string, startTime time.Time) (*entities.Training, error) {
