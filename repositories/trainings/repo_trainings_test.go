@@ -206,7 +206,7 @@ func TestAddExercise(t *testing.T) {
 	mockedStartedExercise.StartTime = now
 	mockedStartedExercise.ExerciseID = exId
 	var te *entities.TrainingExercise
-	te, err := trainingRepo.AddExercise(mockedStartedTraining.ID, &mockedStartedExercise)
+	te, err := trainingRepo.StartExercise(mockedStartedTraining.ID, &mockedStartedExercise)
 	if err != nil {
 		t.Errorf("expect to add exercise, got error: %v", err)
 		return
