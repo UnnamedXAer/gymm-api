@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -108,6 +109,15 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 
 		ctx := context.WithValue(r.Context(), contextKeyUserID, claims.ID)
 		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func suffixMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			r.URL.Path = strings.TrimSuffix(r.URL.Path, "/")
+		}
 		next.ServeHTTP(w, r)
 	})
 }

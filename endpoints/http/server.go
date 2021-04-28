@@ -41,6 +41,8 @@ func NewServer(
 	var trainingUsecases usecases.ITrainingUsecases = usecases.NewTrainingUseCases(trainingRepo)
 
 	router := mux.NewRouter()
+	router.StrictSlash(true)
+
 	app := App{
 		l:                logger,
 		authUsecases:     authUsecases,
@@ -64,31 +66,18 @@ func (app *App) AddHandlers() {
 	// 	"/users/{id:[0-9a-zA-Z]+}",
 	// 	chainMiddlewares(app.GetUserById, app.checkAuthenticated)).Methods(http.MethodGet)
 
-	// exercisesRouter := app.Router.PathPrefix("/exercises").Subrouter()
-	// exercisesRouter.HandleFunc(
-	// 	"/{id:[0-9a-zA-Z]+}",
-	// 	chainMiddlewares(app.GetExerciseByID, app.checkAuthenticated)).Methods(http.MethodGet)
-	// exercisesRouter.HandleFunc(
-	// 	"/",
-	// 	chainMiddlewares(app.GetExercisesByName, app.checkAuthenticated)).Methods(http.MethodGet)
-	// exercisesRouter.HandleFunc(
-	// 	"/{id:[0-9a-zA-Z]+}",
-	// 	chainMiddlewares(app.UpdateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
-	// exercisesRouter.HandleFunc(
-	// 	"",
-	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
-
-	app.Router.HandleFunc(
-		"/exercises/{id:[0-9a-zA-Z]+}",
+	exercisesRouter := app.Router.PathPrefix("/exercises").Subrouter()
+	exercisesRouter.HandleFunc(
+		"/{id:[0-9a-zA-Z]+}",
 		chainMiddlewares(app.GetExerciseByID, app.checkAuthenticated)).Methods(http.MethodGet)
-	app.Router.HandleFunc(
-		"/exercises/",
+	exercisesRouter.HandleFunc(
+		"",
 		chainMiddlewares(app.GetExercisesByName, app.checkAuthenticated)).Methods(http.MethodGet)
-	app.Router.HandleFunc(
-		"/exercises/{id:[0-9a-zA-Z]+}",
+	exercisesRouter.HandleFunc(
+		"/{id:[0-9a-zA-Z]+}",
 		chainMiddlewares(app.UpdateExercise, app.checkAuthenticated)).Methods(http.MethodPatch)
-	app.Router.HandleFunc(
-		"/exercises",
+	exercisesRouter.HandleFunc(
+		"",
 		chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
 
 	// // training
@@ -114,15 +103,16 @@ func (app *App) AddHandlers() {
 	// 	"/trainings/{id:[0-9a-zA-Z]+}/exercises/{id:[0-9a-zA-Z]+}/sets",
 	// 	chainMiddlewares(app.CreateExercise, app.checkAuthenticated)).Methods(http.MethodPost)
 
-	app.Router.HandleFunc("/heath", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
+	app.Router.HandleFunc("/health", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
 
 	app.Router.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
 		logDebug(app.l, r, nil)
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 	})
+
 }
 
 func (app *App) Run(addr string) {
 	app.l.Info().Msg("server is up and running at " + addr)
-	app.l.Error().Stack().Err(http.ListenAndServe(addr, app.Router)).Msg("")
+	app.l.Error().Stack().Err(http.ListenAndServe(addr, suffixMiddleware(app.Router))).Msg("")
 }
