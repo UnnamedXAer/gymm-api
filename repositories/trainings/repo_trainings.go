@@ -22,6 +22,7 @@ type trainingData struct {
 	EndTime   time.Time              `bson:"end_time,omitempty"`
 	Exercises []trainingExerciseData `bson:"exercises,omitempty"`
 	Comment   string                 `bson:"comment,omitempty"`
+	CreatedAt time.Time              `bson:"created_at,omitempty"`
 }
 
 type trainingExerciseData struct {
@@ -31,42 +32,46 @@ type trainingExerciseData struct {
 	EndTime    time.Time          `bson:"end_time,omitempty"`
 	Sets       []trainingSetData  `bson:"sets,omitempty"`
 	Comment    string             `bson:"comment,omitempty"`
+	CreatedAt  time.Time          `bson:"created_at,omitempty"`
 }
 
 type trainingSetData struct {
-	ID   primitive.ObjectID `bson:"_id,omitempty,required"`
-	Time time.Time          `bson:"time,omitempty,required"`
-	Reps int                `bson:"reps,omitempty,required"`
+	ID        primitive.ObjectID `bson:"_id,omitempty,required"`
+	Time      time.Time          `bson:"time,omitempty,required"`
+	Reps      int                `bson:"reps,omitempty,required"`
+	CreatedAt time.Time          `bson:"created_at,omitempty"`
 }
 
-func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (t *entities.Training, err error) {
+func (r *TrainingRepository) StartTraining(userID string, startTime time.Time) (*entities.Training, error) {
 	ouID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return t, fmt.Errorf("start training: %v", err)
+		return nil, fmt.Errorf("start training: %v", err)
 	}
 	td := trainingData{
 		UserID:    ouID,
 		StartTime: startTime,
+		CreatedAt: time.Now(),
 	}
 	results, err := r.col.InsertOne(context.TODO(), td)
 	if err != nil {
-		return t, fmt.Errorf("start training: %v", err)
+		return nil, fmt.Errorf("start training: %v", err)
 	}
 
-	t = &entities.Training{
+	t := &entities.Training{
 		ID:        results.InsertedID.(primitive.ObjectID).Hex(),
 		StartTime: startTime,
 		UserID:    userID,
+		CreatedAt: td.CreatedAt,
 	}
 
 	return t, nil
 }
 
-func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (t *entities.Training, err error) {
+func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (*entities.Training, error) {
 	tOID, err := primitive.ObjectIDFromHex(trainingID)
 	if err != nil {
 		r.l.Error().Msg(err.Error())
-		return t, repositories.NewErrorInvalidID(trainingID)
+		return nil, repositories.NewErrorInvalidID(trainingID)
 	}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
@@ -80,46 +85,19 @@ func (r *TrainingRepository) EndTraining(trainingID string, endTime time.Time) (
 		} else if strings.Contains(err.Error(), "") {
 			//
 		} else if errors.Is(err, mongo.ErrNoDocuments) {
-			return t, nil // @todo: return nil, nil
+			return nil, nil
 		}
-		return t, fmt.Errorf("end training: %v", err)
+		return nil, fmt.Errorf("end training: %v", err)
 	}
 
 	td := trainingData{}
 	err = results.Decode(&td)
 	if err != nil {
 		r.l.Err(err).Send()
-		return t, fmt.Errorf("end training: %v", err)
+		return nil, fmt.Errorf("end training: %v", err)
 	}
 
-	t = &entities.Training{
-		ID:        td.ID.Hex(),
-		UserID:    td.UserID.Hex(),
-		StartTime: td.StartTime,
-		EndTime:   td.EndTime,
-		Exercises: make([]entities.TrainingExercise, len(td.Exercises)),
-		Comment:   td.Comment,
-	}
-
-	for i, exData := range td.Exercises {
-		exercise := entities.TrainingExercise{
-			ID:         exData.ID.Hex(),
-			ExerciseID: exData.ExerciseID.Hex(),
-			StartTime:  exData.StartTime,
-			EndTime:    exData.EndTime,
-			Sets:       make([]entities.TrainingSet, len(exData.Sets)),
-			Comment:    exData.Comment,
-		}
-		for j, setData := range exData.Sets {
-			exercise.Sets[j] = entities.TrainingSet{
-				ID:   setData.ID.Hex(),
-				Time: setData.Time,
-				Reps: setData.Reps,
-			}
-		}
-
-		t.Exercises[i] = exercise
-	}
+	t := mapTrainingToEntity(td)
 
 	return t, nil
 }
@@ -149,7 +127,7 @@ func (r *TrainingRepository) GetUserTrainings(userID string, started bool) (t []
 			return nil, fmt.Errorf("get user trainings: %v", err)
 		}
 
-		t = append(t, mapTrainingToEntity(training))
+		t = append(t, *mapTrainingToEntity(training))
 	}
 
 	if err = cursor.Err(); err != nil {
@@ -206,9 +184,10 @@ func (r TrainingRepository) AddSet(teID string, set *entities.TrainingSet) (*ent
 	}
 
 	newSetData := trainingSetData{
-		ID:   primitive.NewObjectID(),
-		Time: set.Time,
-		Reps: set.Reps,
+		ID:        primitive.NewObjectID(),
+		Time:      set.Time,
+		Reps:      set.Reps,
+		CreatedAt: time.Now(),
 	}
 
 	filter := bson.M{
@@ -227,9 +206,10 @@ func (r TrainingRepository) AddSet(teID string, set *entities.TrainingSet) (*ent
 	}
 
 	newSet := entities.TrainingSet{
-		ID:   newSetData.ID.Hex(),
-		Time: newSetData.Time,
-		Reps: newSetData.Reps,
+		ID:        newSetData.ID.Hex(),
+		Time:      newSetData.Time,
+		Reps:      newSetData.Reps,
+		CreatedAt: newSetData.CreatedAt,
 	}
 	return &newSet, nil
 }
@@ -281,5 +261,5 @@ func (r TrainingRepository) EndExercise(id string, endTime time.Time) (*entities
 		return nil, fmt.Errorf("end exercise: %v", err)
 	}
 	te := mapExerciseToEntity(td.Exercises[0])
-	return &te, nil
+	return te, nil
 }
