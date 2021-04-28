@@ -22,7 +22,7 @@ type trainingData struct {
 	EndTime   time.Time              `bson:"end_time,omitempty"`
 	Exercises []trainingExerciseData `bson:"exercises,omitempty"`
 	Comment   string                 `bson:"comment,omitempty"`
-	CreatedAt time.Time              `bson:"created_at,omitempty"`
+	CreatedAt time.Time              `bson:"created_at,omitempty,required"`
 }
 
 type trainingExerciseData struct {
@@ -32,14 +32,14 @@ type trainingExerciseData struct {
 	EndTime    time.Time          `bson:"end_time,omitempty"`
 	Sets       []trainingSetData  `bson:"sets,omitempty"`
 	Comment    string             `bson:"comment,omitempty"`
-	CreatedAt  time.Time          `bson:"created_at,omitempty"`
+	CreatedAt  time.Time          `bson:"created_at,omitempty,required"`
 }
 
 type trainingSetData struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty,required"`
 	Time      time.Time          `bson:"time,omitempty,required"`
 	Reps      int                `bson:"reps,omitempty,required"`
-	CreatedAt time.Time          `bson:"created_at,omitempty"`
+	CreatedAt time.Time          `bson:"created_at,omitempty,required"`
 }
 
 func (r *TrainingRepository) GetTrainingByID(id string) (*entities.Training, error) {
@@ -147,7 +147,7 @@ func (r *TrainingRepository) GetUserTrainings(userID string, started bool) ([]en
 	}
 	defer cursor.Close(context.TODO())
 
-	t := make([]entities.Training, cursor.RemainingBatchLength())
+	t := make([]entities.Training, 0, cursor.RemainingBatchLength())
 	for cursor.Next(context.Background()) {
 		var training trainingData
 		err = cursor.Decode(&training)
@@ -180,6 +180,7 @@ func (r TrainingRepository) StartExercise(trID string, exercise *entities.Traini
 		ExerciseID: exOID,
 		StartTime:  exercise.StartTime,
 		Comment:    exercise.Comment,
+		CreatedAt:  time.Now(),
 	}
 
 	update := bson.M{"$push": bson.M{"exercises": newExerciseData}}
@@ -205,10 +206,14 @@ func (r TrainingRepository) StartExercise(trID string, exercise *entities.Traini
 	return &newExercise, nil
 }
 
-func (r TrainingRepository) AddSet(teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
+func (r TrainingRepository) AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
 	teOID, err := primitive.ObjectIDFromHex(teID)
 	if err != nil {
 		return nil, errors.WithMessage(repositories.NewErrorInvalidID(teID, "training exercise"), "add set")
+	}
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(userID, "user"), "add set")
 	}
 
 	newSetData := trainingSetData{
@@ -220,6 +225,7 @@ func (r TrainingRepository) AddSet(teID string, set *entities.TrainingSet) (*ent
 
 	filter := bson.M{
 		"exercises._id": teOID,
+		"user_id":       uOID,
 	}
 	// @improvement: check if there is a type safe way to insert nested docs
 	update := bson.M{"$push": bson.M{"exercises.$.sets": newSetData}}
@@ -267,13 +273,17 @@ func (r TrainingRepository) GetTrainingExercises(id string) ([]entities.Training
 	return te, nil
 }
 
-func (r TrainingRepository) EndExercise(id string, endTime time.Time) (*entities.TrainingExercise, error) {
+func (r TrainingRepository) EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error) {
 	teOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "training"), "end exercises")
 	}
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "user"), "end exercises")
+	}
 
-	filter := bson.M{"exercises._id": teOID}
+	filter := bson.M{"exercises._id": teOID, "user_id": uOID}
 	update := bson.M{"$set": bson.M{"exercises.$.end_time": endTime.UTC()}}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
