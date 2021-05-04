@@ -76,7 +76,7 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 func (app *App) GetExerciseByID(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
-	id := vars["id"]
+	id := vars["exerciseID"]
 	app.l.Debug().Msg("[GET / GetExeriseByID] -> id: " + id)
 
 	exercise, err := app.exerciseUsecases.GetExerciseByID(id)
