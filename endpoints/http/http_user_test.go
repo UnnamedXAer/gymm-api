@@ -1,70 +1,61 @@
 package http
 
-import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-	"testing"
+// func TestGetUserByID(t *testing.T) {
+// 	id := "1sadf3245df3245"
 
-	"github.com/unnamedxaer/gymm-api/repositories"
-)
+// 	req, _ := http.NewRequest(http.MethodGet, ("/users" + id), nil)
+// 	req.Header.Set("Content-Type", "application/json")
 
-func TestGetUserByID(t *testing.T) {
-	id := "1sadf3245df3245"
+// 	response := executeRequest(req)
 
-	req, _ := http.NewRequest(http.MethodGet, ("/users/" + id), nil)
-	req.Header.Set("Content-Type", "application/json")
+// 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	response := executeRequest(req)
+// 	//check returned obj
+// }
 
-	checkResponseCode(t, http.StatusOK, response.Code)
+// func TestGetUserByIDNotFound(t *testing.T) {
+// 	id := "1sadf3245df3245" + "notfound"
 
-	//check returned obj
-}
+// 	req, _ := http.NewRequest(http.MethodGet, ("/users" + id), nil)
+// 	req.Header.Set("Content-Type", "application/json")
 
-func TestGetUserByIDNotFound(t *testing.T) {
-	id := "1sadf3245df3245" + "notfound"
+// 	response := executeRequest(req)
 
-	req, _ := http.NewRequest(http.MethodGet, ("/users/" + id), nil)
-	req.Header.Set("Content-Type", "application/json")
+// 	checkResponseCode(t, http.StatusOK, response.Code)
 
-	response := executeRequest(req)
+// 	b, err := ioutil.ReadAll(response.Body)
+// 	if err != nil {
+// 		t.Fatalf("Expected response to be 'null', got error: %v", err)
+// 	}
+// 	if string(b) != "null" {
+// 		t.Fatalf("Expected response to be 'null', got %q", b)
+// 	}
+// }
 
-	checkResponseCode(t, http.StatusOK, response.Code)
+// func TestGetUserByIDInvalidID(t *testing.T) {
+// 	id := "1sadf3245df3245" + "INVALIDID"
 
-	b, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		t.Fatalf("Expected response to be 'null', got error: %v", err)
-	}
-	if string(b) != "null" {
-		t.Fatalf("Expected response to be 'null', got %q", b)
-	}
-}
+// 	req, _ := http.NewRequest(http.MethodGet, ("/users" + id), nil)
+// 	req.Header.Set("Content-Type", "application/json")
 
-func TestGetUserByIDInvalidID(t *testing.T) {
-	id := "1sadf3245df3245" + "INVALIDID"
+// 	response := executeRequest(req)
 
-	req, _ := http.NewRequest(http.MethodGet, ("/users/" + id), nil)
-	req.Header.Set("Content-Type", "application/json")
+// 	checkResponseCode(t, http.StatusBadRequest, response.Code)
 
-	response := executeRequest(req)
+// 	expectedErr := repositories.NewErrorInvalidID(id, "user")
 
-	checkResponseCode(t, http.StatusBadRequest, response.Code)
+// 	b, err := ioutil.ReadAll(response.Body)
+// 	if err != nil {
+// 		t.Fatalf("want response to be %v, got error: %v", expectedErr, err)
+// 	}
+// 	var data map[string]interface{}
 
-	expectedErr := repositories.NewErrorInvalidID(id, "user")
+// 	err = json.Unmarshal(b, &data)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
 
-	b, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		t.Fatalf("want response to be %v, got error: %v", expectedErr, err)
-	}
-	var data map[string]interface{}
-
-	err = json.Unmarshal(b, &data)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if data["error"] != expectedErr.Error() {
-		t.Fatalf("want response to be like {\"error\": \"%s\"}, got %s", expectedErr.Error(), string(b))
-	}
-}
+// 	if data["error"] != expectedErr.Error() {
+// 		t.Fatalf("want response to be like {\"error\": \"%s\"}, got %s", expectedErr.Error(), string(b))
+// 	}
+// }
