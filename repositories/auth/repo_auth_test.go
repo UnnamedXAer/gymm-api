@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -103,7 +104,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestGetUserByID(t *testing.T) {
+func TestGetUserByEmailAddress(t *testing.T) {
 	got, err := authRepo.GetUserByEmailAddress(mockedUser.EmailAddress)
 	if err != nil {
 		t.Fatalf("want user, got error: %v", err)
@@ -118,7 +119,7 @@ func TestGetUserByID(t *testing.T) {
 	}
 }
 
-func TestGetUserByIDNotExists(t *testing.T) {
+func TestGetUserByEmailAddressNotExists(t *testing.T) {
 	got, err := authRepo.GetUserByEmailAddress(nonexistingEmail)
 	if err != nil {
 		t.Fatalf("want nil error, got: %v", err)
