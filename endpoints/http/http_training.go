@@ -88,7 +88,7 @@ func (app *App) EndTraining(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	responseWithJSON(w, http.StatusCreated, &tr)
+	responseWithJSON(w, http.StatusOK, &tr)
 }
 
 // GetTrainingByID is a handler that returns user training for given id
@@ -274,7 +274,7 @@ func (app *App) EndTrainingExercise(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	responseWithJSON(w, http.StatusCreated, &te)
+	responseWithJSON(w, http.StatusOK, &te)
 }
 
 // AddTrainingSetExercise is a handler that adds new set to the training exercise
