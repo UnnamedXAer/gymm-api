@@ -128,3 +128,17 @@ func TestGetUserByIDNotExists(t *testing.T) {
 		t.Errorf("want nil, got: %v", got)
 	}
 }
+
+func TestGetUserByEmailAddressEmpty(t *testing.T) {
+	got, err := authRepo.GetUserByEmailAddress("")
+	if err == nil {
+		t.Fatal("want error 'empty email address', got: nil")
+	}
+	if !strings.Contains(err.Error(), "empty email address") {
+		t.Fatalf("want error 'empty email address', got: %v", err)
+	}
+
+	if got != nil {
+		t.Errorf("want nil, got: %v", got)
+	}
+}
