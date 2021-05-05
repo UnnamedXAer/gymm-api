@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -43,12 +44,14 @@ func responseWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
-	output, err := json.Marshal(payload)
+	output := bytes.Buffer{}
+	enc := json.NewEncoder(&output)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(payload)
 	if err != nil {
-		responseWithErrorTxt(w, http.StatusInternalServerError,
-			http.StatusText(http.StatusInternalServerError))
+		responseWithInternalError(w)
 	}
-	w.Write(output)
+	w.Write(output.Bytes())
 }
 
 // returns error message about malformed payload, message includes info about
