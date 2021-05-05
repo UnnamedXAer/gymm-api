@@ -30,11 +30,17 @@ type refreshTokenData struct {
 }
 
 func (repo *AuthRepository) GetUserByEmailAddress(emailAddress string) (*entities.AuthUser, error) {
+
+	if emailAddress == "" {
+		return nil, errors.WithMessage(errors.Errorf("empty email address"), "GetUserByEmailAddress")
+	}
+
 	var ud users.UserData
-	// filter := bson.M{"email_address": emailAddress}
+
 	filter := users.UserData{
 		EmailAddress: emailAddress,
 	}
+
 	err := repo.usersCol.FindOne(context.Background(), &filter).Decode(&ud)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
