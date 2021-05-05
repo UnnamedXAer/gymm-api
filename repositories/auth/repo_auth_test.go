@@ -56,12 +56,12 @@ func TestMain(m *testing.M) {
 	tokensCol := db.Collection(usersCollectionName)
 	refTokensCol := db.Collection(usersCollectionName)
 	usersCol := db.Collection(usersCollectionName)
-	_, err = usersCol.DeleteOne(context.TODO(), bson.M{"emailAddress": nonexistingEmail})
+	_, err = usersCol.DeleteOne(context.TODO(), bson.M{"email_address": nonexistingEmail})
 	if err != nil && err != mongo.ErrNoDocuments {
 		log.Fatalln(err)
 	}
 
-	result := usersCol.FindOne(context.TODO(), bson.M{"emailAddress": mocks.ExampleUser.EmailAddress})
+	result := usersCol.FindOne(context.TODO(), bson.M{"email_address": mocks.ExampleUser.EmailAddress})
 	if err = result.Err(); err != nil {
 		if err != mongo.ErrNoDocuments {
 			log.Fatalln(err)
@@ -83,6 +83,19 @@ func TestMain(m *testing.M) {
 			User:     *u,
 			Password: mocks.Password,
 		}
+	} else {
+		data := users.UserData{}
+		err := result.Decode(&data)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		mockedUser.User = entities.User{
+			ID:           data.ID.Hex(),
+			EmailAddress: data.EmailAddress,
+			Username:     data.Username,
+			CreatedAt:    data.CreatedAt,
+		}
+		mockedUser.Password = data.Password
 	}
 
 	authRepo = NewRepository(&logger, usersCol, tokensCol, refTokensCol)
