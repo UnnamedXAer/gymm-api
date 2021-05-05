@@ -117,7 +117,7 @@ func (app *App) GetExercisesByName(w http.ResponseWriter, req *http.Request) {
 func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
-	id, ok := vars["id"]
+	id, ok := vars["exerciseID"]
 	if !ok {
 		err := errors.New("missign query parameter 'ID'")
 		logDebugError(app.l, req, err)
