@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/mocks"
@@ -47,8 +46,8 @@ func TestLogin(t *testing.T) {
 			t.Errorf("want token cookie to be HttpOnly")
 		}
 
-		if time.Until(tokenCookie.Expires) < 0 {
-			t.Errorf("want token expire time to be in the future")
+		if !tokenCookie.Expires.IsZero() {
+			t.Errorf("want token cookie expire time to be zero, got %v", tokenCookie.Expires)
 		}
 	}
 

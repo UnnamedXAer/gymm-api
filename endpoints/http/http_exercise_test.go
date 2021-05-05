@@ -247,7 +247,7 @@ func TestGetExercisesByName(t *testing.T) {
 
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			req, err := http.NewRequest(http.MethodGet, "/exercises/?n="+tC.input, nil)
+			req, err := http.NewRequest(http.MethodGet, "/exercises?n="+tC.input, nil)
 			if err != nil {
 				t.Error(err)
 				return
@@ -262,13 +262,15 @@ func TestGetExercisesByName(t *testing.T) {
 				return
 			}
 			if len(exercises) != tC.want {
-				t.Errorf("want unmarshalled res len eq %d, got %d, for %q", tC.want, len(exercises), tC.input)
+				t.Errorf("want unmarshalled results len eq %d, got %d, for %q", tC.want, len(exercises), tC.input)
 			}
 		})
 	}
 }
 func TestGetExercisesByNameMissingParam(t *testing.T) {
-	req, err := http.NewRequest(http.MethodGet, "/exercises/", nil)
+	want := `"error":"missing name`
+
+	req, err := http.NewRequest(http.MethodGet, "/exercises", nil)
 	if err != nil {
 		t.Error(err)
 		return
@@ -276,11 +278,12 @@ func TestGetExercisesByNameMissingParam(t *testing.T) {
 	res := executeRequest(req)
 	checkResponseCode(t, http.StatusBadRequest, res.Code)
 
-	if !strings.Contains(res.Body.String(), `"error":"missing name"`) {
-		t.Errorf("want response like 'missing name...', got %q for not 'n' parameter", res.Body)
+	got := res.Body.String()
+	if !strings.Contains(got, want) {
+		t.Errorf("want response like 'missing name...', got %q for req with no 'n' parameter", got)
 	}
 
-	req, err = http.NewRequest(http.MethodGet, "/exercises/?n=", nil)
+	req, err = http.NewRequest(http.MethodGet, "/exercises?n=", nil)
 	if err != nil {
 		t.Error(err)
 		return
@@ -288,12 +291,15 @@ func TestGetExercisesByNameMissingParam(t *testing.T) {
 	res = executeRequest(req)
 	checkResponseCode(t, http.StatusBadRequest, res.Code)
 
-	if !strings.Contains(res.Body.String(), `"error":"missing name"`) {
-		t.Errorf("want response like 'missing name...', got %q for empty 'n' parameter", res.Body)
+	got = res.Body.String()
+	if !strings.Contains(got, want) {
+		t.Errorf("want response like 'missing name...', got %q for empty 'n' parameter", got)
 	}
 }
+
 func TestGetExercisesByNameEmptyParam(t *testing.T) {
-	req, err := http.NewRequest(http.MethodGet, "/exercises/?n=", nil)
+	want := `"error":"missing name`
+	req, err := http.NewRequest(http.MethodGet, "/exercises?n=", nil)
 	if err != nil {
 		t.Error(err)
 		return
@@ -301,7 +307,8 @@ func TestGetExercisesByNameEmptyParam(t *testing.T) {
 	res := executeRequest(req)
 	checkResponseCode(t, http.StatusBadRequest, res.Code)
 
-	if !strings.Contains(res.Body.String(), `"error":"missing name"`) {
-		t.Errorf("want response like 'missing name...', got %q for empty 'n' parameter", res.Body)
+	got := res.Body.String()
+	if !strings.Contains(got, want) {
+		t.Errorf("want response like 'missing name...', got %q for empty 'n' parameter", got)
 	}
 }

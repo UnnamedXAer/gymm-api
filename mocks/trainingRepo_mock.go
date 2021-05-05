@@ -44,7 +44,7 @@ var (
 				StartTime:  time.Now().Add(-115 * time.Minute),
 			},
 		},
-		EndTime: time.Now(),
+		// EndTime: time.Now(),
 		Comment: "too long, too heavy",
 	}
 
@@ -72,15 +72,16 @@ func (tr *MockTrainingRepo) GetTrainingByID(id string) (*entities.Training, erro
 
 func (tr *MockTrainingRepo) StartTraining(userID string, startTime time.Time) (*entities.Training, error) {
 	return &entities.Training{
-		ID:        userID,
-		UserID:    ExampleTraining.UserID,
-		StartTime: ExampleTraining.StartTime,
+		ID:        ExampleTraining.ID,
+		UserID:    userID,
+		StartTime: startTime,
 	}, nil
 }
 
 func (tr *MockTrainingRepo) EndTraining(id string, endTime time.Time) (*entities.Training, error) {
 	out := ExampleTraining
 	out.ID = id
+	out.EndTime = endTime
 	return &out, nil
 }
 

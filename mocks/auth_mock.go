@@ -13,7 +13,7 @@ var (
 	ExampleUserToken = entities.UserToken{
 		ID:        "ID here",
 		UserID:    UserID,
-		Token:     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwNzJkMzIwNjE0NDY0NDk4NGE1NGZhMSIsInIiOnsidG9rZW4iOiJkNDVhNmU3Ni0wNTllLTRlOTEtOTgwZi05YjliM2FmOGIyN2MifSwiZXhwIjo0Nzc1MTMzODUyfQ.R1GpcstbZ43YjyGxrStv3DB7EZVkPj4RL76a0xTjTB0",
+		Token:     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwNzJkMzIwNjE0NDY0NDk4NGE1NGZhMSIsInIiOnsidG9rZW4iOiJkNDVhNmU3Ni0wNTllLTRlOTEtOTgwZi05YjliM2FmOGIyN2MifSwiZXhwIjo0Nzc1MTMzODUyfQ.D2T803_LhVAfEXBMJ1_z--46ak8CmmXe-772QY1-3o0",
 		Device:    "PostmanRuntime/7.26.10",
 		CreatedAt: time.Now().UTC(),
 		ExpiresAt: time.Now().AddDate(1, 0, 0).UTC(),

@@ -59,7 +59,7 @@ func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, erro
 
 func (er *MockExerciseRepo) GetExercisesByName(name string) ([]entities.Exercise, error) {
 
-	if strings.Contains(ExampleExercise.Name, name) {
+	if strings.Contains(strings.ToLower(ExampleExercise.Name), strings.ToLower(name)) {
 		out := []entities.Exercise{ExampleExercise}
 		return out, nil
 	}
