@@ -133,6 +133,35 @@ func (app *App) Logout(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// Logout logouts the user, removes token from cookies & storage
+func (app *App) GetSessions(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	userID, ok := ctx.Value(contextKeyUserID).(string)
+	if !ok {
+		responseWithUnauthorized(w)
+		return
+	}
+
+	jwts, err := app.authUsecases.GetUserJWTs(userID, false)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		clearCookieJWTAuthToken(w)
+		responseWithInternalError(w)
+		return
+	}
+
+	output := make([]map[string]string, len(jwts))
+
+	for _, jwt := range jwts {
+		output = append(output, map[string]string{
+			"device": jwt.Device,
+		})
+	}
+
+	responseWithJSON(w, http.StatusCreated, &output)
+
+}
+
 func (app *App) Refresh(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
