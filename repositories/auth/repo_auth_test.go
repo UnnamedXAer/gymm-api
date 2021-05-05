@@ -113,7 +113,7 @@ func TestGetUserByID(t *testing.T) {
 		mockedUser.EmailAddress != got.EmailAddress ||
 		mockedUser.Username != got.Username ||
 		mockedUser.ID != got.ID ||
-		len(got.Password) == 0) {
+		len(mockedUser.Password) != len(got.Password)) {
 		t.Errorf("want user like: %v, got: %v", mockedUser, got)
 	}
 }

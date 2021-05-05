@@ -97,7 +97,7 @@ func TestGetUserTrainings(t *testing.T) {
 	}
 
 	for _, v := range tr {
-		if v.EndTime.IsZero() {
+		if !v.EndTime.IsZero() {
 			t.Errorf("want only started trainings, got %v", tr)
 			return
 		}
