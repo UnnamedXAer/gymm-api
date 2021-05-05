@@ -161,11 +161,10 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	body := make(map[string]string, 1)
+	body := make(map[string]interface{}, 1)
 
 	err := json.NewDecoder(req.Body).Decode(&body)
 	if err != nil {
-		err := fmt.Errorf("missing %q property", "exerciseId1")
 		logDebugError(app.l, req, err)
 		responseWithError(w, http.StatusBadRequest, err)
 		return
@@ -174,6 +173,14 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 	exerciseID, ok := body["exerciseId"]
 	if !ok {
 		err := fmt.Errorf("missing %q property", "exerciseId")
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	exID, ok := exerciseID.(string)
+	if !ok {
+		err := fmt.Errorf("incorrect type of %q property, expected string", "exerciseId")
 		logDebugError(app.l, req, err)
 		responseWithError(w, http.StatusBadRequest, err)
 		return
@@ -201,7 +208,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	exercise, err := app.exerciseUsecases.GetExerciseByID(exerciseID)
+	exercise, err := app.exerciseUsecases.GetExerciseByID(exID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -215,7 +222,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 	}
 
 	if exercise == nil {
-		err = fmt.Errorf("exercise with id %q does not exist", exerciseID)
+		err = fmt.Errorf("exercise with id %q does not exist", exID)
 		logDebugError(app.l, req, err)
 		responseWithError(w, http.StatusBadRequest, err)
 		return
@@ -223,7 +230,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 
 	te := &entities.TrainingExercise{
 		StartTime:  time.Now(),
-		ExerciseID: exerciseID,
+		ExerciseID: exID,
 	}
 
 	te, err = app.trainingUsecases.StartExercise(tr.ID, te)
@@ -297,7 +304,6 @@ func (app *App) AddTrainingSetExercise(w http.ResponseWriter, req *http.Request)
 	}
 
 	vars := mux.Vars(req)
-	// tID := vars["trainingID"]
 	teID := vars["exerciseID"]
 
 	ts, err := app.trainingUsecases.AddSet(userID, teID, &set)
