@@ -58,10 +58,6 @@ func TestMain(m *testing.M) {
 
 	trainingsCol := db.Collection(trCollName)
 	usersCol := db.Collection(uCollName)
-	// _, err = trainingsCol.DeleteMany(nil, bson.D{})
-	// if err != nil {
-	// 	panic(err)
-	// }
 
 	trainingRepo = NewRepository(&logger, trainingsCol)
 	userRepo = users.NewRepository(&logger, usersCol)
@@ -89,42 +85,8 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestGetTrainingByID(t *testing.T) {
-	if mockedStartedTraining.StartTime.IsZero() {
-		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
-	}
-
-	tr, err := trainingRepo.GetTrainingByID(mockedStartedTraining.ID)
-	if err != nil {
-		t.Errorf("want training, got error: %v", err)
-		return
-	}
-
-	if tr == nil {
-		t.Errorf("want training with id: %q, got nil", mockedStartedTraining.ID)
-	}
-}
-
-func TestGetTrainingByIDNotExisting(t *testing.T) {
-	id := mockedStartedTraining.ID[:len(mockedStartedTraining.ID)-2]
-	char := "f"
-	if mockedStartedTraining.ID[len(mockedStartedTraining.ID)-1] == 'f' {
-		char = "g"
-	}
-	id += char
-
-	tr, err := trainingRepo.GetTrainingByID(id)
-	if err != nil {
-		t.Errorf("want nil error, got %v", err)
-		return
-	}
-
-	if t != nil {
-		t.Errorf("want nil training for id: %q, got %v", id, tr)
-	}
-}
-
 func TestStartTraining(t *testing.T) {
+
 	gotTraining, err := trainingRepo.StartTraining(trainingdata.UserID.Hex(), trainingdata.StartTime)
 	mockedStartedTraining = *gotTraining
 	if err != nil {
@@ -156,9 +118,46 @@ func TestStartTraining(t *testing.T) {
 	}
 }
 
+func TestGetTrainingByID(t *testing.T) {
+	if mockedStartedTraining.StartTime.IsZero() {
+		t.Run("create new started training", TestStartTraining)
+	}
+
+	tr, err := trainingRepo.GetTrainingByID(mockedStartedTraining.ID)
+	if err != nil {
+		t.Errorf("want training, got error: %v", err)
+		return
+	}
+
+	if tr == nil {
+		t.Errorf("want training with id: %q, got nil", mockedStartedTraining.ID)
+	}
+}
+
+func TestGetTrainingByIDNotExisting(t *testing.T) {
+	if mockedStartedTraining.StartTime.IsZero() {
+		t.Run("create new started training", TestStartTraining)
+	}
+	char := "f"
+	if mockedStartedTraining.ID[len(mockedStartedTraining.ID)-1] == 'f' {
+		char = "e"
+	}
+	id := mockedStartedTraining.ID[:len(mockedStartedTraining.ID)-1] + char
+
+	tr, err := trainingRepo.GetTrainingByID(id)
+	if err != nil {
+		t.Errorf("want nil error, got %v", err)
+		return
+	}
+
+	if tr != nil {
+		t.Errorf("want nil training for id: %q, got %v", id, tr)
+	}
+}
+
 func TestGetStartedTrainings(t *testing.T) {
 	if mockedStartedTraining.StartTime.IsZero() {
-		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
+		t.Run("create new started training", TestStartTraining)
 	}
 
 	gotTrainings, err := trainingRepo.GetUserTrainings(mockedStartedTraining.UserID, true)
@@ -198,7 +197,7 @@ func TestGetStartedTrainings(t *testing.T) {
 
 func TestStartExercise(t *testing.T) {
 	if mockedStartedTraining.StartTime.IsZero() {
-		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
+		t.Run("create new started training", TestStartTraining)
 	}
 
 	now := time.Now().UTC()
@@ -338,7 +337,7 @@ func TestEndExercise(t *testing.T) {
 
 func TestEndTraining(t *testing.T) {
 	if mockedStartedTraining.StartTime.IsZero() {
-		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
+		t.Run("create new started training", TestStartTraining)
 	}
 
 	now := time.Now().UTC()
@@ -355,7 +354,7 @@ func TestEndTraining(t *testing.T) {
 
 func TestGetUserTrainings(t *testing.T) {
 	if mockedStartedTraining.StartTime.IsZero() {
-		t.Run("create new started training by 'TestStartTraining'", TestStartTraining)
+		t.Run("create new started training", TestStartTraining)
 	}
 
 	var tr []entities.Training
