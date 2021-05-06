@@ -8,28 +8,30 @@ func mapTrainingToEntity(td *trainingData) *entities.Training {
 		UserID:    td.UserID.Hex(),
 		StartTime: td.StartTime,
 		EndTime:   td.EndTime,
-		Exercises: mapExercisesToEntity(td.Exercises),
+		Exercises: mapExercisesToEntities(td.Exercises),
 		Comment:   td.Comment,
 		CreatedAt: td.CreatedAt,
 	}
 }
 
-func mapExerciseToEntity(ted trainingExerciseData) *entities.TrainingExercise {
+func mapExerciseToEntity(ted *trainingExerciseData) *entities.TrainingExercise {
 	return &entities.TrainingExercise{
 		ID:         ted.ID.Hex(),
 		ExerciseID: ted.ExerciseID.Hex(),
 		StartTime:  ted.StartTime,
 		EndTime:    ted.EndTime,
 		Comment:    ted.Comment,
-		Sets:       mapSetsToEntity(ted.Sets),
+		Sets:       mapSetsToEntities(ted.Sets),
 		CreatedAt:  ted.CreatedAt,
 	}
 }
 
-func mapExercisesToEntity(ted []trainingExerciseData) (te []entities.TrainingExercise) {
+func mapExercisesToEntities(ted []trainingExerciseData) []entities.TrainingExercise {
 
-	for _, data := range ted {
-		te = append(te, *mapExerciseToEntity(data))
+	te := make([]entities.TrainingExercise, len(ted))
+
+	for i := 0; i < len(ted); i++ {
+		te[i] = *mapExerciseToEntity(&ted[i])
 	}
 
 	return te
@@ -44,10 +46,12 @@ func mapSetToEntity(tsd trainingSetData) *entities.TrainingSet {
 	}
 }
 
-func mapSetsToEntity(tsd []trainingSetData) (ts []entities.TrainingSet) {
+func mapSetsToEntities(tsd []trainingSetData) []entities.TrainingSet {
 
-	for _, data := range tsd {
-		ts = append(ts, *mapSetToEntity(data))
+	ts := make([]entities.TrainingSet, len(tsd))
+
+	for i := 0; i < len(tsd); i++ {
+		ts[i] = *mapSetToEntity(tsd[i])
 	}
 
 	return ts

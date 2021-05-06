@@ -141,6 +141,6 @@ func (repo ExerciseRepository) GetExercisesByName(name string) ([]entities.Exerc
 		return nil, fmt.Errorf("get exercises by name: %v", err)
 	}
 
-	ex := mapExercisesToEntity(data)
+	ex := mapExercisesToEntities(data)
 	return ex, nil
 }

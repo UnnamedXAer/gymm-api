@@ -13,10 +13,12 @@ func mapExerciseToEntity(data *ExerciseData) entities.Exercise {
 	}
 }
 
-func mapExercisesToEntity(exd []ExerciseData) (exercises []entities.Exercise) {
+func mapExercisesToEntities(exd []ExerciseData) []entities.Exercise {
 
-	for _, data := range exd {
-		exercises = append(exercises, mapExerciseToEntity(&data))
+	exercises := make([]entities.Exercise, len(exd))
+
+	for i := 0; i < len(exd); i++ {
+		exercises[i] = mapExerciseToEntity(&exd[i])
 	}
 
 	return exercises

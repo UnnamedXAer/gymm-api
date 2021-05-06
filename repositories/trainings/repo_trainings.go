@@ -201,7 +201,7 @@ func (r TrainingRepository) StartExercise(trID string, exercise *entities.Traini
 		StartTime:  newExerciseData.StartTime,
 		EndTime:    newExerciseData.EndTime,
 		Comment:    newExerciseData.Comment,
-		Sets:       mapSetsToEntity(newExerciseData.Sets),
+		Sets:       mapSetsToEntities(newExerciseData.Sets),
 	}
 	return &newExercise, nil
 }
@@ -269,7 +269,7 @@ func (r TrainingRepository) GetTrainingExercises(id string) ([]entities.Training
 		return nil, fmt.Errorf("get training exercises: %v", err)
 	}
 
-	te := mapExercisesToEntity(tr[0].Exercises)
+	te := mapExercisesToEntities(tr[0].Exercises)
 	return te, nil
 }
 
@@ -298,6 +298,6 @@ func (r TrainingRepository) EndExercise(userID, id string, endTime time.Time) (*
 	if err != nil {
 		return nil, fmt.Errorf("end exercise: %v", err)
 	}
-	te := mapExerciseToEntity(td.Exercises[0])
+	te := mapExerciseToEntity(&td.Exercises[0])
 	return te, nil
 }
