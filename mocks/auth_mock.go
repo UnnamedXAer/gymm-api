@@ -49,14 +49,20 @@ func (r *MockAuthRepo) GetUserByEmailAddress(emailAddress string) (*entities.Aut
 
 func (r *MockAuthRepo) GetUserJWTs(
 	userID string,
-	expired bool,
+	expired entities.ExpireType,
 ) ([]entities.UserToken, error) {
 	if strings.Contains(userID, "notfound") {
 		return nil, nil
 	}
 
 	expirationTime := ExampleUserToken.ExpiresAt
-	if expired {
+
+	switch expired {
+	case entities.All:
+		break
+	case entities.NotExpired:
+		break
+	case entities.Expired:
 		expirationTime = time.Now().AddDate(0, 0, -1)
 	}
 
@@ -85,9 +91,9 @@ func (r *MockAuthRepo) SaveJWT(userID string, device string, token string, expir
 	return out, nil
 }
 
-func (r *MockAuthRepo) DeleteJWT(userID string, device string, token string) error {
+func (r *MockAuthRepo) DeleteJWT(token *entities.UserToken) (int64, error) {
 
-	return nil
+	return 1, nil
 }
 
 func (r *MockAuthRepo) SaveRefreshToken(

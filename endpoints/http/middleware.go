@@ -3,11 +3,13 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/unnamedxaer/gymm-api/entities"
 )
 
 type middleware func(http.HandlerFunc) http.HandlerFunc
@@ -62,11 +64,18 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 
 		if claims.StandardClaims.ExpiresAt < time.Now().Add(30*time.Second).Unix() {
 			device := r.UserAgent() // @todo: improve, mb send some info from client
-			err := app.authUsecases.DeleteJWT(claims.UserID, device, cookie.Value)
+			ut := entities.UserToken{
+				UserID: claims.UserID,
+				Token:  cookie.Value,
+				Device: device,
+			}
+			n, err := app.authUsecases.DeleteJWT(&ut)
 			if err != nil {
 				// we can ignore this error for because we are going to create new token anyway
 				// if next calls fail we will return error to the client
 				logDebugError(app.l, r, err)
+			} else if n == 0 {
+				logDebugError(app.l, r, fmt.Errorf("JWT was not deleted for: %v", ut))
 			}
 
 			rt, err := app.authUsecases.GetRefreshToken(claims.ID)
@@ -83,7 +92,8 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 			err = validateRefreshToken(rt, claims.Token)
 			if err != nil {
 				logDebugError(app.l, r, err)
-				err = app.authUsecases.DeleteRefreshToken(claims.ID)
+				// @todo: handle return
+				_, err = app.authUsecases.DeleteRefreshToken(claims.ID)
 				if err != nil {
 					logDebugError(app.l, r, err)
 				}

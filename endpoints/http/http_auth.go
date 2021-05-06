@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -123,17 +124,23 @@ func (app *App) Register(w http.ResponseWriter, req *http.Request) {
 // Logout logouts the user, removes token from cookies & storage
 func (app *App) Logout(w http.ResponseWriter, req *http.Request) {
 	cookie, err := req.Cookie(cookieJwtTokenName)
+	var n int64
 	if cookie != nil {
-		err = app.authUsecases.DeleteJWT("", "", cookie.Value)
+		n, err = app.authUsecases.DeleteJWT(&entities.UserToken{
+			Token: cookie.Value,
+		})
+
 	}
 	if err != nil {
 		logDebugError(app.l, req, err)
+	} else if n == 0 {
+		logDebugError(app.l, req, fmt.Errorf("JWT was not deleted for cookie.value: %s", cookie.Value))
 	}
 	clearCookieJWTAuthToken(w)
 	w.WriteHeader(http.StatusOK)
 }
 
-// Logout logouts the user, removes token from cookies & storage
+// GetSessions returns all user sessions
 func (app *App) GetSessions(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	userID, ok := ctx.Value(contextKeyUserID).(string)
@@ -142,7 +149,7 @@ func (app *App) GetSessions(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	jwts, err := app.authUsecases.GetUserJWTs(userID, false)
+	jwts, err := app.authUsecases.GetUserJWTs(userID, entities.NotExpired)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		clearCookieJWTAuthToken(w)
@@ -150,16 +157,84 @@ func (app *App) GetSessions(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	output := make([]map[string]string, len(jwts))
+	responseWithJSON(w, http.StatusOK, &jwts)
+}
 
-	for _, jwt := range jwts {
-		output = append(output, map[string]string{
-			"device": jwt.Device,
-		})
+// LogoutSession logouts the user, from the device/browser
+func (app *App) LogoutSession(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	userID, ok := ctx.Value(contextKeyUserID).(string)
+	if !ok {
+		responseWithUnauthorized(w)
+		return
 	}
 
-	responseWithJSON(w, http.StatusCreated, &output)
+	ut := entities.UserToken{}
+	err := json.NewDecoder(req.Body).Decode(&ut)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+	if ut.UserID != "" && ut.UserID != userID {
+		responseWithUnauthorized(w)
+		return
+	}
 
+	n, err := app.authUsecases.DeleteJWT(&ut)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+		responseWithInternalError(w)
+		return
+	}
+
+	// logout the user if he asked to delete current token
+	cookie, _ := req.Cookie(cookieJwtTokenName)
+	if cookie != nil {
+		if ut.Token == cookie.Value {
+			clearCookieJWTAuthToken(w)
+		}
+	}
+
+	if n == 0 {
+		responseWithJSON(w, http.StatusOK, map[string]string{"warning": "no records were deleted"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// LogoutSession logouts the user, from the device/browser
+func (app *App) LogoutAllSessions(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	userID, ok := ctx.Value(contextKeyUserID).(string)
+	if !ok {
+		responseWithUnauthorized(w)
+		return
+	}
+
+	n, err := app.authUsecases.DeleteRefreshTokenAndAllTokens(userID)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		var e *repositories.InvalidIDError
+		if errors.As(err, &e) {
+			responseWithError(w, http.StatusBadRequest, e)
+			return
+		}
+		responseWithInternalError(w)
+		return
+	}
+	clearCookieJWTAuthToken(w)
+	if n == 0 {
+		responseWithJSON(w, http.StatusOK, map[string]string{"warning": "no records were deleted"})
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (app *App) Refresh(w http.ResponseWriter, req *http.Request) {

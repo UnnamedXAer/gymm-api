@@ -11,11 +11,12 @@ import (
 type AuthRepo interface {
 	GetUserByEmailAddress(emailAddress string) (*entities.AuthUser, error)
 	SaveJWT(userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
-	GetUserJWTs(userID string, expired bool) ([]entities.UserToken, error)
-	DeleteJWT(userID string, device string, token string) error
+	GetUserJWTs(userID string, expired entities.ExpireType) ([]entities.UserToken, error)
+	DeleteJWT(ut *entities.UserToken) (int64, error)
 	SaveRefreshToken(userID string, token string, expiresAt time.Time) (*entities.RefreshToken, error)
 	GetRefreshToken(userID string) (*entities.RefreshToken, error)
-	DeleteRefreshToken(userID string) error
+	DeleteRefreshToken(userID string) (n int64, err error)
+	DeleteRefreshTokenAndAllTokens(userID string) (n int64, err error)
 }
 
 type AuthUsecases struct {
@@ -29,15 +30,17 @@ type IAuthUsecases interface {
 	SaveJWT(userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
 	// GetUserJWTs returns user jwt tokens
 	// if expired is true it returns only expired tokens
-	GetUserJWTs(userID string, expired bool) ([]entities.UserToken, error)
-	// DeleteJWT removes jwt token
-	DeleteJWT(userID string, device string, token string) error
+	GetUserJWTs(userID string, expired entities.ExpireType) ([]entities.UserToken, error)
+	// DeleteJWT removes jwt token, it returns number of deleted results and error if any
+	DeleteJWT(ut *entities.UserToken) (int64, error)
 	// SaveRefreshToken creates new or override existing entry in storage with given refresh token for the user.
 	SaveRefreshToken(userID string, token string, expiresAt time.Time) (*entities.RefreshToken, error)
 	// GetRefreshToken reads refresh token for given user.
 	GetRefreshToken(userID string) (*entities.RefreshToken, error)
 	// DeleteRefreshToken removes refresh token for given user id
-	DeleteRefreshToken(userID string) error
+	DeleteRefreshToken(userID string) (n int64, err error)
+	// DeleteRefreshTokenAndAllTokens removes all jwt tokens and refresh token for given user
+	DeleteRefreshTokenAndAllTokens(userID string) (n int64, err error)
 }
 
 type IncorrectCredentialsError struct{}
@@ -73,11 +76,11 @@ func (au *AuthUsecases) SaveJWT(userID string, device string, token string, expi
 	return au.repo.SaveJWT(userID, device, token, expiresAt)
 }
 
-func (au *AuthUsecases) DeleteJWT(userID string, device string, token string) error {
-	return au.repo.DeleteJWT(userID, device, token)
+func (au *AuthUsecases) DeleteJWT(token *entities.UserToken) (int64, error) {
+	return au.repo.DeleteJWT(token)
 }
 
-func (au *AuthUsecases) GetUserJWTs(userID string, expired bool) ([]entities.UserToken, error) {
+func (au *AuthUsecases) GetUserJWTs(userID string, expired entities.ExpireType) ([]entities.UserToken, error) {
 	return au.repo.GetUserJWTs(userID, expired)
 }
 
@@ -89,8 +92,12 @@ func (au *AuthUsecases) GetRefreshToken(userID string) (*entities.RefreshToken, 
 	return au.repo.GetRefreshToken(userID)
 }
 
-func (au *AuthUsecases) DeleteRefreshToken(userID string) error {
+func (au *AuthUsecases) DeleteRefreshToken(userID string) (n int64, err error) {
 	return au.repo.DeleteRefreshToken(userID)
+}
+
+func (au *AuthUsecases) DeleteRefreshTokenAndAllTokens(userID string) (n int64, err error) {
+	return au.repo.DeleteRefreshTokenAndAllTokens(userID)
 }
 
 // NewAuthUsecases creates auth usecases

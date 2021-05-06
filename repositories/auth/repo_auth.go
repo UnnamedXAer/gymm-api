@@ -6,9 +6,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -63,7 +65,7 @@ func (repo *AuthRepository) GetUserByEmailAddress(emailAddress string) (*entitie
 
 func (repo *AuthRepository) GetUserJWTs(
 	userID string,
-	expired bool,
+	expired entities.ExpireType,
 ) ([]entities.UserToken, error) {
 
 	uOID, err := primitive.ObjectIDFromHex(userID)
@@ -75,7 +77,12 @@ func (repo *AuthRepository) GetUserJWTs(
 		"user_id": uOID,
 	}
 
-	if expired {
+	switch expired {
+	case entities.All:
+		break
+	case entities.NotExpired:
+		filter["expires_at"] = bson.M{"$gt": time.Now()}
+	case entities.Expired:
 		filter["expires_at"] = bson.M{"$lte": time.Now()}
 	}
 
@@ -87,12 +94,14 @@ func (repo *AuthRepository) GetUserJWTs(
 		return nil, errors.WithMessage(err, "authRepo.GetUserJWTs")
 	}
 
-	var tokens []entities.UserToken
+	data := []tokenData{}
 
-	err = cursor.All(context.Background(), &tokens)
+	err = cursor.All(context.Background(), &data)
 	if err != nil {
 		return nil, errors.WithMessage(err, "authRepo.GetUserJWTs")
 	}
+
+	tokens := mapTokensToEntities(data)
 
 	return tokens, nil
 }
@@ -133,31 +142,40 @@ func (repo *AuthRepository) SaveJWT(
 	return out, nil
 }
 
-func (repo *AuthRepository) DeleteJWT(userID string, device string, token string) error {
-
+func (repo *AuthRepository) DeleteJWT(ut *entities.UserToken) (int64, error) {
+	ctx := context.TODO()
 	var filter tokenData
-	if token != "" {
-		filter.Token = token
-	} else {
-
-		uOID, err := primitive.ObjectIDFromHex(userID)
+	if ut.ID != "" {
+		tokenOID, err := primitive.ObjectIDFromHex(ut.ID)
 		if err != nil {
-			return errors.WithMessage(err, "authRepo.DeleteJWT")
+			return 0, errors.WithMessage(repositories.NewErrorInvalidID(ut.ID, "token"), "authRepo.DeleteJWT")
+		}
+		filter.ID = tokenOID
+	}
+	if ut.Token != "" {
+		filter.Token = ut.Token
+	}
+	if ut.UserID != "" {
+		uOID, err := primitive.ObjectIDFromHex(ut.UserID)
+		if err != nil {
+			return 0, errors.WithMessage(repositories.NewErrorInvalidID(ut.ID, "token - user"), "authRepo.DeleteJWT")
 		}
 		filter.UserID = uOID
-		filter.Device = device
+	}
+	if ut.Device != "" {
+		filter.Device = ut.Device
 	}
 
-	result, err := repo.tokensCol.DeleteMany(context.Background(), &filter)
+	result, err := repo.tokensCol.DeleteMany(ctx, &filter)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return nil
+			return result.DeletedCount, nil
 		}
-		return errors.WithMessage(err, "authRepo.DeleteJWT")
+		return result.DeletedCount, errors.WithMessage(err, "authRepo.DeleteJWT")
 	}
 
-	repo.l.Debug().Msgf("authRepo.DeleteJWT userID: %q, deleteCnt: %d", userID, result.DeletedCount)
-	return nil
+	repo.l.Debug().Msgf("authRepo.DeleteJWT filter: %v, deleteCnt: %d", filter, result.DeletedCount)
+	return result.DeletedCount, nil
 }
 
 func (repo *AuthRepository) SaveRefreshToken(
@@ -222,10 +240,10 @@ func (repo *AuthRepository) GetRefreshToken(userID string) (*entities.RefreshTok
 	return rt, nil
 }
 
-func (repo *AuthRepository) DeleteRefreshToken(userID string) error {
+func (repo *AuthRepository) DeleteRefreshToken(userID string) (n int64, err error) {
 	uOID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
-		return errors.WithMessage(err, "authRepo.DeleteRefreshToken")
+		return 0, errors.WithMessage(err, "authRepo.DeleteRefreshToken")
 	}
 	filter := refreshTokenData{
 		UserID: uOID,
@@ -234,12 +252,74 @@ func (repo *AuthRepository) DeleteRefreshToken(userID string) error {
 	result, err := repo.tokensCol.DeleteMany(context.Background(), &filter)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return nil
+			return result.DeletedCount, nil
 		}
-		return errors.WithMessage(err, "authRepo.DeleteRefreshToken")
+		return result.DeletedCount, errors.WithMessage(err, "authRepo.DeleteRefreshToken")
 	}
 
 	repo.l.Debug().Msgf("authRepo.DeleteRefreshToken userID: %q, deleteCnt: %d", userID, result.DeletedCount)
 
-	return nil
+	return result.DeletedCount, nil
+}
+
+func (repo *AuthRepository) DeleteRefreshTokenAndAllTokens(userID string) (n int64, err error) {
+
+	return 0, errors.Errorf("not implemented yet")
+
+	ctx := context.TODO()
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		if err != nil {
+			return 0, errors.WithMessage(repositories.NewErrorInvalidID(userID, "user"),
+				"authRepo.DeleteRefreshTokenAndAllTokens")
+		}
+	}
+	filter := bson.M{
+		"user_id": uOID,
+	}
+
+	cb := func(sessCtx mongo.SessionContext) (interface{}, error) {
+
+		tResult, err := repo.tokensCol.DeleteMany(sessCtx, &filter)
+		if err != nil {
+			if err.Error() == "mongo: no documents in result" {
+				return tResult.DeletedCount, nil
+			}
+			return tResult.DeletedCount, errors.WithMessage(err,
+				"authRepo.DeleteRefreshTokenAndAllTokens: token:")
+		}
+
+		rtResults, err := repo.refTokensCol.DeleteMany(sessCtx, &filter)
+		if err != nil {
+			if err.Error() == "mongo: no documents in result" {
+				return rtResults.DeletedCount + tResult.DeletedCount, nil
+			}
+			return rtResults.DeletedCount + tResult.DeletedCount, errors.WithMessage(err,
+				"authRepo.DeleteRefreshTokenAndAllTokens: refresh token:")
+		}
+
+		return rtResults.DeletedCount + tResult.DeletedCount, errors.New("not implemented")
+	}
+
+	session, err := repo.refTokensCol.Database().Client().StartSession()
+	if err != nil {
+		return 0, errors.WithMessage(err, "authRepo.DeleteRefreshTokenAndAllTokens")
+	}
+	defer session.EndSession(ctx)
+
+	results, err := session.WithTransaction(ctx, cb)
+	if err != nil {
+		return 0, err
+	}
+
+	n, ok := results.(int64)
+	if !ok {
+		repo.l.Debug().Msgf("authRepo.DeleteRefreshTokenAndAllTokens: could not assert, results: %v",
+			results)
+	} else {
+		repo.l.Debug().Msgf("authRepo.DeleteRefreshTokenAndAllTokens userID: %q, deleteCnt: %d",
+			userID, n)
+	}
+
+	return n, nil
 }

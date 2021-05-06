@@ -2,6 +2,14 @@ package entities
 
 import "time"
 
+type ExpireType uint8
+
+const (
+	Expired ExpireType = iota
+	NotExpired
+	All
+)
+
 type AuthUser struct {
 	User
 	Password []byte
