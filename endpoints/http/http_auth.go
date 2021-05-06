@@ -149,7 +149,7 @@ func (app *App) GetSessions(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	jwts, err := app.authUsecases.GetUserJWTs(userID, entities.NotExpired)
+	jwts, err := app.authUsecases.GetUserJWTs(userID, entities.All)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		clearCookieJWTAuthToken(w)
@@ -216,14 +216,6 @@ func (app *App) LogoutSession(w http.ResponseWriter, req *http.Request) {
 		}
 		responseWithInternalError(w)
 		return
-	}
-
-	// logout the user if he asked to delete current token
-	cookie, _ := req.Cookie(cookieJwtTokenName)
-	if cookie != nil {
-		if ut.Token == cookie.Value {
-			clearCookieJWTAuthToken(w)
-		}
 	}
 
 	if n == 0 {
