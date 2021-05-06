@@ -181,6 +181,31 @@ func (app *App) LogoutSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	ut.UserID = userID
+
+	cookie, _ := req.Cookie(cookieJwtTokenName)
+	if cookie != nil {
+		// determine if user want to delete current token
+		// and logout his in that case
+		if ut.Token != "" {
+			if ut.Token == cookie.Value {
+				clearCookieJWTAuthToken(w)
+			}
+		} else {
+			storedTokens, err := app.authUsecases.GetUserJWTs(userID, entities.NotExpired)
+			if err != nil {
+				logDebugError(app.l, req, err)
+			}
+
+			for _, t := range storedTokens {
+				if t.Token == cookie.Value {
+					clearCookieJWTAuthToken(w)
+					break
+				}
+			}
+		}
+	}
+
 	n, err := app.authUsecases.DeleteJWT(&ut)
 	if err != nil {
 		logDebugError(app.l, req, err)
