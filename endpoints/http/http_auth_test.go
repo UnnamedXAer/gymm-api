@@ -103,3 +103,21 @@ func TestRegisterValidationFail(t *testing.T) {
 
 	checkResponseCode(t, http.StatusNotAcceptable, response.Code)
 }
+
+func TestChangePassword(t *testing.T) {
+	newPassword := string(mocks.Password) + "X"
+
+	payload := map[string]string{
+		"oldPassword": correctUser.Password,
+		"password":    newPassword,
+	}
+
+	b, _ := json.Marshal(&payload)
+
+	req, _ := http.NewRequest(http.MethodPost, "/password/reset", bytes.NewBuffer(b))
+	req.Header.Set("Content-Type", "application/json")
+
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusOK, response.Code)
+}
