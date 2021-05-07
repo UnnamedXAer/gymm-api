@@ -16,7 +16,9 @@ import (
 )
 
 type Claims struct {
-	ID                     string `json:"id"`
+	ID string `json:"id"`
+	// IssuedAt is here to make the tokens unique by different payload
+	IssuedAt               int64 `json:"createdAt"`
 	*entities.RefreshToken `json:"r"`
 	jwt.StandardClaims
 }
@@ -318,13 +320,16 @@ func createJWTAuth(
 		token string,
 		expiresAt time.Time) (*entities.UserToken, error)) (*entities.UserToken, error) {
 
-	expirationTime := time.Now().Add(time.Second * 60 * 5) // @todo: configurable time
+	now := time.Now().UTC()
+	expirationTime := now.Add(time.Second * 60 * 5) // @todo: configurable time
 
 	claims := Claims{
 		ID:           userID,
 		RefreshToken: rt,
+		IssuedAt:     now.UnixNano(),
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expirationTime.Unix(),
+			IssuedAt:  now.Unix(),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &claims)
