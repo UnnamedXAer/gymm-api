@@ -18,7 +18,9 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	u, err := app.userUsecases.GetUserByID(id)
+	ctx := req.Context()
+
+	u, err := app.userUsecases.GetUserByID(ctx, id)
 	if err != nil {
 		var e *repositories.InvalidIDError
 		if errors.As(err, &e) {

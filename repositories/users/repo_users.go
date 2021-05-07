@@ -21,14 +21,17 @@ type UserData struct {
 }
 
 // GetUserByID retrieves user info from storage
-func (r *UserRepository) GetUserByID(id string) (*entities.User, error) {
+func (r *UserRepository) GetUserByID(
+	ctx context.Context,
+	id string) (*entities.User, error) {
 	var ud UserData
 	oID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "user"), "repo.GetUserByID")
+		return nil, errors.WithMessage(
+			repositories.NewErrorInvalidID(id, "user"), "repo.GetUserByID")
 	}
 
-	err = r.col.FindOne(context.Background(), bson.M{"_id": oID}).Decode(&ud)
+	err = r.col.FindOne(ctx, bson.M{"_id": oID}).Decode(&ud)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return nil, nil
@@ -47,6 +50,7 @@ func (r *UserRepository) GetUserByID(id string) (*entities.User, error) {
 
 // CreateUser inserts newly registered user into storage
 func (r *UserRepository) CreateUser(
+	ctx context.Context,
 	username,
 	emailAddress string,
 	passwordHash []byte) (*entities.User, error) {
@@ -60,7 +64,7 @@ func (r *UserRepository) CreateUser(
 		CreatedAt:    now,
 	}
 
-	result, err := r.col.InsertOne(context.Background(), ud)
+	result, err := r.col.InsertOne(ctx, ud)
 	if err != nil {
 		if repositories.IsDuplicatedError(err) {
 			return nil, errors.WithMessage(
@@ -72,7 +76,8 @@ func (r *UserRepository) CreateUser(
 
 	id, ok := result.InsertedID.(primitive.ObjectID)
 	if !ok {
-		r.l.Error().Msgf("repo.CreateUser: id type assertion failed, id: %v", result.InsertedID)
+		r.l.Error().Msgf(
+			"repo.CreateUser: id type assertion failed, id: %v", result.InsertedID)
 	}
 
 	u := entities.User{

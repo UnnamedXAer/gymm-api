@@ -22,7 +22,7 @@ func (app *App) StartTraining(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tr, err := app.trainingUsecases.StartTraining(userID)
+	tr, err := app.trainingUsecases.StartTraining(ctx, userID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -50,7 +50,7 @@ func (app *App) EndTraining(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 	trainingID := vars["trainingID"]
-	tr, err := app.trainingUsecases.GetTrainingByID(trainingID)
+	tr, err := app.trainingUsecases.GetTrainingByID(ctx, trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -75,7 +75,7 @@ func (app *App) EndTraining(w http.ResponseWriter, req *http.Request) {
 		responseWithError(w, http.StatusConflict, err)
 	}
 
-	tr, err = app.trainingUsecases.EndTraining(trainingID)
+	tr, err = app.trainingUsecases.EndTraining(ctx, trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -103,7 +103,7 @@ func (app *App) GetTrainingByID(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 	trainingID := vars["trainingID"]
-	tr, err := app.trainingUsecases.GetTrainingByID(trainingID)
+	tr, err := app.trainingUsecases.GetTrainingByID(ctx, trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -135,7 +135,7 @@ func (app *App) GetUserTrainings(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	tr, err := app.trainingUsecases.GetUserTrainings(userID, false)
+	tr, err := app.trainingUsecases.GetUserTrainings(ctx, userID, false)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -180,7 +180,8 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 
 	exID, ok := exerciseID.(string)
 	if !ok {
-		err := fmt.Errorf("incorrect type of %q property, expected string", "exerciseId")
+		err := fmt.Errorf(
+			"incorrect type of %q property, expected string", "exerciseId")
 		logDebugError(app.l, req, err)
 		responseWithError(w, http.StatusBadRequest, err)
 		return
@@ -188,7 +189,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 
 	vars := mux.Vars(req)
 	trainingID := vars["trainingID"]
-	tr, err := app.trainingUsecases.GetTrainingByID(trainingID)
+	tr, err := app.trainingUsecases.GetTrainingByID(ctx, trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -208,7 +209,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	exercise, err := app.exerciseUsecases.GetExerciseByID(exID)
+	exercise, err := app.exerciseUsecases.GetExerciseByID(ctx, exID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -233,7 +234,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 		ExerciseID: exID,
 	}
 
-	te, err = app.trainingUsecases.StartExercise(tr.ID, te)
+	te, err = app.trainingUsecases.StartExercise(ctx, tr.ID, te)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -262,7 +263,7 @@ func (app *App) EndTrainingExercise(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	teID := vars["exerciseID"]
 
-	te, err := app.trainingUsecases.EndExercise(userID, teID, time.Now())
+	te, err := app.trainingUsecases.EndExercise(ctx, userID, teID, time.Now())
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -306,7 +307,7 @@ func (app *App) AddTrainingSetExercise(w http.ResponseWriter, req *http.Request)
 	vars := mux.Vars(req)
 	teID := vars["exerciseID"]
 
-	ts, err := app.trainingUsecases.AddSet(userID, teID, &set)
+	ts, err := app.trainingUsecases.AddSet(ctx, userID, teID, &set)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError

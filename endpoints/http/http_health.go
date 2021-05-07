@@ -52,7 +52,10 @@ func (app *App) Health(w http.ResponseWriter, req *http.Request) {
 	output["token"] = "OK"
 
 	loggedUserID := claims.ID
-	user, err := app.userUsecases.GetUserByID(loggedUserID)
+
+	ctx := req.Context()
+
+	user, err := app.userUsecases.GetUserByID(ctx, loggedUserID)
 	if err != nil {
 		output["DB"] = "error"
 		output["user"] = "could not retrieve"

@@ -64,8 +64,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreateUser(t *testing.T) {
+	ctx := context.TODO()
 	clearCollection(t)
-	gotUser, err := ur.CreateUser(u.Username, u.EmailAddress, u.Password)
+	gotUser, err := ur.CreateUser(ctx, u.Username, u.EmailAddress, u.Password)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -95,9 +96,10 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestCreateUserDuplicatedEmail(t *testing.T) {
+	ctx := context.TODO()
 	clearCollection(t)
 	insertMockUser(t)
-	gotUser, err := ur.CreateUser(u.Username, u.EmailAddress, u.Password)
+	gotUser, err := ur.CreateUser(ctx, u.Username, u.EmailAddress, u.Password)
 	if err != nil {
 		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
 			return
@@ -112,6 +114,7 @@ func TestCreateUserDuplicatedEmail(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
+	ctx := context.TODO()
 	clearCollection(t)
 	results, err := ur.col.InsertOne(context.TODO(), u)
 	if err != nil {
@@ -120,7 +123,7 @@ func TestGetUserByID(t *testing.T) {
 
 	uID := results.InsertedID.(primitive.ObjectID).Hex()
 
-	gotUser, err := ur.GetUserByID(uID)
+	gotUser, err := ur.GetUserByID(ctx, uID)
 	if err != nil {
 		t.Fatalf("want user, got %v", err)
 	}
@@ -134,10 +137,11 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestGetUserByIDNotExisting(t *testing.T) {
+	ctx := context.TODO()
 	clearCollection(t)
 	uID := "60108393da81e60598d5347f"
 
-	gotUser, err := ur.GetUserByID(uID)
+	gotUser, err := ur.GetUserByID(ctx, uID)
 	if err != nil {
 		t.Fatalf("want nil error, got: %v", err)
 	}
@@ -148,10 +152,11 @@ func TestGetUserByIDNotExisting(t *testing.T) {
 }
 
 func TestGetUserByIDInvalidID(t *testing.T) {
+	ctx := context.TODO()
 	clearCollection(t)
 	uID := "6s108393da81e60598d5347f"
 
-	gotUser, err := ur.GetUserByID(uID)
+	gotUser, err := ur.GetUserByID(ctx, uID)
 	var e *repositories.InvalidIDError
 	if !errors.As(err, &e) {
 		t.Fatalf("want error: %q, got: %v", repositories.NewErrorInvalidID(uID, "user"), err)

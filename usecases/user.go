@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -23,8 +24,12 @@ type UserRepo interface {
 
 	// GetUserByID it is signature of repo method
 	// it's here to not couple both packages
-	GetUserByID(id string) (*entities.User, error)
-	CreateUser(username, email string, passwordHash []byte) (*entities.User, error)
+	GetUserByID(ctx context.Context, id string) (*entities.User, error)
+	CreateUser(
+		ctx context.Context,
+		username,
+		email string,
+		passwordHash []byte) (*entities.User, error)
 }
 
 type UserUseCases struct {
@@ -32,21 +37,25 @@ type UserUseCases struct {
 }
 
 type IUserUseCases interface {
-	GetUserByID(id string) (*entities.User, error)
-	CreateUser(u *UserInput) (*entities.User, error)
+	GetUserByID(ctx context.Context, id string) (*entities.User, error)
+	CreateUser(ctx context.Context, u *UserInput) (*entities.User, error)
 }
 
-func (uc *UserUseCases) GetUserByID(id string) (*entities.User, error) {
-	return uc.repo.GetUserByID(id)
+func (uc *UserUseCases) GetUserByID(
+	ctx context.Context,
+	id string) (*entities.User, error) {
+	return uc.repo.GetUserByID(ctx, id)
 }
 
-func (uc *UserUseCases) CreateUser(u *UserInput) (*entities.User, error) {
+func (uc *UserUseCases) CreateUser(
+	ctx context.Context,
+	u *UserInput) (*entities.User, error) {
 	passwordHash, err := hashPassword(u.Password)
 	if err != nil {
 		return nil, errors.WithMessage(err, "incorrect password, cannot hash")
 	}
 
-	return uc.repo.CreateUser(u.Username, u.EmailAddress, passwordHash)
+	return uc.repo.CreateUser(ctx, u.Username, u.EmailAddress, passwordHash)
 }
 
 func NewUserUseCases(userRepo UserRepo) IUserUseCases {

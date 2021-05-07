@@ -22,15 +22,19 @@ type ExerciseData struct {
 	CreatedBy   string             `bson:"created_by,omitempty"`
 }
 
-func (repo ExerciseRepository) GetExerciseByID(id string) (*entities.Exercise, error) {
+func (repo *ExerciseRepository) GetExerciseByID(
+	ctx context.Context,
+	id string) (*entities.Exercise, error) {
 	exOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, errors.WithMessage(repositories.NewErrorInvalidID(id, "exercise"), "get exercise by id")
+		return nil, errors.WithMessage(
+			repositories.NewErrorInvalidID(id, "exercise"),
+			"get exercise by id")
 	}
 
 	filter := bson.M{"_id": exOID}
 
-	result := repo.col.FindOne(context.Background(), filter)
+	result := repo.col.FindOne(ctx, filter)
 	if err = result.Err(); err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return nil, nil //repositories.NewErrorNotFoundRecord()
@@ -47,7 +51,12 @@ func (repo ExerciseRepository) GetExerciseByID(id string) (*entities.Exercise, e
 	return &ex, nil
 }
 
-func (repo ExerciseRepository) CreateExercise(name, description string, setUnit entities.SetUnit, createdBy string) (*entities.Exercise, error) {
+func (repo *ExerciseRepository) CreateExercise(
+	ctx context.Context,
+	name string,
+	description string,
+	setUnit entities.SetUnit,
+	createdBy string) (*entities.Exercise, error) {
 
 	data := ExerciseData{
 		Name:        name,
@@ -57,7 +66,7 @@ func (repo ExerciseRepository) CreateExercise(name, description string, setUnit 
 		SetUnit:     setUnit,
 	}
 
-	result, err := repo.col.InsertOne(context.Background(), &data)
+	result, err := repo.col.InsertOne(ctx, &data)
 	if err != nil {
 		return nil, errors.WithMessage(err, "create exercise")
 	}
@@ -68,7 +77,8 @@ func (repo ExerciseRepository) CreateExercise(name, description string, setUnit 
 		// @todo: should we return nil, error or go with incorrect ID?
 		// this scenario should not happen as long as long we use driver
 		// created ids
-		repo.l.Error().Msgf("repo.CreateExercise: id type assertion failed, id: %v", result.InsertedID)
+		repo.l.Error().Msgf(
+			"repo.CreateExercise: id type assertion failed, id: %v", result.InsertedID)
 	}
 
 	ex := mapExerciseToEntity(&data)
@@ -76,10 +86,13 @@ func (repo ExerciseRepository) CreateExercise(name, description string, setUnit 
 	return &ex, nil
 }
 
-func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
+func (repo *ExerciseRepository) UpdateExercise(
+	ctx context.Context,
+	ex *entities.Exercise) (*entities.Exercise, error) {
 	exOID, err := primitive.ObjectIDFromHex(ex.ID)
 	if err != nil {
-		return nil, errors.WithMessage(repositories.NewErrorInvalidID(ex.ID, "exercise"),
+		return nil, errors.WithMessage(
+			repositories.NewErrorInvalidID(ex.ID, "exercise"),
 			"update exercise")
 	}
 
@@ -100,7 +113,8 @@ func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.
 
 	update = bson.D{{"$set", update}}
 
-	result := repo.col.FindOneAndUpdate(context.Background(), filter, update, options.FindOneAndUpdate().SetReturnDocument(options.After))
+	result := repo.col.FindOneAndUpdate(
+		ctx, filter, update, options.FindOneAndUpdate().SetReturnDocument(options.After))
 	if err = result.Err(); err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return nil, nil //repositories.NewErrorNotFoundRecord()
@@ -118,11 +132,13 @@ func (repo ExerciseRepository) UpdateExercise(ex *entities.Exercise) (*entities.
 	return &updatedEx, nil
 }
 
-func (repo ExerciseRepository) GetExercisesByName(name string) ([]entities.Exercise, error) {
+func (repo *ExerciseRepository) GetExercisesByName(
+	ctx context.Context,
+	name string) ([]entities.Exercise, error) {
 
 	filter := bson.M{"$text": bson.M{"$search": name}}
 
-	cursor, err := repo.col.Find(context.Background(), filter)
+	cursor, err := repo.col.Find(ctx, filter)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return nil, nil
@@ -132,7 +148,7 @@ func (repo ExerciseRepository) GetExercisesByName(name string) ([]entities.Exerc
 
 	data := make([]ExerciseData, 0, cursor.RemainingBatchLength())
 
-	err = cursor.All(context.Background(), &data)
+	err = cursor.All(ctx, &data)
 	if err != nil {
 		return nil, fmt.Errorf("get exercises by name: %v", err)
 	}

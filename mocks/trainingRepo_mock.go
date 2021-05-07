@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -55,7 +56,9 @@ var (
 type MockTrainingRepo struct {
 }
 
-func (tr *MockTrainingRepo) GetTrainingByID(id string) (*entities.Training, error) {
+func (tr *MockTrainingRepo) GetTrainingByID(
+	ctx context.Context,
+	id string) (*entities.Training, error) {
 
 	if strings.Contains(id, "notfound") {
 		return nil, nil
@@ -70,7 +73,10 @@ func (tr *MockTrainingRepo) GetTrainingByID(id string) (*entities.Training, erro
 	return &out, nil
 }
 
-func (tr *MockTrainingRepo) StartTraining(userID string, startTime time.Time) (*entities.Training, error) {
+func (tr *MockTrainingRepo) StartTraining(
+	ctx context.Context,
+	userID string,
+	startTime time.Time) (*entities.Training, error) {
 	return &entities.Training{
 		ID:        ExampleTraining.ID,
 		UserID:    userID,
@@ -78,14 +84,20 @@ func (tr *MockTrainingRepo) StartTraining(userID string, startTime time.Time) (*
 	}, nil
 }
 
-func (tr *MockTrainingRepo) EndTraining(id string, endTime time.Time) (*entities.Training, error) {
+func (tr *MockTrainingRepo) EndTraining(
+	ctx context.Context,
+	id string,
+	endTime time.Time) (*entities.Training, error) {
 	out := ExampleTraining
 	out.ID = id
 	out.EndTime = endTime
 	return &out, nil
 }
 
-func (tr *MockTrainingRepo) GetUserTrainings(userID string, started bool) ([]entities.Training, error) {
+func (tr *MockTrainingRepo) GetUserTrainings(
+	ctx context.Context,
+	userID string,
+	started bool) ([]entities.Training, error) {
 	out := []entities.Training{ExampleTraining}
 
 	out[0].UserID = userID
@@ -95,20 +107,28 @@ func (tr *MockTrainingRepo) GetUserTrainings(userID string, started bool) ([]ent
 	return out, nil
 }
 
-func (tr *MockTrainingRepo) StartExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error) {
+func (tr *MockTrainingRepo) StartExercise(
+	ctx context.Context,
+	trID string,
+	exercise *entities.TrainingExercise) (*entities.TrainingExercise, error) {
 	out := ExampleTrainingExercise
 	out.EndTime = time.Time{}
 	return &out, nil
 }
 
-func (tr *MockTrainingRepo) AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
+func (tr *MockTrainingRepo) AddSet(
+	ctx context.Context,
+	userID, teID string,
+	set *entities.TrainingSet) (*entities.TrainingSet, error) {
 	out := *set
 	out.ID = ExampleTrainingSet.ID
 	out.Time = ExampleTrainingSet.Time
 	return &out, nil
 }
 
-func (tr *MockTrainingRepo) GetTrainingExercises(id string) ([]entities.TrainingExercise, error) {
+func (tr *MockTrainingRepo) GetTrainingExercises(
+	ctx context.Context,
+	id string) ([]entities.TrainingExercise, error) {
 	out := []entities.TrainingExercise{}
 	for i, ex := range ExampleTraining.Exercises {
 		out = append(out, ex)
@@ -117,7 +137,10 @@ func (tr *MockTrainingRepo) GetTrainingExercises(id string) ([]entities.Training
 	return out, nil
 }
 
-func (tr *MockTrainingRepo) EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error) {
+func (tr *MockTrainingRepo) EndExercise(
+	ctx context.Context,
+	userID, id string,
+	endTime time.Time) (*entities.TrainingExercise, error) {
 	out := ExampleTrainingExercise
 	out.ID = id
 	out.EndTime = endTime

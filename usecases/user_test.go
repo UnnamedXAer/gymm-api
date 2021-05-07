@@ -1,6 +1,7 @@
 package usecases_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/unnamedxaer/gymm-api/mocks"
@@ -17,7 +18,8 @@ var (
 )
 
 func TestCreateUser(t *testing.T) {
-	got, _ := userUC.CreateUser(&userInput)
+	ctx := context.TODO()
+	got, _ := userUC.CreateUser(ctx, &userInput)
 
 	if got.EmailAddress != userInput.EmailAddress {
 		t.Fatalf("want UserRepo.CreateUser to be called and 'EmailAddress' to be '%s', got %s", userInput.EmailAddress, got.EmailAddress)
@@ -25,7 +27,8 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-	got, _ := userUC.GetUserByID(mocks.UserID)
+	ctx := context.TODO()
+	got, _ := userUC.GetUserByID(ctx, mocks.UserID)
 
 	if got.ID != mocks.UserID {
 		t.Fatalf("want UserRepo.GetUserByID to be called and 'ID' to be '%s', got %s", mocks.UserID, got.ID)

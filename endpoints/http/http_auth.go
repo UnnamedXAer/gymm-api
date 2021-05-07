@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -32,12 +33,15 @@ func (app *App) Login(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		logDebugError(app.l, req, err)
 
-		resErrText := getErrOfMalformedInput(&ui, []string{"ID", "CreatedAt", "Username"})
+		resErrText := getErrOfMalformedInput(
+			&ui, []string{"ID", "CreatedAt", "Username"})
 		responseWithErrorTxt(w, http.StatusBadRequest, resErrText)
 		return
 	}
 
-	user, err := app.authUsecases.Login(ui)
+	ctx := req.Context()
+
+	user, err := app.authUsecases.Login(ctx, ui)
 	if err != nil && errors.Is(err, &usecases.IncorrectCredentialsError{}) {
 		logDebugError(app.l, req, err)
 		responseWithInternalError(w)
@@ -56,8 +60,7 @@ func (app *App) Login(w http.ResponseWriter, req *http.Request) {
 	}
 
 	device := req.UserAgent() // @todo: improve, mb send some info from client
-
-	err = app.login(w, user.ID, device, req.Method, req.RequestURI)
+	err = app.login(ctx, w, user.ID, device, req.Method, req.RequestURI)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		clearCookieJWTAuthToken(w)
@@ -94,7 +97,9 @@ func (app *App) Register(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	user, err := app.userUsecases.CreateUser(&u)
+	ctx := req.Context()
+
+	user, err := app.userUsecases.CreateUser(ctx, &u)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
@@ -112,7 +117,7 @@ func (app *App) Register(w http.ResponseWriter, req *http.Request) {
 		"user": user,
 	}
 
-	err = app.login(w, user.ID, req.UserAgent(), req.Method, req.RequestURI)
+	err = app.login(ctx, w, user.ID, req.UserAgent(), req.Method, req.RequestURI)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		clearCookieJWTAuthToken(w)
@@ -128,15 +133,19 @@ func (app *App) Logout(w http.ResponseWriter, req *http.Request) {
 	cookie, err := req.Cookie(cookieJwtTokenName)
 	var n int64
 	if cookie != nil {
-		n, err = app.authUsecases.DeleteJWT(&entities.UserToken{
-			Token: cookie.Value,
-		})
+		ctx := req.Context()
+		n, err = app.authUsecases.DeleteJWT(
+			ctx,
+			&entities.UserToken{
+				Token: cookie.Value,
+			})
 
 	}
 	if err != nil {
 		logDebugError(app.l, req, err)
 	} else if n == 0 {
-		logDebugError(app.l, req, fmt.Errorf("JWT was not deleted for cookie.value: %s", cookie.Value))
+		logDebugError(app.l, req, fmt.Errorf(
+			"JWT was not deleted for cookie.value: %s", cookie.Value))
 	}
 	clearCookieJWTAuthToken(w)
 	w.WriteHeader(http.StatusOK)
@@ -151,7 +160,7 @@ func (app *App) GetSessions(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	jwts, err := app.authUsecases.GetUserJWTs(userID, entities.All)
+	jwts, err := app.authUsecases.GetUserJWTs(ctx, userID, entities.All)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		clearCookieJWTAuthToken(w)
@@ -194,7 +203,8 @@ func (app *App) LogoutSession(w http.ResponseWriter, req *http.Request) {
 				clearCookieJWTAuthToken(w)
 			}
 		} else {
-			storedTokens, err := app.authUsecases.GetUserJWTs(userID, entities.NotExpired)
+			storedTokens, err := app.authUsecases.GetUserJWTs(
+				ctx, userID, entities.NotExpired)
 			if err != nil {
 				logDebugError(app.l, req, err)
 			}
@@ -208,7 +218,7 @@ func (app *App) LogoutSession(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	n, err := app.authUsecases.DeleteJWT(&ut)
+	n, err := app.authUsecases.DeleteJWT(ctx, &ut)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -221,7 +231,10 @@ func (app *App) LogoutSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if n == 0 {
-		responseWithJSON(w, http.StatusOK, map[string]string{"warning": "no records were deleted"})
+		responseWithJSON(
+			w,
+			http.StatusOK,
+			map[string]string{"warning": "no records were deleted"})
 		return
 	}
 
@@ -237,7 +250,7 @@ func (app *App) LogoutAllSessions(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	n, err := app.authUsecases.DeleteRefreshTokenAndAllTokens(userID)
+	n, err := app.authUsecases.DeleteRefreshTokenAndAllTokens(ctx, userID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -250,7 +263,8 @@ func (app *App) LogoutAllSessions(w http.ResponseWriter, req *http.Request) {
 	}
 	clearCookieJWTAuthToken(w)
 	if n == 0 {
-		responseWithJSON(w, http.StatusOK, map[string]string{"warning": "no records were deleted"})
+		responseWithJSON(
+			w, http.StatusOK, map[string]string{"warning": "no records were deleted"})
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -263,8 +277,11 @@ func (app *App) Refresh(w http.ResponseWriter, req *http.Request) {
 // login make user authenticated by
 // creating tokens and setting them in user response as a cookie
 // tokens are also stored in db
-func (app *App) login(w http.ResponseWriter, userID, device, method, reqURI string) error {
-	rt, err := app.authUsecases.GetRefreshToken(userID)
+func (app *App) login(
+	ctx context.Context,
+	w http.ResponseWriter,
+	userID, device, method, reqURI string) error {
+	rt, err := app.authUsecases.GetRefreshToken(ctx, userID)
 	if err != nil {
 		app.l.Debug().Msgf("[%s %s]: error: %v", method, reqURI, err)
 		// the retrive of the refresh token has failed for some reason,
@@ -272,13 +289,15 @@ func (app *App) login(w http.ResponseWriter, userID, device, method, reqURI stri
 	}
 
 	if rt == nil || time.Until(rt.ExpiresAt) <= 0 {
-		rt, err = createRefreshToken(userID, app.authUsecases.SaveRefreshToken)
+		rt, err = createRefreshToken(
+			ctx, userID, app.authUsecases.SaveRefreshToken)
 		if err != nil {
 			return err
 		}
 	}
 
-	token, err := createJWTAuth(userID, device, rt, app.jwtKey, app.authUsecases.SaveJWT)
+	token, err := createJWTAuth(
+		ctx, userID, device, rt, app.jwtKey, app.authUsecases.SaveJWT)
 	if err != nil {
 		return err
 	}
@@ -310,11 +329,13 @@ func clearCookieJWTAuthToken(w http.ResponseWriter) {
 
 // generate new jwt for given user and saves it in storage
 func createJWTAuth(
+	ctx context.Context,
 	userID string,
 	device string,
 	rt *entities.RefreshToken,
 	jwtKey []byte,
 	saveFunc func(
+		ctx context.Context,
 		userID string,
 		device string,
 		token string,
@@ -338,13 +359,15 @@ func createJWTAuth(
 		return nil, err
 	}
 
-	return saveFunc(userID, device, tokenStr, expirationTime)
+	return saveFunc(ctx, userID, device, tokenStr, expirationTime)
 }
 
 // generate new refresh token for given user and saves it in storage
 func createRefreshToken(
+	ctx context.Context,
 	userID string,
 	saveFunc func(
+		ctx context.Context,
 		userID string,
 		token string,
 		expiresAt time.Time) (*entities.RefreshToken, error)) (*entities.RefreshToken, error) {
@@ -353,7 +376,7 @@ func createRefreshToken(
 	if err != nil {
 		return nil, err
 	}
-	return saveFunc(userID, refreshVal.String(), time.Now().AddDate(1, 0, 0))
+	return saveFunc(ctx, userID, refreshVal.String(), time.Now().AddDate(1, 0, 0))
 }
 
 // it returns nil error if token is valid

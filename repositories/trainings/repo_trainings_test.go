@@ -86,8 +86,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestStartTraining(t *testing.T) {
+	ctx := context.TODO()
 
-	gotTraining, err := trainingRepo.StartTraining(trainingdata.UserID.Hex(), trainingdata.StartTime)
+	gotTraining, err := trainingRepo.StartTraining(ctx, trainingdata.UserID.Hex(), trainingdata.StartTime)
 	mockedStartedTraining = *gotTraining
 	if err != nil {
 		t.Errorf("expect to start training, got error: %v", err)
@@ -119,11 +120,12 @@ func TestStartTraining(t *testing.T) {
 }
 
 func TestGetTrainingByID(t *testing.T) {
+	ctx := context.TODO()
 	if mockedStartedTraining.StartTime.IsZero() {
 		t.Run("create new started training", TestStartTraining)
 	}
 
-	tr, err := trainingRepo.GetTrainingByID(mockedStartedTraining.ID)
+	tr, err := trainingRepo.GetTrainingByID(ctx, mockedStartedTraining.ID)
 	if err != nil {
 		t.Errorf("want training, got error: %v", err)
 		return
@@ -135,6 +137,7 @@ func TestGetTrainingByID(t *testing.T) {
 }
 
 func TestGetTrainingByIDNotExisting(t *testing.T) {
+	ctx := context.TODO()
 	if mockedStartedTraining.StartTime.IsZero() {
 		t.Run("create new started training", TestStartTraining)
 	}
@@ -144,7 +147,7 @@ func TestGetTrainingByIDNotExisting(t *testing.T) {
 	}
 	id := mockedStartedTraining.ID[:len(mockedStartedTraining.ID)-1] + char
 
-	tr, err := trainingRepo.GetTrainingByID(id)
+	tr, err := trainingRepo.GetTrainingByID(ctx, id)
 	if err != nil {
 		t.Errorf("want nil error, got %v", err)
 		return
@@ -156,11 +159,12 @@ func TestGetTrainingByIDNotExisting(t *testing.T) {
 }
 
 func TestGetStartedTrainings(t *testing.T) {
+	ctx := context.TODO()
 	if mockedStartedTraining.StartTime.IsZero() {
 		t.Run("create new started training", TestStartTraining)
 	}
 
-	gotTrainings, err := trainingRepo.GetUserTrainings(mockedStartedTraining.UserID, true)
+	gotTrainings, err := trainingRepo.GetUserTrainings(ctx, mockedStartedTraining.UserID, true)
 	if err != nil {
 		t.Errorf("expect to get started training, got error: %v", err)
 		return
@@ -196,6 +200,7 @@ func TestGetStartedTrainings(t *testing.T) {
 }
 
 func TestStartExercise(t *testing.T) {
+	ctx := context.TODO()
 	if mockedStartedTraining.StartTime.IsZero() {
 		t.Run("create new started training", TestStartTraining)
 	}
@@ -205,7 +210,7 @@ func TestStartExercise(t *testing.T) {
 	mockedStartedExercise.StartTime = now
 	mockedStartedExercise.ExerciseID = exId
 	var te *entities.TrainingExercise
-	te, err := trainingRepo.StartExercise(mockedStartedTraining.ID, &mockedStartedExercise)
+	te, err := trainingRepo.StartExercise(ctx, mockedStartedTraining.ID, &mockedStartedExercise)
 	if err != nil {
 		t.Errorf("expect to add exercise, got error: %v", err)
 		return
@@ -239,6 +244,7 @@ func TestStartExercise(t *testing.T) {
 }
 
 func TestAddSet(t *testing.T) {
+	ctx := context.TODO()
 	if mockedStartedExercise.StartTime.IsZero() {
 		t.Run("create new started exercise by 'TestAddExercise'", TestStartExercise)
 	}
@@ -248,7 +254,7 @@ func TestAddSet(t *testing.T) {
 	mockedSet.Time = now
 	mockedSet.Reps = reps
 	var ts *entities.TrainingSet
-	ts, err := trainingRepo.AddSet(mockedStartedTraining.UserID, mockedStartedExercise.ID, &mockedSet)
+	ts, err := trainingRepo.AddSet(ctx, mockedStartedTraining.UserID, mockedStartedExercise.ID, &mockedSet)
 	if err != nil {
 		t.Errorf("expect to add set, got error: %v", err)
 		return
@@ -270,6 +276,7 @@ func TestAddSet(t *testing.T) {
 }
 
 func TestGetTrainingExercises(t *testing.T) {
+	ctx := context.TODO()
 	if mockedSet.Time.IsZero() {
 		t.Run("create new started exercise by 'TestAddSet'", TestAddSet)
 	}
@@ -279,7 +286,7 @@ func TestGetTrainingExercises(t *testing.T) {
 	mockedSet.Time = now
 	mockedSet.Reps = reps
 	var te []entities.TrainingExercise
-	te, err := trainingRepo.GetTrainingExercises(mockedStartedTraining.ID)
+	te, err := trainingRepo.GetTrainingExercises(ctx, mockedStartedTraining.ID)
 	if err != nil {
 		t.Errorf("expect to get training exercises, got error: %v", err)
 		return
@@ -318,13 +325,14 @@ func TestGetTrainingExercises(t *testing.T) {
 }
 
 func TestEndExercise(t *testing.T) {
+	ctx := context.TODO()
 	if mockedStartedExercise.StartTime.IsZero() {
 		t.Run("create new started exercise by 'TestAddExercise'", TestStartExercise)
 	}
 
 	now := time.Now().UTC()
 	var te *entities.TrainingExercise
-	te, err := trainingRepo.EndExercise(mockedStartedTraining.UserID, mockedStartedExercise.ID, now)
+	te, err := trainingRepo.EndExercise(ctx, mockedStartedTraining.UserID, mockedStartedExercise.ID, now)
 	if err != nil {
 		t.Errorf("expect to end exercise, got error: %v", err)
 		return
@@ -336,12 +344,13 @@ func TestEndExercise(t *testing.T) {
 }
 
 func TestEndTraining(t *testing.T) {
+	ctx := context.TODO()
 	if mockedStartedTraining.StartTime.IsZero() {
 		t.Run("create new started training", TestStartTraining)
 	}
 
 	now := time.Now().UTC()
-	tr, err := trainingRepo.EndTraining(mockedStartedTraining.ID, now)
+	tr, err := trainingRepo.EndTraining(ctx, mockedStartedTraining.ID, now)
 	if err != nil {
 		t.Errorf("expected to end training (%s), got error: %v", mockedStartedTraining.ID, err)
 		return
@@ -353,12 +362,13 @@ func TestEndTraining(t *testing.T) {
 }
 
 func TestGetUserTrainings(t *testing.T) {
+	ctx := context.TODO()
 	if mockedStartedTraining.StartTime.IsZero() {
 		t.Run("create new started training", TestStartTraining)
 	}
 
 	var tr []entities.Training
-	tr, err := trainingRepo.GetUserTrainings(mockedStartedTraining.UserID, false)
+	tr, err := trainingRepo.GetUserTrainings(ctx, mockedStartedTraining.UserID, false)
 	if err != nil {
 		t.Errorf("expected to get trainings for user %q, got error: %v", mockedStartedTraining.UserID, err)
 		return

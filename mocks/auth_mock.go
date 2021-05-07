@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -29,7 +30,9 @@ var (
 
 type MockAuthRepo struct{}
 
-func (r *MockAuthRepo) GetUserByEmailAddress(emailAddress string) (*entities.AuthUser, error) {
+func (r *MockAuthRepo) GetUserByEmailAddress(
+	ctx context.Context,
+	emailAddress string) (*entities.AuthUser, error) {
 	// mock storage get where ID = id
 
 	if strings.Contains(emailAddress, "notfound") {
@@ -48,6 +51,7 @@ func (r *MockAuthRepo) GetUserByEmailAddress(emailAddress string) (*entities.Aut
 }
 
 func (r *MockAuthRepo) GetUserJWTs(
+	ctx context.Context,
 	userID string,
 	expired entities.ExpireType,
 ) ([]entities.UserToken, error) {
@@ -78,7 +82,12 @@ func (r *MockAuthRepo) GetUserJWTs(
 	}, nil
 }
 
-func (r *MockAuthRepo) SaveJWT(userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error) {
+func (r *MockAuthRepo) SaveJWT(
+	ctx context.Context,
+	userID string,
+	device string,
+	token string,
+	expiresAt time.Time) (*entities.UserToken, error) {
 	out := &entities.UserToken{
 		ID:        ExampleUserToken.ID,
 		UserID:    userID,
@@ -91,12 +100,15 @@ func (r *MockAuthRepo) SaveJWT(userID string, device string, token string, expir
 	return out, nil
 }
 
-func (r *MockAuthRepo) DeleteJWT(token *entities.UserToken) (int64, error) {
+func (r *MockAuthRepo) DeleteJWT(
+	ctx context.Context,
+	token *entities.UserToken) (int64, error) {
 
 	return 1, nil
 }
 
 func (r *MockAuthRepo) SaveRefreshToken(
+	ctx context.Context,
 	userID string,
 	token string,
 	expiresAt time.Time) (*entities.RefreshToken, error) {
@@ -112,6 +124,7 @@ func (r *MockAuthRepo) SaveRefreshToken(
 }
 
 func (r *MockAuthRepo) GetRefreshToken(
+	ctx context.Context,
 	userID string) (*entities.RefreshToken, error) {
 	out := &entities.RefreshToken{
 		ID:        ExampleRefreshToken.ID,
@@ -124,12 +137,16 @@ func (r *MockAuthRepo) GetRefreshToken(
 	return out, nil
 }
 
-func (r *MockAuthRepo) DeleteRefreshToken(userID string) (n int64, err error) {
+func (r *MockAuthRepo) DeleteRefreshToken(
+	ctx context.Context,
+	userID string) (n int64, err error) {
 
 	return 1, nil
 }
 
-func (r *MockAuthRepo) DeleteRefreshTokenAndAllTokens(userID string) (n int64, err error) {
+func (r *MockAuthRepo) DeleteRefreshTokenAndAllTokens(
+	ctx context.Context,
+	userID string) (n int64, err error) {
 
 	return 2, nil
 }

@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
@@ -17,16 +18,16 @@ type TrainingInput struct {
 // TrainingRepo represents trainings repository
 type TrainingRepo interface {
 	// GetTrainingByID returns training for given id
-	GetTrainingByID(id string) (*entities.Training, error)
+	GetTrainingByID(ctx context.Context, id string) (*entities.Training, error)
 	// StartTraining starts new training by inserting new record in training storage with start time.
-	StartTraining(userID string, startTime time.Time) (*entities.Training, error)
+	StartTraining(ctx context.Context, userID string, startTime time.Time) (*entities.Training, error)
 	// EndTraining marks given training as completed by setting training end time.
-	EndTraining(trainingID string, endTime time.Time) (*entities.Training, error)
-	GetUserTrainings(userID string, started bool) (t []entities.Training, err error)
-	StartExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error)
-	AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
-	GetTrainingExercises(id string) ([]entities.TrainingExercise, error)
-	EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error)
+	EndTraining(ctx context.Context, trainingID string, endTime time.Time) (*entities.Training, error)
+	GetUserTrainings(ctx context.Context, userID string, started bool) (t []entities.Training, err error)
+	StartExercise(ctx context.Context, trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error)
+	AddSet(ctx context.Context, userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
+	GetTrainingExercises(ctx context.Context, id string) ([]entities.TrainingExercise, error)
+	EndExercise(ctx context.Context, userID, id string, endTime time.Time) (*entities.TrainingExercise, error)
 }
 
 type TrainingUsecases struct {
@@ -34,49 +35,57 @@ type TrainingUsecases struct {
 }
 
 type ITrainingUsecases interface {
-	GetTrainingByID(id string) (*entities.Training, error)
-	StartTraining(userID string) (*entities.Training, error)
-	EndTraining(id string) (*entities.Training, error)
-	GetUserTrainings(userID string, started bool) (t []entities.Training, err error)
-	StartExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error)
-	AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
-	GetTrainingExercises(id string) ([]entities.TrainingExercise, error)
-	EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error)
+	GetTrainingByID(ctx context.Context, id string) (*entities.Training, error)
+	StartTraining(ctx context.Context, userID string) (*entities.Training, error)
+	EndTraining(ctx context.Context, id string) (*entities.Training, error)
+	GetUserTrainings(ctx context.Context, userID string, started bool) (t []entities.Training, err error)
+	StartExercise(ctx context.Context, trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error)
+	AddSet(ctx context.Context, userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error)
+	GetTrainingExercises(ctx context.Context, id string) ([]entities.TrainingExercise, error)
+	EndExercise(ctx context.Context, userID, id string, endTime time.Time) (*entities.TrainingExercise, error)
 }
 
 // GetTrainingByID returns training for given id
-func (tu *TrainingUsecases) GetTrainingByID(id string) (*entities.Training, error) {
-	return tu.repo.GetTrainingByID(id)
+func (tu *TrainingUsecases) GetTrainingByID(ctx context.Context,
+	id string) (*entities.Training, error) {
+	return tu.repo.GetTrainingByID(ctx, id)
 }
 
 // StartTraining creates a new training.
-func (tu *TrainingUsecases) StartTraining(userID string) (*entities.Training, error) {
-	return tu.repo.StartTraining(userID, time.Now())
+func (tu *TrainingUsecases) StartTraining(ctx context.Context,
+	userID string) (*entities.Training, error) {
+	return tu.repo.StartTraining(ctx, userID, time.Now())
 }
 
 // EndTraining stops current training.
-func (tu *TrainingUsecases) EndTraining(id string) (*entities.Training, error) {
-	return tu.repo.EndTraining(id, time.Now())
+func (tu *TrainingUsecases) EndTraining(ctx context.Context,
+	id string) (*entities.Training, error) {
+	return tu.repo.EndTraining(ctx, id, time.Now())
 }
 
-func (tu *TrainingUsecases) GetUserTrainings(userID string, started bool) (t []entities.Training, err error) {
-	return tu.repo.GetUserTrainings(userID, started)
+func (tu *TrainingUsecases) GetUserTrainings(ctx context.Context,
+	userID string, started bool) (t []entities.Training, err error) {
+	return tu.repo.GetUserTrainings(ctx, userID, started)
 }
 
-func (tu *TrainingUsecases) StartExercise(trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error) {
-	return tu.repo.StartExercise(trID, exercise)
+func (tu *TrainingUsecases) StartExercise(ctx context.Context,
+	trID string, exercise *entities.TrainingExercise) (*entities.TrainingExercise, error) {
+	return tu.repo.StartExercise(ctx, trID, exercise)
 }
 
-func (tu *TrainingUsecases) AddSet(userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
-	return tu.repo.AddSet(userID, teID, set)
+func (tu *TrainingUsecases) AddSet(ctx context.Context,
+	userID, teID string, set *entities.TrainingSet) (*entities.TrainingSet, error) {
+	return tu.repo.AddSet(ctx, userID, teID, set)
 }
 
-func (tu *TrainingUsecases) GetTrainingExercises(id string) ([]entities.TrainingExercise, error) {
-	return tu.repo.GetTrainingExercises(id)
+func (tu *TrainingUsecases) GetTrainingExercises(ctx context.Context,
+	id string) ([]entities.TrainingExercise, error) {
+	return tu.repo.GetTrainingExercises(ctx, id)
 }
 
-func (tu *TrainingUsecases) EndExercise(userID, id string, endTime time.Time) (*entities.TrainingExercise, error) {
-	return tu.repo.EndExercise(userID, id, endTime)
+func (tu *TrainingUsecases) EndExercise(ctx context.Context,
+	userID, id string, endTime time.Time) (*entities.TrainingExercise, error) {
+	return tu.repo.EndExercise(ctx, userID, id, endTime)
 }
 
 func NewTrainingUseCases(repo TrainingRepo) ITrainingUsecases {

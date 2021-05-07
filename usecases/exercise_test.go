@@ -1,6 +1,7 @@
 package usecases_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -21,7 +22,9 @@ var (
 )
 
 func TestCreateExercise(t *testing.T) {
-	got, _ := exerciseUC.CreateExercise(exerciseInput.Name, exerciseInput.Description, exerciseInput.SetUnit, exerciseInput.CreatedBy)
+	ctx := context.TODO()
+
+	got, _ := exerciseUC.CreateExercise(ctx, exerciseInput.Name, exerciseInput.Description, exerciseInput.SetUnit, exerciseInput.CreatedBy)
 	if got.ID == "" ||
 		got.Name != exerciseInput.Name ||
 		got.Description != exerciseInput.Description ||
@@ -33,17 +36,21 @@ func TestCreateExercise(t *testing.T) {
 }
 
 func TestGetExerciseByID(t *testing.T) {
-	got, _ := exerciseUC.GetExerciseByID(mocks.ExampleExercise.ID)
+	ctx := context.TODO()
+
+	got, _ := exerciseUC.GetExerciseByID(ctx, mocks.ExampleExercise.ID)
 	if got.ID != mocks.ExampleExercise.ID {
 		t.Fatalf("want\n%v got\n%v", mocks.ExampleExercise, got)
 	}
 }
 
 func TestUpdateExercise(t *testing.T) {
+	ctx := context.TODO()
+
 	var input entities.Exercise
 	input.ID = mocks.ExampleExercise.ID
 	input.Description = mocks.ExampleExercise.Description + "\n->" + time.Now().String()
-	got, _ := exerciseUC.UpdateExercise(&input)
+	got, _ := exerciseUC.UpdateExercise(ctx, &input)
 	if got.ID != mocks.ExampleExercise.ID {
 		t.Fatalf("want\n%v got\n%v", mocks.ExampleExercise, got)
 	}

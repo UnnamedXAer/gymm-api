@@ -65,6 +65,8 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
+		ctx := r.Context()
+
 		if claims.StandardClaims.ExpiresAt < time.Now().Add(30*time.Second).Unix() {
 			device := r.UserAgent() // @todo: improve, mb send some info from client
 			ut := entities.UserToken{
@@ -72,7 +74,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 				Token:  cookie.Value,
 				Device: device,
 			}
-			n, err := app.authUsecases.DeleteJWT(&ut)
+			n, err := app.authUsecases.DeleteJWT(ctx, &ut)
 			if err != nil {
 				// we can ignore this error for because we are going to create new token anyway
 				// if next calls fail we will return error to the client
@@ -81,7 +83,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 				logDebugError(app.l, r, fmt.Errorf("JWT was not deleted for: %v", ut))
 			}
 
-			rt, err := app.authUsecases.GetRefreshToken(claims.ID)
+			rt, err := app.authUsecases.GetRefreshToken(ctx, claims.ID)
 			if err != nil {
 				logDebugError(app.l, r, err)
 				clearCookieJWTAuthToken(w)
@@ -96,7 +98,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 			if err != nil {
 				logDebugError(app.l, r, err)
 				// @todo: handle return
-				_, err = app.authUsecases.DeleteRefreshToken(claims.ID)
+				_, err = app.authUsecases.DeleteRefreshToken(ctx, claims.ID)
 				if err != nil {
 					logDebugError(app.l, r, err)
 				}
@@ -105,7 +107,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			newToken, err := createJWTAuth(claims.ID, device, rt, app.jwtKey, app.authUsecases.SaveJWT)
+			newToken, err := createJWTAuth(ctx, claims.ID, device, rt, app.jwtKey, app.authUsecases.SaveJWT)
 			if err != nil {
 				logDebugError(app.l, r, err)
 				responseWithInternalError(w)
@@ -120,7 +122,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		ctx := context.WithValue(r.Context(), contextKeyUserID, claims.ID)
+		ctx = context.WithValue(ctx, contextKeyUserID, claims.ID)
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})

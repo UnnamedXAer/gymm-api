@@ -56,7 +56,8 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	exercise, err := app.exerciseUsecases.CreateExercise(input.Name, input.Description, input.SetUnit /*mocks.UserID*/, userID) // @todo: logged user
+	exercise, err := app.exerciseUsecases.CreateExercise(
+		ctx, input.Name, input.Description, input.SetUnit, userID)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		if repositories.IsDuplicatedError(err) {
@@ -79,7 +80,9 @@ func (app *App) GetExerciseByID(w http.ResponseWriter, req *http.Request) {
 	id := vars["exerciseID"]
 	app.l.Debug().Msg("[GET / GetExeriseByID] -> id: " + id)
 
-	exercise, err := app.exerciseUsecases.GetExerciseByID(id)
+	ctx := req.Context()
+
+	exercise, err := app.exerciseUsecases.GetExerciseByID(ctx, id)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -100,11 +103,14 @@ func (app *App) GetExercisesByName(w http.ResponseWriter, req *http.Request) {
 	name := req.URL.Query().Get("n")
 	name = strings.TrimSpace(name)
 	if name == "" {
-		responseWithErrorTxt(w, http.StatusBadRequest, "missing name (&n=...) parameter")
+		responseWithErrorTxt(
+			w, http.StatusBadRequest, "missing name (&n=...) parameter")
 		return
 	}
 
-	exercises, err := app.exerciseUsecases.GetExercisesByName(name)
+	ctx := req.Context()
+
+	exercises, err := app.exerciseUsecases.GetExercisesByName(ctx, name)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		responseWithInternalError(w)
@@ -160,7 +166,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	curExercise, err := app.exerciseUsecases.GetExerciseByID(id)
+	curExercise, err := app.exerciseUsecases.GetExerciseByID(ctx, id)
 	if err != nil {
 		logDebugError(app.l, req, err)
 		var e *repositories.InvalidIDError
@@ -180,12 +186,14 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	exercise, err := app.exerciseUsecases.UpdateExercise(&entities.Exercise{
-		ID:          id,
-		Name:        input.Name,
-		Description: input.Description,
-		SetUnit:     input.SetUnit,
-	})
+	exercise, err := app.exerciseUsecases.UpdateExercise(
+		ctx,
+		&entities.Exercise{
+			ID:          id,
+			Name:        input.Name,
+			Description: input.Description,
+			SetUnit:     input.SetUnit,
+		})
 	if err != nil {
 		logDebugError(app.l, req, err)
 

@@ -73,8 +73,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetExerciseByID(t *testing.T) {
+	ctx := context.TODO()
 	want := mockedExercise
-	ex, err := exerciseRepo.GetExerciseByID(want.ID)
+	ex, err := exerciseRepo.GetExerciseByID(ctx, want.ID)
 	if err != nil {
 		t.Error(err)
 		return
@@ -107,9 +108,10 @@ func TestGetExerciseByID(t *testing.T) {
 }
 
 func TestCreateExercise(t *testing.T) {
+	ctx := context.TODO()
 	want := mockedExercise
 	want.Name += fmt.Sprintf("-> %d", time.Now().UnixNano())
-	ex, err := exerciseRepo.CreateExercise(want.Name, want.Description, want.SetUnit, want.CreatedBy)
+	ex, err := exerciseRepo.CreateExercise(ctx, want.Name, want.Description, want.SetUnit, want.CreatedBy)
 	if err != nil {
 		t.Error(err)
 		return
@@ -143,10 +145,11 @@ func TestCreateExercise(t *testing.T) {
 }
 
 func TestUpdateExercise(t *testing.T) {
+	ctx := context.TODO()
 	want := mockedExercise
 	want.Description += "\n-> updated at " + time.Now().String()
 	want.SetUnit = entities.Time
-	ex, err := exerciseRepo.UpdateExercise(&want)
+	ex, err := exerciseRepo.UpdateExercise(ctx, &want)
 	if err != nil {
 		t.Error(err)
 		return
@@ -179,13 +182,14 @@ func TestUpdateExercise(t *testing.T) {
 }
 
 func TestUpdateExerciseOneProp(t *testing.T) {
+	ctx := context.TODO()
 	input := entities.Exercise{
 		ID:      mockedExercise.ID,
 		SetUnit: entities.Time,
 	}
 	want := mockedExercise
 	want.SetUnit = input.SetUnit
-	ex, err := exerciseRepo.UpdateExercise(&input)
+	ex, err := exerciseRepo.UpdateExercise(ctx, &input)
 	if err != nil {
 		t.Error(err)
 		return
@@ -218,9 +222,10 @@ func TestUpdateExerciseOneProp(t *testing.T) {
 }
 
 func TestGetExercisesByName(t *testing.T) {
+	ctx := context.TODO()
 	want := mockedExercise
 	name := strings.ToLower(want.Name[:len(mockedExercise.Name)-1])
-	exercises, err := exerciseRepo.GetExercisesByName(name)
+	exercises, err := exerciseRepo.GetExercisesByName(ctx, name)
 	if err != nil {
 		t.Error(err)
 		return
@@ -239,8 +244,9 @@ func TestGetExercisesByName(t *testing.T) {
 }
 
 func TestGetExercisesByNameNotExisting(t *testing.T) {
+	ctx := context.TODO()
 	name := "notfound"
-	exercises, err := exerciseRepo.GetExercisesByName(name)
+	exercises, err := exerciseRepo.GetExercisesByName(ctx, name)
 	if err != nil {
 		t.Error(err)
 		return

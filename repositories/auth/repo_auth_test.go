@@ -73,6 +73,7 @@ func TestMain(m *testing.M) {
 		}
 		usersRepo := users.NewRepository(&logger, usersCol)
 		u, err := usersRepo.CreateUser(
+			context.TODO(),
 			mocks.ExampleUser.Username,
 			mocks.ExampleUser.EmailAddress,
 			hashed,
@@ -105,7 +106,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetUserByEmailAddress(t *testing.T) {
-	got, err := authRepo.GetUserByEmailAddress(mockedUser.EmailAddress)
+	ctx := context.TODO()
+	got, err := authRepo.GetUserByEmailAddress(ctx, mockedUser.EmailAddress)
 	if err != nil {
 		t.Fatalf("want user, got error: %v", err)
 	}
@@ -120,7 +122,8 @@ func TestGetUserByEmailAddress(t *testing.T) {
 }
 
 func TestGetUserByEmailAddressNotExists(t *testing.T) {
-	got, err := authRepo.GetUserByEmailAddress(nonexistingEmail)
+	ctx := context.TODO()
+	got, err := authRepo.GetUserByEmailAddress(ctx, nonexistingEmail)
 	if err != nil {
 		t.Fatalf("want nil error, got: %v", err)
 	}
@@ -131,7 +134,8 @@ func TestGetUserByEmailAddressNotExists(t *testing.T) {
 }
 
 func TestGetUserByEmailAddressEmpty(t *testing.T) {
-	got, err := authRepo.GetUserByEmailAddress("")
+	ctx := context.TODO()
+	got, err := authRepo.GetUserByEmailAddress(ctx, "")
 	if err == nil {
 		t.Fatal("want error 'empty email address', got: nil")
 	}

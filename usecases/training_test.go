@@ -1,6 +1,7 @@
 package usecases_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -19,7 +20,9 @@ var (
 )
 
 func TestStartTraining(t *testing.T) {
-	tr, err := trainingUC.StartTraining(mocks.ExampleUser.ID)
+	ctx := context.TODO()
+
+	tr, err := trainingUC.StartTraining(ctx, mocks.ExampleUser.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +33,9 @@ func TestStartTraining(t *testing.T) {
 }
 
 func TestEndTraining(t *testing.T) {
-	tr, err := trainingUC.EndTraining(mocks.ExampleTraining.ID)
+	ctx := context.TODO()
+
+	tr, err := trainingUC.EndTraining(ctx, mocks.ExampleTraining.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +46,9 @@ func TestEndTraining(t *testing.T) {
 }
 
 func TestAddTrainingSet(t *testing.T) {
-	ts, err := trainingUC.AddSet(mocks.ExampleTraining.UserID, mocks.ExampleExercise.ID, &mocks.ExampleTrainingSet)
+	ctx := context.TODO()
+
+	ts, err := trainingUC.AddSet(ctx, mocks.ExampleTraining.UserID, mocks.ExampleExercise.ID, &mocks.ExampleTrainingSet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +59,9 @@ func TestAddTrainingSet(t *testing.T) {
 }
 
 func TestEndTrainingExercise(t *testing.T) {
-	te, err := trainingUC.EndExercise(mocks.ExampleTraining.UserID, mocks.ExampleExercise.ID, time.Now())
+	ctx := context.TODO()
+
+	te, err := trainingUC.EndExercise(ctx, mocks.ExampleTraining.UserID, mocks.ExampleExercise.ID, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +72,9 @@ func TestEndTrainingExercise(t *testing.T) {
 }
 
 func TestAddTrainingExercise(t *testing.T) {
-	tr, err := trainingUC.EndTraining(mocks.ExampleTraining.ID)
+	ctx := context.TODO()
+
+	tr, err := trainingUC.EndTraining(ctx, mocks.ExampleTraining.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +85,9 @@ func TestAddTrainingExercise(t *testing.T) {
 }
 
 func TestGetTrainingExercises(t *testing.T) {
-	te, err := trainingUC.GetTrainingExercises(mocks.ExampleTraining.ID)
+	ctx := context.TODO()
+
+	te, err := trainingUC.GetTrainingExercises(ctx, mocks.ExampleTraining.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +98,9 @@ func TestGetTrainingExercises(t *testing.T) {
 }
 
 func TestGetUserTrainings(t *testing.T) {
-	tr, err := trainingUC.GetUserTrainings(mocks.ExampleTraining.UserID, true)
+	ctx := context.TODO()
+
+	tr, err := trainingUC.GetUserTrainings(ctx, mocks.ExampleTraining.UserID, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +118,7 @@ func TestGetUserTrainings(t *testing.T) {
 		}
 	}
 
-	tr, err = trainingUC.GetUserTrainings(mocks.ExampleTraining.UserID, false)
+	tr, err = trainingUC.GetUserTrainings(ctx, mocks.ExampleTraining.UserID, false)
 	if err != nil {
 		t.Fatal(err)
 	}

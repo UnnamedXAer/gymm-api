@@ -1,6 +1,7 @@
 package usecases
 
 import (
+	"context"
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
@@ -15,10 +16,10 @@ type ExerciseInput struct {
 }
 
 type ExerciseRepo interface {
-	CreateExercise(name, description string, setUnit entities.SetUnit, createdBy string) (*entities.Exercise, error)
-	GetExerciseByID(id string) (*entities.Exercise, error)
-	GetExercisesByName(name string) ([]entities.Exercise, error)
-	UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error)
+	CreateExercise(ctx context.Context, name, description string, setUnit entities.SetUnit, createdBy string) (*entities.Exercise, error)
+	GetExerciseByID(ctx context.Context, id string) (*entities.Exercise, error)
+	GetExercisesByName(ctx context.Context, name string) ([]entities.Exercise, error)
+	UpdateExercise(ctx context.Context, ex *entities.Exercise) (*entities.Exercise, error)
 }
 
 type ExerciseUseCases struct {
@@ -26,25 +27,36 @@ type ExerciseUseCases struct {
 }
 
 type IExerciseUseCases interface {
-	CreateExercise(name, description string, setUnit entities.SetUnit, loggedUserID string) (*entities.Exercise, error)
-	GetExerciseByID(id string) (*entities.Exercise, error)
-	GetExercisesByName(name string) ([]entities.Exercise, error)
-	UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error)
+	CreateExercise(ctx context.Context, name, description string, setUnit entities.SetUnit, loggedUserID string) (*entities.Exercise, error)
+	GetExerciseByID(ctx context.Context, id string) (*entities.Exercise, error)
+	GetExercisesByName(ctx context.Context, name string) ([]entities.Exercise, error)
+	UpdateExercise(ctx context.Context, ex *entities.Exercise) (*entities.Exercise, error)
 }
 
-func (eu *ExerciseUseCases) CreateExercise(name, description string, setUnit entities.SetUnit, loggedUserID string) (*entities.Exercise, error) {
-	return eu.repo.CreateExercise(name, description, setUnit, loggedUserID)
+func (eu *ExerciseUseCases) CreateExercise(
+	ctx context.Context,
+	name string,
+	description string,
+	setUnit entities.SetUnit,
+	loggedUserID string) (*entities.Exercise, error) {
+	return eu.repo.CreateExercise(ctx, name, description, setUnit, loggedUserID)
 }
 
-func (eu *ExerciseUseCases) GetExerciseByID(id string) (*entities.Exercise, error) {
-	return eu.repo.GetExerciseByID(id)
+func (eu *ExerciseUseCases) GetExerciseByID(
+	ctx context.Context,
+	id string) (*entities.Exercise, error) {
+	return eu.repo.GetExerciseByID(ctx, id)
 }
-func (eu *ExerciseUseCases) GetExercisesByName(name string) ([]entities.Exercise, error) {
-	return eu.repo.GetExercisesByName(name)
+func (eu *ExerciseUseCases) GetExercisesByName(
+	ctx context.Context,
+	name string) ([]entities.Exercise, error) {
+	return eu.repo.GetExercisesByName(ctx, name)
 }
 
-func (eu *ExerciseUseCases) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
-	return eu.repo.UpdateExercise(ex)
+func (eu *ExerciseUseCases) UpdateExercise(
+	ctx context.Context,
+	ex *entities.Exercise) (*entities.Exercise, error) {
+	return eu.repo.UpdateExercise(ctx, ex)
 }
 
 func NewExerciseUseCases(exRepo ExerciseRepo) IExerciseUseCases {

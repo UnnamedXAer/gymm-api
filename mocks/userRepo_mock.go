@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -20,7 +21,9 @@ var (
 type MockUserRepo struct {
 }
 
-func (ur MockUserRepo) GetUserByID(id string) (*entities.User, error) {
+func (ur MockUserRepo) GetUserByID(
+	ctx context.Context,
+	id string) (*entities.User, error) {
 	// mock storage get where ID = id
 
 	if strings.Contains(id, "notfound") {
@@ -36,7 +39,9 @@ func (ur MockUserRepo) GetUserByID(id string) (*entities.User, error) {
 	}, nil
 }
 
-func (ur MockUserRepo) CreateUser(username, email string, passwordHash []byte) (*entities.User, error) {
+func (ur MockUserRepo) CreateUser(
+	ctx context.Context,
+	username, email string, passwordHash []byte) (*entities.User, error) {
 	// mock storage insert new user
 	u := ExampleUser
 	u.Username = username

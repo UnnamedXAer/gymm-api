@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -22,6 +23,7 @@ var ExampleExercise = entities.Exercise{
 func InsertMockExercise(er usecases.ExerciseRepo) (*entities.Exercise, error) {
 
 	return er.CreateExercise(
+		context.TODO(),
 		ExampleExercise.Name,
 		ExampleExercise.Description,
 		ExampleExercise.SetUnit,
@@ -31,7 +33,12 @@ func InsertMockExercise(er usecases.ExerciseRepo) (*entities.Exercise, error) {
 
 type MockExerciseRepo struct{}
 
-func (er *MockExerciseRepo) CreateExercise(name, description string, setUnit entities.SetUnit, createdBy string) (*entities.Exercise, error) {
+func (er *MockExerciseRepo) CreateExercise(
+	ctx context.Context,
+	name string,
+	description string,
+	setUnit entities.SetUnit,
+	createdBy string) (*entities.Exercise, error) {
 
 	return &entities.Exercise{
 		ID:          ExampleExercise.ID,
@@ -43,7 +50,9 @@ func (er *MockExerciseRepo) CreateExercise(name, description string, setUnit ent
 	}, nil
 }
 
-func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, error) {
+func (er *MockExerciseRepo) GetExerciseByID(
+	ctx context.Context,
+	id string) (*entities.Exercise, error) {
 	_, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, repositories.NewErrorInvalidID(id, "exercise")
@@ -57,7 +66,9 @@ func (er *MockExerciseRepo) GetExerciseByID(id string) (*entities.Exercise, erro
 	return nil, nil //repositories.NewErrorNotFoundRecord()
 }
 
-func (er *MockExerciseRepo) GetExercisesByName(name string) ([]entities.Exercise, error) {
+func (er *MockExerciseRepo) GetExercisesByName(
+	ctx context.Context,
+	name string) ([]entities.Exercise, error) {
 
 	if strings.Contains(strings.ToLower(ExampleExercise.Name), strings.ToLower(name)) {
 		out := []entities.Exercise{ExampleExercise}
@@ -67,7 +78,9 @@ func (er *MockExerciseRepo) GetExercisesByName(name string) ([]entities.Exercise
 	return nil, nil
 }
 
-func (er *MockExerciseRepo) UpdateExercise(ex *entities.Exercise) (*entities.Exercise, error) {
+func (er *MockExerciseRepo) UpdateExercise(
+	ctx context.Context,
+	ex *entities.Exercise) (*entities.Exercise, error) {
 	_, err := primitive.ObjectIDFromHex(ex.ID)
 	if err != nil {
 		return nil, repositories.NewErrorInvalidID(ex.ID, "exercise")

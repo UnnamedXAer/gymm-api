@@ -12,7 +12,10 @@ import (
 func TestMain(m *testing.M) {
 	testhelpers.EnsureTestEnv()
 
-	var ur usecases.UserRepo = mocks.MockUserRepo{}
+	var ar usecases.AuthRepo = &mocks.MockAuthRepo{}
+	authUC = usecases.NewAuthUsecases(ar)
+
+	var ur usecases.UserRepo = &mocks.MockUserRepo{}
 	userUC = usecases.NewUserUseCases(ur)
 
 	var er usecases.ExerciseRepo = &mocks.MockExerciseRepo{}
