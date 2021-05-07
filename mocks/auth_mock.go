@@ -124,7 +124,12 @@ func (r *MockAuthRepo) GetRefreshToken(
 	return out, nil
 }
 
-func (r *MockAuthRepo) DeleteRefreshToken(userID string) error {
+func (r *MockAuthRepo) DeleteRefreshToken(userID string) (n int64, err error) {
 
-	return nil
+	return 1, nil
+}
+
+func (r *MockAuthRepo) DeleteRefreshTokenAndAllTokens(userID string) (n int64, err error) {
+
+	return 2, nil
 }
