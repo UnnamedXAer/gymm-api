@@ -52,6 +52,9 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 			var vErr *jwt.ValidationError
 			if !(errors.As(err, &vErr) &&
 				// verify that only expiration time is not valid
+				// @thought: maybe validate time manually eg. by using IssuedAt + "max age"
+				// instead of expiration time, this way there will be no need of asserting
+				// the error (if exptime will be zero value)
 				(vErr.Errors == jwt.ValidationErrorExpired)) ||
 				claims.ID == "" ||
 				claims.StandardClaims.ExpiresAt == 0 {
