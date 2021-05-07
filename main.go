@@ -41,7 +41,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	repositories.CreateCollections(&logger, db)
+	err = repositories.CreateCollections(&logger, db)
+	if err != nil {
+		logger.Panic().Msg(err.Error())
+	}
 
 	usersCol := repositories.GetCollection(&logger, db, repositories.UsersCollectionName)
 	tokensCol := repositories.GetCollection(&logger, db, repositories.TokensCollectionName)
