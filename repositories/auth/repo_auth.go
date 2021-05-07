@@ -264,8 +264,6 @@ func (repo *AuthRepository) DeleteRefreshToken(userID string) (n int64, err erro
 
 func (repo *AuthRepository) DeleteRefreshTokenAndAllTokens(userID string) (n int64, err error) {
 
-	return 0, errors.Errorf("not implemented yet")
-
 	ctx := context.TODO()
 	uOID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
@@ -282,23 +280,21 @@ func (repo *AuthRepository) DeleteRefreshTokenAndAllTokens(userID string) (n int
 
 		tResult, err := repo.tokensCol.DeleteMany(sessCtx, &filter)
 		if err != nil {
-			if err.Error() == "mongo: no documents in result" {
-				return tResult.DeletedCount, nil
+			if err.Error() != "mongo: no documents in result" {
+				return tResult.DeletedCount, errors.WithMessage(err,
+					"authRepo.DeleteRefreshTokenAndAllTokens: token:")
 			}
-			return tResult.DeletedCount, errors.WithMessage(err,
-				"authRepo.DeleteRefreshTokenAndAllTokens: token:")
 		}
 
 		rtResults, err := repo.refTokensCol.DeleteMany(sessCtx, &filter)
 		if err != nil {
-			if err.Error() == "mongo: no documents in result" {
-				return rtResults.DeletedCount + tResult.DeletedCount, nil
+			if err.Error() != "mongo: no documents in result" {
+				return rtResults.DeletedCount + tResult.DeletedCount, errors.WithMessage(err,
+					"authRepo.DeleteRefreshTokenAndAllTokens: refresh token:")
 			}
-			return rtResults.DeletedCount + tResult.DeletedCount, errors.WithMessage(err,
-				"authRepo.DeleteRefreshTokenAndAllTokens: refresh token:")
 		}
 
-		return rtResults.DeletedCount + tResult.DeletedCount, errors.New("not implemented")
+		return rtResults.DeletedCount + tResult.DeletedCount, nil
 	}
 
 	session, err := repo.refTokensCol.Database().Client().StartSession()
