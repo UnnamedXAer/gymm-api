@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -14,7 +13,7 @@ var (
 	ExampleUserToken = entities.UserToken{
 		ID:        "ID here",
 		UserID:    UserID,
-		Token:     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwNzJkMzIwNjE0NDY0NDk4NGE1NGZhMSIsInIiOnsidG9rZW4iOiJkNDVhNmU3Ni0wNTllLTRlOTEtOTgwZi05YjliM2FmOGIyN2MifSwiZXhwIjo0Nzc1MTMzODUyfQ.D2T803_LhVAfEXBMJ1_z--46ak8CmmXe-772QY1-3o0",
+		Token:     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwNzJkMzIwNjE0NDY0NDk4NGE1NGZhMSIsImNyZWF0ZWRBdCI6MTYyMDQ4Njg2MjkyOTA2NTUwMCwiciI6eyJ0b2tlbiI6IjRiYmI1NDZlLTM0MjEtNGI1Ni1iODI2LWQwYjY0OGM3YjUzYiJ9LCJleHAiOjE2MjA0ODcxNjIsImlhdCI6MTYyMDQ4Njg2Mn0.j8dSyoCoSiKOI1duK9eNAl2LFgHjV0fe8eB58IhxlvI",
 		Device:    "PostmanRuntime/7.26.10",
 		CreatedAt: time.Now().UTC(),
 		ExpiresAt: time.Now().AddDate(1, 0, 0).UTC(),
@@ -22,7 +21,7 @@ var (
 	ExampleRefreshToken = entities.RefreshToken{
 		ID:        "ID here",
 		UserID:    UserID,
-		Token:     uuid.NewString(),
+		Token:     "4bbb546e-3421-4b56-b826-d0b648c7b53b",
 		CreatedAt: time.Now().UTC(),
 		ExpiresAt: time.Now().AddDate(1, 0, 0).UTC(),
 	}
@@ -33,8 +32,6 @@ type MockAuthRepo struct{}
 func (r *MockAuthRepo) GetUserByEmailAddress(
 	ctx context.Context,
 	emailAddress string) (*entities.AuthUser, error) {
-	// mock storage get where ID = id
-
 	if strings.Contains(emailAddress, "notfound") {
 		return nil, nil
 	}
@@ -48,6 +45,30 @@ func (r *MockAuthRepo) GetUserByEmailAddress(
 		User:     ExampleUser,
 		Password: pwd,
 	}, nil
+}
+
+func (r *MockAuthRepo) GetUserByID(ctx context.Context, id string) (*entities.AuthUser, error) {
+
+	if strings.Contains(id, "notfound") {
+		return nil, nil
+	}
+
+	pwd, err := bcrypt.GenerateFromPassword(Password, bcrypt.MinCost)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entities.AuthUser{
+		User:     ExampleUser,
+		Password: pwd,
+	}, nil
+}
+
+func (r *MockAuthRepo) ChangePassword(
+	ctx context.Context,
+	userID string,
+	newPwd []byte) error {
+	return nil
 }
 
 func (r *MockAuthRepo) GetUserJWTs(

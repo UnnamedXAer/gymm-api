@@ -26,7 +26,7 @@ var (
 	correctUser usecases.UserInput = usecases.UserInput{
 		Username:     "Al",
 		EmailAddress: "al@mymeil.go",
-		Password:     "Pwd123",
+		Password:     "TheSecretestPasswordEver123$%^",
 	}
 )
 

@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
@@ -267,6 +269,65 @@ func (app *App) LogoutAllSessions(w http.ResponseWriter, req *http.Request) {
 			w, http.StatusOK, map[string]string{"warning": "no records were deleted"})
 		return
 	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (app *App) ChangePassword(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	userID, ok := ctx.Value(contextKeyUserID).(string)
+	if !ok {
+		responseWithUnauthorized(w)
+		return
+	}
+
+	body := make(map[string]string, 2)
+	err := json.NewDecoder(req.Body).Decode(&body)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	rv := reflect.TypeOf(usecases.UserInput{})
+	srf, ok := rv.FieldByName("Password")
+	if !ok {
+		responseWithInternalError(w)
+		return
+	}
+
+	validationRules := srf.Tag.Get("validate")
+	fieldName := "password"
+	err = app.Validate.Var(body[fieldName], validationRules)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		// @refactor: see exercise validation
+		formattedErrors := make(map[string]string, 1)
+		validateErrs, ok := err.(validator.ValidationErrors)
+		if !ok {
+			formattedErrors[fieldName] = err.Error()
+		}
+
+		for _, err := range validateErrs {
+			formattedErrors[fieldName] += getErrorTranslation4User(&err, fieldName)
+		}
+
+		vErrs := validation.NewStructValidError(formattedErrors)
+		responseWithJSON(w, http.StatusBadRequest, vErrs.Format())
+		return
+	}
+
+	err = app.authUsecases.ChangePassword(ctx, userID, body["oldPassword"], body["password"])
+	if err != nil {
+		logDebugError(app.l, req, err)
+		if errors.Is(err, usecases.IncorrectCredentialsError{}) {
+			responseWithError(w, http.StatusUnauthorized, err)
+			return
+		}
+		// @todo: handle other error types
+		responseWithError(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 

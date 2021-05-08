@@ -66,6 +66,68 @@ func (repo *AuthRepository) GetUserByEmailAddress(
 	return u, nil
 }
 
+func (repo *AuthRepository) GetUserByID(ctx context.Context, id string) (*entities.AuthUser, error) {
+	uOID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, errors.WithMessage(
+			repositories.NewErrorInvalidID(id, "user"), "authRepo.GetUserByID")
+	}
+
+	filter := users.UserData{
+		ID: uOID,
+	}
+
+	var ud users.UserData
+	err = repo.usersCol.FindOne(ctx, &filter).Decode(&ud)
+	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return nil, nil
+		}
+		return nil, errors.WithMessage(err, "authRepo.GetUserByID")
+	}
+
+	u := &entities.AuthUser{
+		User: entities.User{
+			ID:           ud.ID.Hex(),
+			EmailAddress: ud.EmailAddress,
+			Username:     ud.Username,
+			CreatedAt:    ud.CreatedAt,
+		},
+		Password: ud.Password,
+	}
+	return u, nil
+}
+
+func (repo *AuthRepository) ChangePassword(ctx context.Context, userID string, newPwd []byte) error {
+	uOID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return errors.WithMessage(
+			repositories.NewErrorInvalidID(userID, "user"), "authRepo.ChangePassword")
+	}
+
+	filter := users.UserData{
+		ID: uOID,
+	}
+
+	update := bson.M{"$set": bson.M{"password": newPwd}}
+
+	result, err := repo.usersCol.UpdateOne(ctx, &filter, &update)
+	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return errors.WithMessage(
+				errors.New("no record has been updated"), "authRepo.ChangePassword")
+		}
+		return errors.WithMessage(err, "authRepo.ChangePassword")
+	}
+
+	if result.MatchedCount == 0 {
+		return errors.WithMessage(
+			errors.New("no record has been updated"), "authRepo.ChangePassword")
+	}
+
+	return nil
+}
+
 func (repo *AuthRepository) GetUserJWTs(
 	ctx context.Context,
 

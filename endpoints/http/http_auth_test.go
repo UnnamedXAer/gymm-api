@@ -3,7 +3,9 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/unnamedxaer/gymm-api/entities"
@@ -107,17 +109,70 @@ func TestRegisterValidationFail(t *testing.T) {
 func TestChangePassword(t *testing.T) {
 	newPassword := string(mocks.Password) + "X"
 
-	payload := map[string]string{
-		"oldPassword": correctUser.Password,
-		"password":    newPassword,
+	testCases := []struct {
+		desc   string
+		oldPwd string
+		newPwd string
+		code   int
+		errTxt string
+	}{
+		{
+			desc:   "missing old password",
+			newPwd: newPassword,
+			code:   http.StatusUnauthorized,
+			errTxt: "incorrect",
+		},
+		{
+			desc:   "incorrect old password",
+			oldPwd: correctUser.Password + "👽",
+			newPwd: newPassword,
+			code:   http.StatusUnauthorized,
+			errTxt: "incorrect",
+		},
+		{
+			desc:   "missing new password",
+			oldPwd: correctUser.Password,
+			code:   http.StatusBadRequest,
+			errTxt: "'password' field value is required",
+		},
+		{
+			desc:   "correct",
+			oldPwd: string(mocks.Password),
+			newPwd: newPassword,
+			code:   http.StatusOK,
+			errTxt: "",
+		},
 	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
 
-	b, _ := json.Marshal(&payload)
+			payload := map[string]string{
+				"oldPassword": tC.oldPwd,
+				"password":    tC.newPwd,
+			}
 
-	req, _ := http.NewRequest(http.MethodPost, "/password/reset", bytes.NewBuffer(b))
-	req.Header.Set("Content-Type", "application/json")
+			b, _ := json.Marshal(&payload)
 
-	response := executeRequest(req)
+			req, _ := http.NewRequest(http.MethodPost, "/password/change", bytes.NewBuffer(b))
+			req.Header.Set("Content-Type", "application/json")
 
-	checkResponseCode(t, http.StatusOK, response.Code)
+			res := executeRequest(req)
+
+			checkResponseCode(t, tC.code, res.Code)
+
+			got := res.Body.String()
+
+			if tC.errTxt == "" {
+				if got != "" {
+					t.Errorf("want empty body, got %q", got)
+				}
+			}
+			if tC.errTxt != "" && !strings.Contains(got, tC.errTxt) {
+				t.Errorf("want error like %q, got %q", tC.errTxt, got)
+				fmt.Println("response")
+				fmt.Println(got)
+			}
+
+		})
+	}
 }

@@ -11,6 +11,8 @@ import (
 
 type AuthRepo interface {
 	GetUserByEmailAddress(ctx context.Context, emailAddress string) (*entities.AuthUser, error)
+	GetUserByID(ctx context.Context, id string) (*entities.AuthUser, error)
+	ChangePassword(ctx context.Context, userID string, newPwd []byte) error
 	SaveJWT(ctx context.Context, userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
 	GetUserJWTs(ctx context.Context, userID string, expired entities.ExpireType) ([]entities.UserToken, error)
 	DeleteJWT(ctx context.Context, ut *entities.UserToken) (int64, error)
@@ -27,6 +29,8 @@ type AuthUsecases struct {
 type IAuthUsecases interface {
 	// Login checks given credentials against registered users
 	Login(ctx context.Context, u *UserInput) (*entities.User, error)
+	// ChangePassword updates user password
+	ChangePassword(ctx context.Context, userID string, oldPwd, newPwd string) error
 	// SaveJWT saves jwt for given user and device name
 	SaveJWT(ctx context.Context, userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
 	// GetUserJWTs returns user jwt tokens
@@ -72,6 +76,44 @@ func (au *AuthUsecases) Login(
 	}
 
 	return &user.User, nil
+}
+
+func (au *AuthUsecases) ChangePassword(
+	ctx context.Context,
+	userID string,
+	oldPwd,
+	newPwd string) error {
+	user, err := au.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if user == nil {
+		// should not happen ever
+		return errors.WithMessage(
+			errors.New("could not find the user"), "usecases.ChangePassword")
+	}
+
+	err = bcrypt.CompareHashAndPassword(user.Password, []byte(oldPwd))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return IncorrectCredentialsError{}
+		}
+
+		return errors.WithMessage(err, "usecases.ChangePassword")
+	}
+
+	passwordHash, err := hashPassword(newPwd)
+	if err != nil {
+		return errors.WithMessage(err, "invalid password, cannot hash")
+	}
+
+	err = au.repo.ChangePassword(ctx, userID, passwordHash)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (au *AuthUsecases) SaveJWT(

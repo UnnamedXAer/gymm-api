@@ -63,6 +63,7 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/sessions", chainMiddlewares(app.GetSessions, app.checkAuthenticated)).Methods(http.MethodGet)
 	app.Router.HandleFunc("/logout-session", chainMiddlewares(app.LogoutSession, app.checkAuthenticated)).Methods(http.MethodPost)
 	app.Router.HandleFunc("/logout-all", chainMiddlewares(app.LogoutAllSessions, app.checkAuthenticated)).Methods(http.MethodPost)
+	app.Router.HandleFunc("/password/change", chainMiddlewares(app.ChangePassword, app.checkAuthenticated)).Methods(http.MethodPost)
 	app.Router.HandleFunc("/health", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
 
 	// app.Router.HandleFunc(

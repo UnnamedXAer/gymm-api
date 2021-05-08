@@ -26,6 +26,9 @@ const (
 )
 
 var (
+	nonexistingID = mocks.UserID[:len(mocks.UserID)-1] + "a"
+	pwdHash       []byte
+
 	authRepo   usecases.AuthRepo
 	mockedUser entities.AuthUser
 )
@@ -62,12 +65,22 @@ func TestMain(m *testing.M) {
 		log.Fatalln(err)
 	}
 
-	result := usersCol.FindOne(context.TODO(), bson.M{"email_address": mocks.ExampleUser.EmailAddress})
+	if mocks.UserID[len(mocks.UserID)-1] == 'a' {
+		nonexistingID = nonexistingID[:len(nonexistingID)-1] + "b"
+	}
+
+	result := usersCol.FindOne(context.TODO(),
+		bson.M{
+			"$or": bson.A{
+				bson.M{"email_address": mocks.ExampleUser.EmailAddress},
+				bson.M{"_id": nonexistingEmail},
+			},
+		})
 	if err = result.Err(); err != nil {
 		if err != mongo.ErrNoDocuments {
 			log.Fatalln(err)
 		}
-		hashed, err := bcrypt.GenerateFromPassword([]byte(mocks.Password), bcrypt.MinCost)
+		pwdHash, err = bcrypt.GenerateFromPassword([]byte(mocks.Password), bcrypt.MinCost)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -76,7 +89,7 @@ func TestMain(m *testing.M) {
 			context.TODO(),
 			mocks.ExampleUser.Username,
 			mocks.ExampleUser.EmailAddress,
-			hashed,
+			pwdHash,
 		)
 		if err != nil {
 			log.Fatalln(err)
@@ -103,6 +116,115 @@ func TestMain(m *testing.M) {
 	authRepo = NewRepository(&logger, usersCol, tokensCol, refTokensCol)
 
 	os.Exit(m.Run())
+}
+
+func TestGetUserByID(t *testing.T) {
+	testCases := []struct {
+		desc        string
+		id          string
+		errTxt      string
+		returnsUser bool
+	}{
+		{
+			desc:        "invalid id",
+			id:          mocks.UserID + "🐼",
+			errTxt:      repositories.NewErrorInvalidID(mocks.UserID+"🐼", "user").Error(),
+			returnsUser: false,
+		},
+		{
+			desc:        "not existing user",
+			id:          mocks.UserID,
+			errTxt:      "",
+			returnsUser: false,
+		},
+		{
+			desc:        "correct id",
+			id:          mockedUser.ID,
+			errTxt:      "",
+			returnsUser: true,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctx := context.TODO()
+			got, err := authRepo.GetUserByID(ctx, tC.id)
+
+			if tC.returnsUser && got == nil {
+				t.Errorf("want user, got nil")
+			}
+			if !tC.returnsUser && got != nil {
+				t.Errorf("want nil user , got %v", got)
+			}
+
+			if tC.errTxt == "" {
+				if err != nil {
+					t.Errorf("want nil error, got %v", err)
+				}
+			} else {
+				if !strings.Contains(err.Error(), tC.errTxt) {
+					t.Errorf("want error %q, got %v", tC.errTxt, err)
+				}
+			}
+		})
+	}
+}
+
+func TestChangePassword(t *testing.T) {
+	testCases := []struct {
+		desc   string
+		id     string
+		pwd    []byte
+		errTxt string
+	}{
+		{
+			desc:   "invalid id",
+			id:     mocks.UserID + "🐼",
+			pwd:    pwdHash,
+			errTxt: repositories.NewErrorInvalidID(mocks.UserID+"🐼", "user").Error(),
+		},
+		{
+			desc:   "not existing user",
+			id:     nonexistingID,
+			pwd:    pwdHash,
+			errTxt: "no record has been updated",
+		},
+		{
+			desc:   "new password the same as old",
+			id:     mockedUser.ID,
+			pwd:    pwdHash,
+			errTxt: "",
+		},
+		{
+			desc:   "new password different than old",
+			id:     mockedUser.ID,
+			pwd:    append(pwdHash, 'a', 'b'),
+			errTxt: "",
+		},
+		{
+			desc:   "__restore default password",
+			id:     mockedUser.ID,
+			pwd:    pwdHash,
+			errTxt: "",
+		},
+	}
+	var err error
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctx := context.TODO()
+			err = authRepo.ChangePassword(ctx, tC.id, tC.pwd)
+
+			if tC.errTxt == "" {
+				if err != nil {
+					t.Errorf("want nil error, got %v", err)
+				}
+			} else {
+				if !strings.Contains(err.Error(), tC.errTxt) {
+					t.Errorf("want error %q, got %v", tC.errTxt, err)
+				}
+			}
+		})
+	}
 }
 
 func TestGetUserByEmailAddress(t *testing.T) {

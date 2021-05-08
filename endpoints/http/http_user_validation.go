@@ -30,36 +30,7 @@ func validateUserInput(validate *validator.Validate, u *usecases.UserInput) erro
 				fieldName = err.StructField()
 			}
 
-			switch err.Tag() {
-			// user json tags
-			case "pwd":
-				txt = fmt.Sprintf("The '%s' is not strong enough", fieldName)
-			case "email":
-				txt = fmt.Sprintf("The '%s' is not a valid email address", fieldName)
-			case "required":
-				txt = fmt.Sprintf("The '%s' field value is required and cannot be empty", fieldName)
-			case "min":
-				var objLengthUnit string
-				if err.Kind() == reflect.String {
-					objLengthUnit = "characters"
-				} else {
-					objLengthUnit = "elements"
-				}
-
-				txt = fmt.Sprintf("The '%s' has to be at least %s %s long", fieldName, err.Param(), objLengthUnit)
-			case "max":
-				var objLengthUnit string
-				if err.Kind() == reflect.String {
-					objLengthUnit = "characters"
-				} else {
-					objLengthUnit = "elements"
-				}
-
-				txt = fmt.Sprintf("The '%s' has to be at max %s %s long", fieldName, err.Param(), objLengthUnit)
-			default:
-				txt = fmt.Sprintf("The '%s' field failed on the '%s' tag validation", fieldName, err.Tag())
-			}
-
+			txt = getErrorTranslation4User(&err, fieldName)
 			errText += txt
 			formatedErrors[fieldName] = txt
 		}
@@ -68,4 +39,36 @@ func validateUserInput(validate *validator.Validate, u *usecases.UserInput) erro
 	}
 
 	return nil
+}
+
+func getErrorTranslation4User(err *validator.FieldError, fieldName string) string {
+	switch (*err).Tag() {
+	case "pwd":
+		return fmt.Sprintf("The '%s' is not strong enough", fieldName)
+	case "email":
+		return fmt.Sprintf("The '%s' is not a valid email address", fieldName)
+	case "required":
+		return fmt.Sprintf("The '%s' field value is required and cannot be empty", fieldName)
+	case "min":
+		var objLengthUnit string
+		if (*err).Kind() == reflect.String {
+			objLengthUnit = "characters"
+		} else {
+			objLengthUnit = "elements"
+		}
+
+		return fmt.Sprintf("The '%s' has to be at least %s %s long", fieldName, (*err).Param(), objLengthUnit)
+	case "max":
+		var objLengthUnit string
+		if (*err).Kind() == reflect.String {
+			objLengthUnit = "characters"
+		} else {
+			objLengthUnit = "elements"
+		}
+
+		return fmt.Sprintf("The '%s' has to be at max %s %s long", fieldName, (*err).Param(), objLengthUnit)
+	default:
+		return fmt.Sprintf("The '%s' field failed on the '%s' tag validation", fieldName, (*err).Tag())
+	}
+
 }
