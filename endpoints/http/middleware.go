@@ -60,7 +60,7 @@ func (app *App) checkAuthenticated(next http.HandlerFunc) http.HandlerFunc {
 				claims.StandardClaims.ExpiresAt == 0 {
 				logDebugError(app.l, r, err)
 				clearCookieJWTAuthToken(w)
-				responseWithUnauthorized(w, err)
+				responseWithUnauthorized(w)
 				return
 			}
 		}
