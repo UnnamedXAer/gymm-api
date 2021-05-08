@@ -14,7 +14,7 @@ type UserInput struct {
 	// ID           primitive.ObjectID `json:"id" validate:"-"`
 	Username     string    `json:"userName" validate:"required,min=2,max=50,printascii"`
 	EmailAddress string    `json:"emailAddress" validate:"required,email"`
-	Password     string    `json:"password" validate:"required,min=6,max=24,pwd"`
+	Password     string    `json:"password" validate:"required,min=6,max=50,pwd"`
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
