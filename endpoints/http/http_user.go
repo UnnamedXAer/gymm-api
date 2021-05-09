@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
 func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
@@ -22,7 +22,7 @@ func (app *App) GetUserById(w http.ResponseWriter, req *http.Request) {
 
 	u, err := app.userUsecases.GetUserByID(ctx, id)
 	if err != nil {
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, err)
 			return

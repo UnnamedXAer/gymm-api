@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
@@ -104,7 +103,7 @@ func (app *App) Register(w http.ResponseWriter, req *http.Request) {
 	user, err := app.userUsecases.CreateUser(ctx, &u)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
+		if errors.Is(err, usecases.NewErrorEmailAddressInUse()) {
 			responseWithErrorTxt(w, http.StatusConflict, "email address already in use")
 			return
 		}
@@ -223,7 +222,7 @@ func (app *App) LogoutSession(w http.ResponseWriter, req *http.Request) {
 	n, err := app.authUsecases.DeleteJWT(ctx, &ut)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -255,7 +254,7 @@ func (app *App) LogoutAllSessions(w http.ResponseWriter, req *http.Request) {
 	n, err := app.authUsecases.DeleteRefreshTokenAndAllTokens(ctx, userID)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return

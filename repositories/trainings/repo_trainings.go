@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -48,7 +48,7 @@ func (r *TrainingRepository) GetTrainingByID(
 	oTID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(id, "training"), "get training by id")
+			usecases.NewErrorInvalidID(id, "training"), "get training by id")
 	}
 
 	filter := bson.M{"_id": oTID}
@@ -80,7 +80,7 @@ func (r *TrainingRepository) StartTraining(
 	ouID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(userID, "user"), "start training")
+			usecases.NewErrorInvalidID(userID, "user"), "start training")
 	}
 	td := trainingData{
 		UserID:    ouID,
@@ -109,7 +109,7 @@ func (r *TrainingRepository) EndTraining(
 	tOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(id, "training"), "end training")
+			usecases.NewErrorInvalidID(id, "training"), "end training")
 	}
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
@@ -119,7 +119,7 @@ func (r *TrainingRepository) EndTraining(
 		ctx, trainingData{ID: tOID}, update, opts)
 	err = results.Err()
 	if err != nil {
-		if repositories.IsDuplicatedError(err) {
+		if usecases.IsDuplicatedError(err) {
 			//
 		} else if strings.Contains(err.Error(), "") {
 			//
@@ -148,7 +148,7 @@ func (r *TrainingRepository) GetUserTrainings(
 	oUserID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(userID, "user"),
+			usecases.NewErrorInvalidID(userID, "user"),
 			"get user trainings")
 	}
 
@@ -189,13 +189,13 @@ func (r TrainingRepository) StartExercise(
 	tOID, err := primitive.ObjectIDFromHex(trID)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(trID, "training"),
+			usecases.NewErrorInvalidID(trID, "training"),
 			"start exercise")
 	}
 
 	exOID, err := primitive.ObjectIDFromHex(exercise.ExerciseID)
 	if err != nil {
-		return nil, repositories.NewErrorInvalidID(exercise.ExerciseID, "exercise")
+		return nil, usecases.NewErrorInvalidID(exercise.ExerciseID, "exercise")
 	}
 	newExerciseData := trainingExerciseData{
 		ID:         primitive.NewObjectID(),
@@ -236,12 +236,12 @@ func (r TrainingRepository) AddSet(
 	teOID, err := primitive.ObjectIDFromHex(teID)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(teID, "training exercise"), "add set")
+			usecases.NewErrorInvalidID(teID, "training exercise"), "add set")
 	}
 	uOID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(userID, "user"), "add set")
+			usecases.NewErrorInvalidID(userID, "user"), "add set")
 	}
 
 	newSetData := trainingSetData{
@@ -282,7 +282,7 @@ func (r TrainingRepository) GetTrainingExercises(
 	tOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(id, "training"),
+			usecases.NewErrorInvalidID(id, "training"),
 			"get training exercises")
 	}
 
@@ -312,12 +312,12 @@ func (r TrainingRepository) EndExercise(
 	teOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(id, "training"), "end exercises")
+			usecases.NewErrorInvalidID(id, "training"), "end exercises")
 	}
 	uOID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(id, "user"), "end exercises")
+			usecases.NewErrorInvalidID(id, "user"), "end exercises")
 	}
 
 	filter := bson.M{"exercises._id": teOID, "user_id": uOID}

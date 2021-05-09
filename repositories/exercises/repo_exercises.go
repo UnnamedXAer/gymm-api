@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -28,7 +28,7 @@ func (repo *ExerciseRepository) GetExerciseByID(
 	exOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(id, "exercise"),
+			usecases.NewErrorInvalidID(id, "exercise"),
 			"get exercise by id")
 	}
 
@@ -37,7 +37,7 @@ func (repo *ExerciseRepository) GetExerciseByID(
 	result := repo.col.FindOne(ctx, filter)
 	if err = result.Err(); err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return nil, nil //repositories.NewErrorNotFoundRecord()
+			return nil, nil //usecases.NewErrorNotFoundRecord()
 		}
 		return nil, fmt.Errorf("get exercise by id: %v", err)
 	}
@@ -92,7 +92,7 @@ func (repo *ExerciseRepository) UpdateExercise(
 	exOID, err := primitive.ObjectIDFromHex(ex.ID)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(ex.ID, "exercise"),
+			usecases.NewErrorInvalidID(ex.ID, "exercise"),
 			"update exercise")
 	}
 
@@ -117,7 +117,7 @@ func (repo *ExerciseRepository) UpdateExercise(
 		ctx, filter, update, options.FindOneAndUpdate().SetReturnDocument(options.After))
 	if err = result.Err(); err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return nil, nil //repositories.NewErrorNotFoundRecord()
+			return nil, nil //usecases.NewErrorNotFoundRecord()
 		}
 		return nil, errors.WithMessage(err, "update exercise")
 	}

@@ -180,7 +180,7 @@ func TestChangePassword(t *testing.T) {
 			desc:   "invalid id",
 			id:     mocks.UserID + "🐼",
 			pwd:    pwdHash,
-			errTxt: repositories.NewErrorInvalidID(mocks.UserID+"🐼", "user").Error(),
+			errTxt: usecases.NewErrorInvalidID(mocks.UserID+"🐼", "user").Error(),
 		},
 		{
 			desc:   "not existing user",

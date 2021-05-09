@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
@@ -60,7 +59,7 @@ func (app *App) CreateExercise(w http.ResponseWriter, req *http.Request) {
 		ctx, input.Name, input.Description, input.SetUnit, userID)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		if repositories.IsDuplicatedError(err) {
+		if usecases.IsDuplicatedError(err) {
 			responseWithError(w, http.StatusConflict,
 				fmt.Errorf("exercise with name: %q and set unit: %d already exists",
 					input.Name, input.SetUnit))
@@ -85,7 +84,7 @@ func (app *App) GetExerciseByID(w http.ResponseWriter, req *http.Request) {
 	exercise, err := app.exerciseUsecases.GetExerciseByID(ctx, id)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -169,7 +168,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 	curExercise, err := app.exerciseUsecases.GetExerciseByID(ctx, id)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -197,7 +196,7 @@ func (app *App) UpdateExercise(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		logDebugError(app.l, req, err)
 
-		if repositories.IsDuplicatedError(err) {
+		if usecases.IsDuplicatedError(err) {
 			responseWithErrorTxt(w, http.StatusConflict, fmt.Sprintf("exercise with name: %q and set unit: %d already exists",
 				input.Name, input.SetUnit))
 			return

@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
+	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -70,7 +70,7 @@ func (repo *AuthRepository) GetUserByID(ctx context.Context, id string) (*entiti
 	uOID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(id, "user"), "authRepo.GetUserByID")
+			usecases.NewErrorInvalidID(id, "user"), "authRepo.GetUserByID")
 	}
 
 	filter := users.UserData{
@@ -102,7 +102,7 @@ func (repo *AuthRepository) ChangePassword(ctx context.Context, userID string, n
 	uOID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return errors.WithMessage(
-			repositories.NewErrorInvalidID(userID, "user"), "authRepo.ChangePassword")
+			usecases.NewErrorInvalidID(userID, "user"), "authRepo.ChangePassword")
 	}
 
 	filter := users.UserData{
@@ -218,7 +218,7 @@ func (repo *AuthRepository) DeleteJWT(
 		tokenOID, err := primitive.ObjectIDFromHex(ut.ID)
 		if err != nil {
 			return 0, errors.WithMessage(
-				repositories.NewErrorInvalidID(ut.ID, "token"), "authRepo.DeleteJWT")
+				usecases.NewErrorInvalidID(ut.ID, "token"), "authRepo.DeleteJWT")
 		}
 		filter.ID = tokenOID
 	}
@@ -229,7 +229,7 @@ func (repo *AuthRepository) DeleteJWT(
 		uOID, err := primitive.ObjectIDFromHex(ut.UserID)
 		if err != nil {
 			return 0, errors.WithMessage(
-				repositories.NewErrorInvalidID(ut.ID, "token - user"),
+				usecases.NewErrorInvalidID(ut.ID, "token - user"),
 				"authRepo.DeleteJWT")
 		}
 		filter.UserID = uOID
@@ -350,7 +350,7 @@ func (repo *AuthRepository) DeleteRefreshTokenAndAllTokens(
 	uOID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		if err != nil {
-			return 0, errors.WithMessage(repositories.NewErrorInvalidID(userID, "user"),
+			return 0, errors.WithMessage(usecases.NewErrorInvalidID(userID, "user"),
 				"authRepo.DeleteRefreshTokenAndAllTokens")
 		}
 	}

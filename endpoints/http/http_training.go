@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
 // StartTraining is a handler that trigger starting of a new training for logged in user.
@@ -25,7 +25,7 @@ func (app *App) StartTraining(w http.ResponseWriter, req *http.Request) {
 	tr, err := app.trainingUsecases.StartTraining(ctx, userID)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -53,7 +53,7 @@ func (app *App) EndTraining(w http.ResponseWriter, req *http.Request) {
 	tr, err := app.trainingUsecases.GetTrainingByID(ctx, trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -78,7 +78,7 @@ func (app *App) EndTraining(w http.ResponseWriter, req *http.Request) {
 	tr, err = app.trainingUsecases.EndTraining(ctx, trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -106,7 +106,7 @@ func (app *App) GetTrainingByID(w http.ResponseWriter, req *http.Request) {
 	tr, err := app.trainingUsecases.GetTrainingByID(ctx, trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -138,7 +138,7 @@ func (app *App) GetUserTrainings(w http.ResponseWriter, req *http.Request) {
 	tr, err := app.trainingUsecases.GetUserTrainings(ctx, userID, false)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -192,7 +192,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 	tr, err := app.trainingUsecases.GetTrainingByID(ctx, trainingID)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -212,7 +212,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 	exercise, err := app.exerciseUsecases.GetExerciseByID(ctx, exID)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -237,7 +237,7 @@ func (app *App) StartTrainingExercise(w http.ResponseWriter, req *http.Request) 
 	te, err = app.trainingUsecases.StartExercise(ctx, tr.ID, te)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -266,7 +266,7 @@ func (app *App) EndTrainingExercise(w http.ResponseWriter, req *http.Request) {
 	te, err := app.trainingUsecases.EndExercise(ctx, userID, teID, time.Now())
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return
@@ -310,7 +310,7 @@ func (app *App) AddTrainingSetExercise(w http.ResponseWriter, req *http.Request)
 	ts, err := app.trainingUsecases.AddSet(ctx, userID, teID, &set)
 	if err != nil {
 		logDebugError(app.l, req, err)
-		var e *repositories.InvalidIDError
+		var e *usecases.InvalidIDError
 		if errors.As(err, &e) {
 			responseWithError(w, http.StatusBadRequest, e)
 			return

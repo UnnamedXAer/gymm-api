@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/testhelpers"
+	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -101,14 +102,14 @@ func TestCreateUserDuplicatedEmail(t *testing.T) {
 	insertMockUser(t)
 	gotUser, err := ur.CreateUser(ctx, u.Username, u.EmailAddress, u.Password)
 	if err != nil {
-		if errors.Is(err, repositories.NewErrorEmailAddressInUse()) {
+		if errors.Is(err, usecases.NewErrorEmailAddressInUse()) {
 			return
 		}
 		t.Fatal(err)
 	}
 
 	t.Fatalf("want error %q for email addres: %q, got %v",
-		repositories.NewErrorEmailAddressInUse(),
+		usecases.NewErrorEmailAddressInUse(),
 		u.EmailAddress,
 		gotUser)
 }
@@ -157,9 +158,9 @@ func TestGetUserByIDInvalidID(t *testing.T) {
 	uID := "6s108393da81e60598d5347f"
 
 	gotUser, err := ur.GetUserByID(ctx, uID)
-	var e *repositories.InvalidIDError
+	var e *usecases.InvalidIDError
 	if !errors.As(err, &e) {
-		t.Fatalf("want error: %q, got: %v", repositories.NewErrorInvalidID(uID, "user"), err)
+		t.Fatalf("want error: %q, got: %v", usecases.NewErrorInvalidID(uID, "user"), err)
 	}
 
 	if gotUser != nil {

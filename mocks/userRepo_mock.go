@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
 var (
@@ -31,7 +31,7 @@ func (ur MockUserRepo) GetUserByID(
 	}
 
 	if strings.Contains(id, "INVALIDID") {
-		return nil, repositories.NewErrorInvalidID(id, "user")
+		return nil, usecases.NewErrorInvalidID(id, "user")
 	}
 
 	return &entities.User{

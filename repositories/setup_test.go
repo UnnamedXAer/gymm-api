@@ -11,6 +11,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/testhelpers"
+	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -99,7 +100,7 @@ func TestCreateUsersCollection(t *testing.T) {
 	inputDuplicate := input
 	inputDuplicate["username"] = fmt.Sprintf(tmplName, getN())
 	_, err = usCol.InsertOne(context.Background(), input)
-	if !IsDuplicatedError(err) {
+	if !usecases.IsDuplicatedError(err) {
 		t.Fatalf("want error like: %s, got %v", "E11000 duplicate key error collection", err)
 	}
 
@@ -154,7 +155,7 @@ func TestCreateExercisesCollection(t *testing.T) {
 		t.Fatalf("want index violation error, got %v", err)
 	}
 
-	if !IsDuplicatedError(err) {
+	if !usecases.IsDuplicatedError(err) {
 		t.Fatalf("want error like: %s, got %v", "E11000 duplicate key error collection", err)
 	}
 

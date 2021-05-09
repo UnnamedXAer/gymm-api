@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/usecases"
 )
 
 var (
@@ -65,7 +65,7 @@ func (tr *MockTrainingRepo) GetTrainingByID(
 	}
 
 	if strings.Contains(id, "INVALIDID") {
-		return nil, repositories.NewErrorInvalidID(id, "training")
+		return nil, usecases.NewErrorInvalidID(id, "training")
 	}
 
 	out := ExampleTraining

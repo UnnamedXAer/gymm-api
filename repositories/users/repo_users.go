@@ -6,7 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/repositories"
+	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -28,7 +28,7 @@ func (r *UserRepository) GetUserByID(
 	oID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, errors.WithMessage(
-			repositories.NewErrorInvalidID(id, "user"), "repo.GetUserByID")
+			usecases.NewErrorInvalidID(id, "user"), "repo.GetUserByID")
 	}
 
 	err = r.col.FindOne(ctx, bson.M{"_id": oID}).Decode(&ud)
@@ -66,9 +66,9 @@ func (r *UserRepository) CreateUser(
 
 	result, err := r.col.InsertOne(ctx, ud)
 	if err != nil {
-		if repositories.IsDuplicatedError(err) {
+		if usecases.IsDuplicatedError(err) {
 			return nil, errors.WithMessage(
-				repositories.NewErrorEmailAddressInUse(), "repo.GetUserByID")
+				usecases.NewErrorEmailAddressInUse(), "repo.GetUserByID")
 		}
 
 		return nil, errors.WithMessage(err, "repo.GetUserByID")
