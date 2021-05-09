@@ -10,6 +10,14 @@ const (
 	All
 )
 
+type ResetPwdStatus uint8
+
+const (
+	ResetPwdStatusNoActionYet ResetPwdStatus = iota
+	ResetPwdStatusAccepted
+	ResetPwdStatusCanceled
+)
+
 type AuthUser struct {
 	User
 	Password []byte
@@ -30,4 +38,12 @@ type RefreshToken struct {
 	Token     string    `json:"token"`
 	CreatedAt time.Time `json:"-"`
 	ExpiresAt time.Time `json:"-"`
+}
+
+type ResetPwdReq struct {
+	ID           string         `json:"id"`
+	EmailAddress string         `json:"emailAddress"`
+	Status       ResetPwdStatus `json:"status"`
+	ExpiresAt    time.Time      `json:"expiresAt"`
+	CreatedAt    time.Time      `json:"createdAt"`
 }

@@ -31,6 +31,15 @@ type refreshTokenData struct {
 	ExpiresAt time.Time          `bson:"expires_at,omitempty"`
 }
 
+type resetPwdData struct {
+	ID           primitive.ObjectID      `bson:"_id,omitempty"`
+	EmailAddress string                  `bson:"email_address,omitempty"`
+	Status       entities.ResetPwdStatus `bson:"status,omitempty"`
+	ExpiresAt    time.Time               `bson:"expires_at,omitempty"`
+	CreatedAt    time.Time               `bson:"created_at,omitempty"`
+	UpdatedAt    time.Time               `bson:"updated_at,omitempty"`
+}
+
 func (repo *AuthRepository) GetUserByEmailAddress(
 	ctx context.Context,
 	emailAddress string) (*entities.AuthUser, error) {
@@ -126,6 +135,100 @@ func (repo *AuthRepository) ChangePassword(ctx context.Context, userID string, n
 	}
 
 	return nil
+}
+func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailaddress string, expiresAt time.Time) (*entities.ResetPwdReq, error) {
+	if expiresAt.Before(time.Now()) {
+		return nil, errors.New("expiration time from the past")
+	}
+
+	cb := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		insert := resetPwdData{
+			EmailAddress: emailaddress,
+			Status:       entities.ResetPwdStatusNoActionYet,
+			ExpiresAt:    expiresAt,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+
+		result, err := repo.resetPwdCol.InsertOne(sessCtx, &insert)
+		if err != nil {
+			if err.Error() == "mongo: no documents in result" {
+				return nil, errors.WithMessage(
+					errors.New("no record has been updated"), "authRepo.ChangePassword")
+			}
+			return nil, errors.WithMessage(err, "authRepo.ChangePassword")
+		}
+
+		insertedID, ok := result.InsertedID.(primitive.ObjectID)
+		if !ok {
+			return nil, errors.WithMessage(
+				errors.New("ID assert failed"), "add reset password request")
+		}
+
+		filter := bson.M{"$and": bson.A{
+			bson.M{"email_address": emailaddress},
+			bson.M{"_id": bson.M{"$not": insertedID}},
+		}}
+		update := resetPwdData{
+			Status:    entities.ResetPwdStatusCanceled,
+			UpdatedAt: time.Now(),
+		}
+
+		updateResult, err := repo.resetPwdCol.UpdateMany(sessCtx, &filter, &update)
+		if err != nil {
+			if err.Error() != "mongo: no documents in result" {
+				return nil, errors.WithMessage(err, "add reset password request: could not cancell previous requests")
+			}
+		}
+
+		if updateResult.ModifiedCount > 0 {
+			repo.l.Debug().Msgf("add reset password request: cancelled %d requests for %s", updateResult.ModifiedCount, emailaddress)
+		}
+
+		insert.ID = insertedID
+		return &insert, nil
+	}
+
+	session, err := repo.resetPwdCol.Database().Client().StartSession()
+	if err != nil {
+		return nil, errors.WithMessagef(err, "add reset password request: start session")
+	}
+	defer session.EndSession(ctx)
+
+	transactionResult, err := session.WithTransaction(ctx, cb)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "add reset password request")
+	}
+
+	insertResult, ok := transactionResult.(*mongo.SingleResult) // resetPwdData <--
+	if !ok {
+		err = session.AbortTransaction(ctx)
+		return nil, errors.WithMessagef(err, "add reset password request: results assertion")
+	}
+
+	data := resetPwdData{}
+	err = insertResult.Decode(&data)
+	if err != nil {
+		abortErr := session.AbortTransaction(ctx)
+		if abortErr != nil {
+			abortErr = errors.WithMessagef(
+				abortErr,
+				"add reset password request: aboard due to failed decode: %v",
+				err)
+			repo.l.Err(abortErr).Send()
+		}
+		return nil, errors.WithMessagef(err, "add reset password request")
+	}
+
+	resetPwdReq := entities.ResetPwdReq{
+		ID:           data.ID.Hex(),
+		EmailAddress: data.EmailAddress,
+		Status:       data.Status,
+		ExpiresAt:    data.ExpiresAt,
+		CreatedAt:    data.CreatedAt,
+	}
+
+	return &resetPwdReq, nil
 }
 
 func (repo *AuthRepository) GetUserJWTs(

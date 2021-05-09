@@ -13,7 +13,7 @@ var (
 	userInput usecases.UserInput = usecases.UserInput{
 		Username:     mocks.ExampleUser.Username,
 		EmailAddress: mocks.ExampleUser.EmailAddress,
-		Password:     "TheSecretestPasswordEver123$%^",
+		Password:     string(mocks.Password),
 	}
 )
 

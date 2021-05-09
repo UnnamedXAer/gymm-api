@@ -57,3 +57,45 @@ func TestChangePassword(t *testing.T) {
 		})
 	}
 }
+
+func TestResetPassword(t *testing.T) {
+	testCases := []struct {
+		desc         string
+		emailAddress string
+		errTxt       string
+		code         int
+	}{
+
+		{
+			desc:   "missing email",
+			errTxt: "'emailAddress' field value is required",
+		},
+		{
+			desc:         "nonexisting user",
+			emailAddress: mocks.NonexistingEmail,
+			errTxt:       "no documents",
+		},
+		{
+			desc:         "correct",
+			emailAddress: mocks.ExampleUser.EmailAddress,
+			errTxt:       "",
+		},
+	}
+
+	ctx := context.TODO()
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+
+			err := authUC.ResetPassword(ctx, tC.emailAddress)
+			if tC.errTxt == "" {
+				if err != nil {
+					t.Errorf("want nil error, got %q", err)
+				}
+			} else {
+				if err == nil || !strings.Contains(err.Error(), tC.errTxt) {
+					t.Errorf("want error like %q, got %q", tC.errTxt, err)
+				}
+			}
+		})
+	}
+}

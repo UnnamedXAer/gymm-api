@@ -17,6 +17,7 @@ const (
 	UsersCollectionName         = "users"
 	TokensCollectionName        = "tokens"
 	RefreshTokensCollectionName = "refreshTokens"
+	ResPwdReqCollectionName     = "resetPasswordRequest"
 	TrainingsCollectionName     = "trainings"
 	ExercisesCollectionName     = "exercises"
 )
@@ -112,6 +113,16 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 	err = createExercisesCollection(l, db, colName, helpers.StrSliceIndexOf(collections, colName) == -1)
 	if err != nil {
 		return err
+	}
+
+	colName = ""
+	if helpers.StrSliceIndexOf(collections, colName) == -1 {
+		err = createRefreshTokensCollection(l, db, colName)
+		if err != nil {
+			return err
+		}
+	} else {
+		l.Info().Msgf("collection '%s' already exists - skipped", colName)
 	}
 
 	return nil
@@ -274,6 +285,22 @@ func createRefreshTokensCollection(l *zerolog.Logger, db *mongo.Database, collec
 	}
 
 	l.Info().Msgf("indexes %q on collection %q created", indexesNames, collectionName)
+	return nil
+}
+
+func createResPwdReqCollection(l *zerolog.Logger, db *mongo.Database, collectionName string) error {
+	ctx := context.Background()
+	err := db.CreateCollection(ctx, collectionName, &options.CreateCollectionOptions{
+		Collation: &options.Collation{
+			Strength: 2,
+			Locale:   "en",
+		},
+	})
+	if err != nil {
+		return errors.WithMessagef(err, "create %q collection", collectionName)
+	}
+	l.Info().Msgf("collection %q created", collectionName)
+
 	return nil
 }
 

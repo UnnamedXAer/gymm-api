@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/entities"
@@ -22,12 +23,10 @@ import (
 const (
 	usersCollectionName  = "users"
 	tokensCollectionName = "tokens"
-	nonexistingEmail     = "notfound@example.com"
 )
 
 var (
-	nonexistingID = mocks.UserID[:len(mocks.UserID)-1] + "a"
-	pwdHash       []byte
+	pwdHash []byte
 
 	authRepo   usecases.AuthRepo
 	mockedUser entities.AuthUser
@@ -60,20 +59,20 @@ func TestMain(m *testing.M) {
 	tokensCol := db.Collection(usersCollectionName)
 	refTokensCol := db.Collection(usersCollectionName)
 	usersCol := db.Collection(usersCollectionName)
-	_, err = usersCol.DeleteOne(context.TODO(), bson.M{"email_address": nonexistingEmail})
+	_, err = usersCol.DeleteOne(context.TODO(), bson.M{"email_address": mocks.NonexistingEmail})
 	if err != nil && err != mongo.ErrNoDocuments {
 		log.Fatalln(err)
 	}
 
 	if mocks.UserID[len(mocks.UserID)-1] == 'a' {
-		nonexistingID = nonexistingID[:len(nonexistingID)-1] + "b"
+		mocks.NonexistingUserID = mocks.NonexistingUserID[:len(mocks.NonexistingUserID)-1] + "b"
 	}
 
 	result := usersCol.FindOne(context.TODO(),
 		bson.M{
 			"$or": bson.A{
 				bson.M{"email_address": mocks.ExampleUser.EmailAddress},
-				bson.M{"_id": nonexistingEmail},
+				bson.M{"_id": mocks.NonexistingEmail},
 			},
 		})
 	if err = result.Err(); err != nil {
@@ -128,7 +127,7 @@ func TestGetUserByID(t *testing.T) {
 		{
 			desc:        "invalid id",
 			id:          mocks.UserID + "🐼",
-			errTxt:      repositories.NewErrorInvalidID(mocks.UserID+"🐼", "user").Error(),
+			errTxt:      usecases.NewErrorInvalidID(mocks.UserID+"🐼", "user").Error(),
 			returnsUser: false,
 		},
 		{
@@ -184,7 +183,7 @@ func TestChangePassword(t *testing.T) {
 		},
 		{
 			desc:   "not existing user",
-			id:     nonexistingID,
+			id:     mocks.NonexistingUserID,
 			pwd:    pwdHash,
 			errTxt: "no record has been updated",
 		},
@@ -227,6 +226,65 @@ func TestChangePassword(t *testing.T) {
 	}
 }
 
+func TestAddResetPasswordRequest(t *testing.T) {
+	testCases := []struct {
+		desc         string
+		emailAddress string
+		expiresAt    time.Time
+		errTxt       string
+		code         int
+	}{
+		{
+			desc:      "missing email",
+			expiresAt: time.Now().Add(time.Minute * 15),
+			errTxt:    "no records found",
+		},
+		{
+			desc:         "nonexisting user",
+			expiresAt:    time.Now().Add(time.Minute * 15),
+			emailAddress: mocks.NonexistingEmail,
+			errTxt:       "no records found",
+		},
+		{
+			desc:         "past expiration time",
+			expiresAt:    time.Now().Add(time.Minute * -15),
+			emailAddress: mocks.NonexistingEmail,
+			errTxt:       "past expiration time",
+		},
+		{
+			desc:         "zero value expiration time",
+			expiresAt:    time.Time{},
+			emailAddress: mocks.NonexistingEmail,
+			errTxt:       "past expiration time",
+		},
+		{
+			desc:         "correct",
+			expiresAt:    time.Now().Add(time.Minute * 15),
+			emailAddress: mocks.ExampleUser.EmailAddress,
+			errTxt:       "",
+		},
+	}
+
+	var err error
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			ctx := context.TODO()
+			err = authRepo.AddResetPasswordRequest(ctx, tC.emailAddress, tC.expiresAt)
+
+			if tC.errTxt == "" {
+				if err != nil {
+					t.Errorf("want nil error, got %v", err)
+				}
+			} else {
+				if !strings.Contains(err.Error(), tC.errTxt) {
+					t.Errorf("want error %q, got %v", tC.errTxt, err)
+				}
+			}
+		})
+	}
+}
+
 func TestGetUserByEmailAddress(t *testing.T) {
 	ctx := context.TODO()
 	got, err := authRepo.GetUserByEmailAddress(ctx, mockedUser.EmailAddress)
@@ -245,7 +303,7 @@ func TestGetUserByEmailAddress(t *testing.T) {
 
 func TestGetUserByEmailAddressNotExists(t *testing.T) {
 	ctx := context.TODO()
-	got, err := authRepo.GetUserByEmailAddress(ctx, nonexistingEmail)
+	got, err := authRepo.GetUserByEmailAddress(ctx, mocks.NonexistingEmail)
 	if err != nil {
 		t.Fatalf("want nil error, got: %v", err)
 	}

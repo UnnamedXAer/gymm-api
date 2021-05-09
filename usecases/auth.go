@@ -13,6 +13,7 @@ type AuthRepo interface {
 	GetUserByEmailAddress(ctx context.Context, emailAddress string) (*entities.AuthUser, error)
 	GetUserByID(ctx context.Context, id string) (*entities.AuthUser, error)
 	ChangePassword(ctx context.Context, userID string, newPwd []byte) error
+	AddResetPasswordRequest(ctx context.Context, emailaddress string, expiresAt time.Time) (*entities.ResetPwdReq, error)
 	SaveJWT(ctx context.Context, userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
 	GetUserJWTs(ctx context.Context, userID string, expired entities.ExpireType) ([]entities.UserToken, error)
 	DeleteJWT(ctx context.Context, ut *entities.UserToken) (int64, error)
@@ -31,6 +32,8 @@ type IAuthUsecases interface {
 	Login(ctx context.Context, u *UserInput) (*entities.User, error)
 	// ChangePassword updates user password
 	ChangePassword(ctx context.Context, userID string, oldPwd, newPwd string) error
+	// AddResetPasswordRequest adds a password reset request and send it via email
+	AddResetPasswordRequest(ctx context.Context, emailaddress string) (*entities.ResetPwdReq, error)
 	// SaveJWT saves jwt for given user and device name
 	SaveJWT(ctx context.Context, userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
 	// GetUserJWTs returns user jwt tokens
@@ -114,6 +117,22 @@ func (au *AuthUsecases) ChangePassword(
 	}
 
 	return nil
+}
+
+func (au *AuthUsecases) AddResetPasswordRequest(ctx context.Context, emailaddress string) (*entities.ResetPwdReq, error) {
+	expiresAt := time.Now().Add(time.Minute * 15) // @todo: config
+
+	pwdResetReq, err := au.repo.AddResetPasswordRequest(ctx, emailaddress, expiresAt)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sendResetPwdRequestEmail(ctx, &entities.User{})
+	if err != nil {
+		return nil, err
+	}
+
+	return pwdResetReq, nil
 }
 
 func (au *AuthUsecases) SaveJWT(

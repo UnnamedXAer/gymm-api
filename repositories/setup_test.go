@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/testhelpers"
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
@@ -201,6 +202,39 @@ func TestCreateTrainingsCollection(t *testing.T) {
 	}
 
 	result, err := trCol.CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var wantCnt int64 = 1
+	if result != wantCnt {
+		t.Fatalf("want %d documents in collection, got %d", wantCnt, result)
+	}
+}
+
+func TestCreateResPwdReqCollection(t *testing.T) {
+	ctx := context.TODO()
+	colName := ResPwdReqCollectionName + colSuffix
+	err := createResPwdReqCollection(&logger, db, colName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rprCol := db.Collection(colName)
+
+	input := bson.M{
+		"emailAddress": "",
+		"expires_at":   time.Now(),
+		"status":       entities.ResetPwdStatusNoActionYet,
+		"comment":      "",
+		"created_at":   time.Now().Add(-15 * time.Minute),
+	}
+
+	_, err = rprCol.InsertOne(ctx, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := rprCol.CountDocuments(ctx, bson.M{})
 	if err != nil {
 		t.Fatal(err)
 	}

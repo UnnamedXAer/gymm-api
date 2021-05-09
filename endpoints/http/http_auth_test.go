@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -169,8 +168,62 @@ func TestChangePassword(t *testing.T) {
 			}
 			if tC.errTxt != "" && !strings.Contains(got, tC.errTxt) {
 				t.Errorf("want error like %q, got %q", tC.errTxt, got)
-				fmt.Println("response")
-				fmt.Println(got)
+			}
+
+		})
+	}
+}
+
+func TestResetPassword(t *testing.T) {
+	testCases := []struct {
+		desc         string
+		emailAddress string
+		errTxt       string
+		code         int
+	}{
+
+		{
+			desc:   "missing email",
+			errTxt: "'emailAddress' field value is required",
+			code:   http.StatusBadRequest,
+		},
+		{
+			desc:         "nonexisting user",
+			emailAddress: mocks.NonexistingEmail,
+			errTxt:       "",
+			code:         http.StatusAccepted,
+		},
+		{
+			desc:         "correct",
+			emailAddress: mocks.ExampleUser.EmailAddress,
+			errTxt:       "",
+			code:         http.StatusAccepted,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			payload := map[string]string{
+				"emailAddress": tC.emailAddress,
+			}
+
+			b, _ := json.Marshal(&payload)
+
+			req, _ := http.NewRequest(http.MethodPost, "/password/reset", bytes.NewBuffer(b))
+			req.Header.Set("Content-Type", "application/json")
+
+			res := executeRequest(req)
+
+			checkResponseCode(t, tC.code, res.Code)
+
+			got := res.Body.String()
+
+			if tC.errTxt == "" {
+				if got != "" {
+					t.Errorf("want empty body, got %q", got)
+				}
+			}
+			if tC.errTxt != "" && !strings.Contains(got, tC.errTxt) {
+				t.Errorf("want error like %q, got %q", tC.errTxt, got)
 			}
 
 		})
