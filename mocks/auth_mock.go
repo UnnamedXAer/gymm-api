@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -83,6 +84,11 @@ func (r *MockAuthRepo) AddResetPasswordRequest(
 	ctx context.Context,
 	emailaddress string,
 	expiresAt time.Time) (*entities.ResetPwdReq, error) {
+
+	if strings.Contains(emailaddress, "notfound") {
+		return nil, fmt.Errorf("user does not exist")
+	}
+
 	out := ExampleResetPwdReq
 	out.EmailAddress = emailaddress
 	out.ExpiresAt = expiresAt
