@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/unnamedxaer/gymm-api/mocks"
 	"github.com/unnamedxaer/gymm-api/usecases"
@@ -63,21 +64,24 @@ func TestResetPassword(t *testing.T) {
 		desc         string
 		emailAddress string
 		errTxt       string
-		code         int
 	}{
-
+		// {
+		// 	desc:   "missing email",
+		// 	errTxt: "emailAddress cannot be empty",
+		// },
+		// {
+		// 	desc:         "nonexisting user",
+		// 	emailAddress: mocks.NonexistingEmail,
+		// 	errTxt:       "user does not exist",
+		// },
+		// {
+		// 	desc:         "correct",
+		// 	emailAddress: mocks.ExampleUser.EmailAddress,
+		// 	errTxt:       "",
+		// },
 		{
-			desc:   "missing email",
-			errTxt: "'emailAddress' field value is required",
-		},
-		{
-			desc:         "nonexisting user",
-			emailAddress: mocks.NonexistingEmail,
-			errTxt:       "no documents",
-		},
-		{
-			desc:         "correct",
-			emailAddress: mocks.ExampleUser.EmailAddress,
+			desc:         "correct2",
+			emailAddress: "unnamedxaer@gmail.com",
 			errTxt:       "",
 		},
 	}
@@ -92,9 +96,20 @@ func TestResetPassword(t *testing.T) {
 					t.Errorf("want nil error, got %q", err)
 				}
 			} else {
+
+				if pwdResReq != nil {
+					t.Errorf("want nil pwd request, got %v", pwdResReq)
+				}
 				if err == nil || !strings.Contains(err.Error(), tC.errTxt) {
 					t.Errorf("want error like %q, got %q", tC.errTxt, err)
 				}
+			}
+
+			if pwdResReq == nil {
+				if tC.errTxt == "" {
+					t.Errorf("want password reset request, got nil")
+				}
+				return
 			}
 
 			if len(pwdResReq.ID) == 0 {
@@ -104,6 +119,10 @@ func TestResetPassword(t *testing.T) {
 			if pwdResReq.EmailAddress != tC.emailAddress {
 				t.Errorf("want request for %s, got %v", tC.emailAddress, pwdResReq)
 			}
+
 		})
+
 	}
+	time.Sleep(time.Second * 5)
+	t.Log("finish")
 }

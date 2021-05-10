@@ -2,60 +2,37 @@ package usecases
 
 import (
 	"bytes"
-	"context"
 	"fmt"
-	"net/smtp"
-	"os"
 	"text/template"
 
 	"github.com/unnamedxaer/gymm-api/entities"
 )
 
-func sendResetPwdRequestEmail(ctx context.Context, user *entities.User, requestID string) error {
+func generatePwdResetEmailContent(
+	user *entities.User,
+	pwdResetReq *entities.ResetPwdReq) ([]byte, error) {
 
 	tmpl, err := template.ParseFiles("../templates/templatefiles/resetpwd.html")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	clientURL := "http://localhost"
+	// clientURL := os.Getenv("CLIENT_URL")
+	appName := "The Gymm Api"
 
-	url := fmt.Sprintf("%s/password/reset/%s", clientURL, requestID)
+	url := fmt.Sprintf("%s/password/reset/%s", clientURL, pwdResetReq.ID)
 
 	data := map[string]interface{}{
 		"User":    user,
-		"AppName": "The Gymm Api",
+		"AppName": appName,
 		"URL":     url,
 	}
 
 	b := bytes.Buffer{}
 	err = tmpl.Execute(&b, &data)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	return sendEmail([]string{user.EmailAddress}, b.Bytes())
-}
-
-func sendEmail(recipients []string, data []byte) error {
-	// Sender data.
-	from := os.Getenv("APP_EMAIL_ADDRESS")
-	password := os.Getenv("APP_EMAIL_PASSWORD")
-
-	// Receiver email address.
-	to := recipients
-
-	// smtp server configuration.
-	smtpHost := os.Getenv("SMTP_HOST")
-	smtpPort := os.Getenv("SMTP_PORT")
-
-	// Authentication.
-	auth := smtp.PlainAuth("", from, password, smtpHost)
-
-	// Sending email.
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, data)
-	if err != nil {
-		return err
-	}
-	return nil
+	return b.Bytes(), nil
 }

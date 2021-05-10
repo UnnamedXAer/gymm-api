@@ -2,10 +2,12 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/usecases/mailer"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -120,6 +122,10 @@ func (au *AuthUsecases) ChangePassword(
 }
 
 func (au *AuthUsecases) AddResetPasswordRequest(ctx context.Context, emailaddress string) (*entities.ResetPwdReq, error) {
+	if len(emailaddress) == 0 {
+		return nil, fmt.Errorf("emailAddress cannot be empty")
+	}
+
 	expiresAt := time.Now().Add(time.Minute * 15) // @todo: config
 
 	pwdResetReq, err := au.repo.AddResetPasswordRequest(ctx, emailaddress, expiresAt)
@@ -127,12 +133,19 @@ func (au *AuthUsecases) AddResetPasswordRequest(ctx context.Context, emailaddres
 		return nil, err
 	}
 
-	err = sendResetPwdRequestEmail(ctx, &entities.User{
-		EmailAddress: emailaddress,
-	}, pwdResetReq.ID)
+	authUser, err := au.repo.GetUserByEmailAddress(ctx, emailaddress)
 	if err != nil {
 		return nil, err
 	}
+
+	if authUser == nil {
+		//should not happend
+		return nil, errors.WithMessage(
+			fmt.Errorf("user with email %s not found", emailaddress),
+			"sending email abandoned")
+	}
+
+	go au.sendResetPwdRequestEmail(ctx, &authUser.User, pwdResetReq)
 
 	return pwdResetReq, nil
 }
@@ -184,6 +197,40 @@ func (au *AuthUsecases) DeleteRefreshTokenAndAllTokens(
 	ctx context.Context,
 	userID string) (n int64, err error) {
 	return au.repo.DeleteRefreshTokenAndAllTokens(ctx, userID)
+}
+
+func (au *AuthUsecases) sendResetPwdRequestEmail(
+	ctx context.Context,
+	user *entities.User,
+	pwdResetReq *entities.ResetPwdReq) {
+	var data []byte
+	var err error
+	select {
+	case <-ctx.Done():
+		// @todo: handle err
+		return
+	default:
+		data, err = generatePwdResetEmailContent(user, pwdResetReq)
+		if err != nil {
+			// @todo: handler error
+			return
+		}
+	}
+
+	m := mailer.NewMailer(func(err error) {
+		fmt.Println("---")
+		fmt.Println("Error while sending email: ")
+		fmt.Println(err)
+		fmt.Println("---")
+	})
+
+	go func() {
+		<-ctx.Done()
+		m.Close()
+		fmt.Println("leave goroutine with close mailer")
+	}()
+
+	m.Send([]string{pwdResetReq.EmailAddress}, data)
 }
 
 // NewAuthUsecases creates auth usecases
