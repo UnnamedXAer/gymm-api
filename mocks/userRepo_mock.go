@@ -3,7 +3,6 @@ package mocks
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/usecases"
@@ -14,7 +13,7 @@ var (
 		ID:           UserID,
 		Username:     "John Silver",
 		EmailAddress: "johnsilver@email.com",
-		CreatedAt:    time.Now(),
+		CreatedAt:    Now,
 	}
 )
 

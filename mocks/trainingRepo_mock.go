@@ -13,27 +13,27 @@ var (
 	ExampleTraining = entities.Training{
 		ID:        "607443ceb40d9ea8602803e7",
 		UserID:    UserID,
-		StartTime: time.Now().Add(-2 * time.Hour),
+		StartTime: Now.Add(-2 * time.Hour),
 		Exercises: []entities.TrainingExercise{
 			{
 				ID:         "607400d5bf81935a539bd698",
 				ExerciseID: ExampleExercise.ID,
-				StartTime:  time.Now().Add(-115 * time.Minute),
-				EndTime:    time.Now(),
+				StartTime:  Now.Add(-115 * time.Minute),
+				EndTime:    Now,
 				Sets: []entities.TrainingSet{
 					{
 						ID:   "60740f289ee8e963adb5412a",
-						Time: time.Now().Add(-110 * time.Minute),
+						Time: Now.Add(-110 * time.Minute),
 						Reps: 12,
 					},
 					{
 						ID:   "60740f289ee8e963adb5412d",
-						Time: time.Now().Add(-107 * time.Minute),
+						Time: Now.Add(-107 * time.Minute),
 						Reps: 10,
 					},
 					{
 						ID:   "60740f289ee8e963adb5412c",
-						Time: time.Now().Add(-103 * time.Minute),
+						Time: Now.Add(-103 * time.Minute),
 						Reps: 10,
 					},
 				},
@@ -42,7 +42,7 @@ var (
 			{
 				ID:         "60740f289ee8e963adb5412b",
 				ExerciseID: ExampleExercise.ID,
-				StartTime:  time.Now().Add(-115 * time.Minute),
+				StartTime:  Now.Add(-115 * time.Minute),
 			},
 		},
 		// EndTime: time.Now(),

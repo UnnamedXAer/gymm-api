@@ -3,7 +3,6 @@ package mocks
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/usecases"
@@ -15,7 +14,7 @@ var ExampleExercise = entities.Exercise{
 	Name:        "Deadlift",
 	Description: "The deadlift is an exercise in which a loaded bar is lifted off the ground to the level of the hips.",
 	SetUnit:     entities.Weight,
-	CreatedAt:   time.Now().UTC(),
+	CreatedAt:   Now,
 	CreatedBy:   UserID,
 }
 
