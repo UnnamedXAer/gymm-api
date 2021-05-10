@@ -1,0 +1,108 @@
+<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="https://www.w3.org/1999/xhtml">
+<!--[if gte mso 9]>
+	<xml>
+		<o:OfficeDocumentSettings>
+			<o:AllowPNG />
+			<o:PixelsPerInch>96</o:PixelsPerInch>
+		</o:OfficeDocumentSettings>
+	</xml>
+	<![endif]-->
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="content-type" content="text/html;charset=utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Reset Password Request</title>
+	<!--[if !mso]><!-->
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800" rel="stylesheet">
+	<!--<![endif]-->
+	<style type="text/css">
+		body {
+			margin: 0 !important;
+			padding: 8px !important;
+			-webkit-text-size-adjust: 100% !important;
+			-ms-text-size-adjust: 100% !important;
+			-webkit-font-smoothing: antialiased !important;
+			max-width: 600px;
+			width: 100%;
+		}
+
+		img {
+			border: 0 !important;
+			outline: none !important;
+		}
+
+		p {
+			margin: 0px !important;
+			padding: 0px !important;
+		}
+
+		table {
+			border-collapse: collapse;
+			mso-table-lspace: 0px;
+			mso-table-rspace: 0px;
+		}
+
+		td,
+		a,
+		span {
+			border-collapse: collapse;
+			mso-line-height-rule: exactly;
+		}
+	</style>
+</head>
+
+<body class="em_body" style="margin:0px;" bgcolor="#efefef">
+	<span
+		style="color: transparent; display: none !important; height: 0; max-height: 0; max-width: 0; opacity: 0; overflow: hidden; mso-hide: all; visibility: hidden; width: 0;">{{.AppName}}
+		- password reset</span>
+	<table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding-left: 8px; padding-right: 8px;">
+		<!-- header -->
+		<tr>
+			<td>
+				<h1>Hi {{.User.EmailAddress}}!</h1>
+			</td>
+		</tr>
+		<!-- message -->
+		<tr>
+			<td>
+				<br />
+				<p style="font-size: 1.2em;">We receive password reset request, please follow link below to set up new
+					password.</p>
+				<br />
+			</td>
+		</tr>
+		<!-- button -->
+		<tr>
+			<td align="center">
+				<table>
+					<tr>
+						<td>
+							<!--  -->
+							<a href="{{.URL}}"
+								style="background-color: yellowgreen; font-size:16px; line-height:30px;  padding: 16px 24px 16px 24px; font-family:'Open Sans', Arial, sans-serif; font-weight: bold;">
+								Reset
+								Password</a>
+							<p style="border: 1px;"></p>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<!-- footer -->
+		<tr>
+			<td align="center">
+				<br />
+				<br />
+				<p style="color: #666; font-style: italic; font-size: 0.9em;">If you do not requested password reset
+					please ignore this message.</p>
+			</td>
+		</tr>
+	</table>
+
+</body>
+
+</html>
