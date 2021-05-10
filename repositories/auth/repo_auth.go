@@ -142,6 +142,20 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 	}
 
 	cb := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		userFilter := bson.M{
+			"email_address": emailaddress,
+		}
+		countRes, err := repo.usersCol.CountDocuments(sessCtx, userFilter)
+		if err != nil {
+			return nil, errors.WithMessage(
+				err, "add reset password request")
+
+		}
+		if countRes == 0 {
+			return nil, errors.WithMessage(
+				errors.New("user does not exist"), "add reset password request")
+		}
+
 		insert := resetPwdData{
 			EmailAddress: emailaddress,
 			Status:       entities.ResetPwdStatusNoActionYet,
@@ -154,9 +168,9 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 		if err != nil {
 			if err.Error() == "mongo: no documents in result" {
 				return nil, errors.WithMessage(
-					errors.New("no record has been updated"), "authRepo.ChangePassword")
+					errors.New("no record has been updated"), "add reset password request")
 			}
-			return nil, errors.WithMessage(err, "authRepo.ChangePassword")
+			return nil, errors.WithMessage(err, "add reset password request")
 		}
 
 		insertedID, ok := result.InsertedID.(primitive.ObjectID)
