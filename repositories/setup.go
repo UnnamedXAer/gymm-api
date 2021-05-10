@@ -52,6 +52,8 @@ func GetCollection(l *zerolog.Logger, db *mongo.Database, collName string) *mong
 		fallthrough
 	case RefreshTokensCollectionName:
 		fallthrough
+	case ResPwdReqCollectionName:
+		fallthrough
 	case ExercisesCollectionName:
 		fallthrough
 	case UsersCollectionName:
@@ -89,6 +91,16 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 		l.Info().Msgf("collection '%s' already exists - skipped", colName)
 	}
 
+	colName = ResPwdReqCollectionName
+	if helpers.StrSliceIndexOf(collections, colName) == -1 {
+		err = createResPwdReqCollection(l, db, colName)
+		if err != nil {
+			return err
+		}
+	} else {
+		l.Info().Msgf("collection '%s' already exists - skipped", colName)
+	}
+
 	colName = UsersCollectionName
 	if helpers.StrSliceIndexOf(collections, colName) == -1 {
 		err = createUsersCollection(l, db, colName)
@@ -113,16 +125,6 @@ func CreateCollections(l *zerolog.Logger, db *mongo.Database) error {
 	err = createExercisesCollection(l, db, colName, helpers.StrSliceIndexOf(collections, colName) == -1)
 	if err != nil {
 		return err
-	}
-
-	colName = ""
-	if helpers.StrSliceIndexOf(collections, colName) == -1 {
-		err = createRefreshTokensCollection(l, db, colName)
-		if err != nil {
-			return err
-		}
-	} else {
-		l.Info().Msgf("collection '%s' already exists - skipped", colName)
 	}
 
 	return nil
