@@ -127,7 +127,9 @@ func (au *AuthUsecases) AddResetPasswordRequest(ctx context.Context, emailaddres
 		return nil, err
 	}
 
-	err = sendResetPwdRequestEmail(ctx, &entities.User{})
+	err = sendResetPwdRequestEmail(ctx, &entities.User{
+		EmailAddress: emailaddress,
+	}, pwdResetReq.ID)
 	if err != nil {
 		return nil, err
 	}

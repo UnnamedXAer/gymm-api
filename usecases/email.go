@@ -3,6 +3,7 @@ package usecases
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/smtp"
 	"os"
 	"text/template"
@@ -10,15 +11,25 @@ import (
 	"github.com/unnamedxaer/gymm-api/entities"
 )
 
-func sendResetPwdRequestEmail(ctx context.Context, user *entities.User) error {
+func sendResetPwdRequestEmail(ctx context.Context, user *entities.User, requestID string) error {
 
-	tmpl, err := template.ParseFiles("../templates/resetpwd.html")
+	tmpl, err := template.ParseFiles("../templates/templatefiles/resetpwd.html")
 	if err != nil {
 		return err
 	}
 
+	clientURL := "http://localhost"
+
+	url := fmt.Sprintf("%s/password/reset/%s", clientURL, requestID)
+
+	data := map[string]interface{}{
+		"User":    user,
+		"AppName": "The Gymm Api",
+		"URL":     url,
+	}
+
 	b := bytes.Buffer{}
-	err = tmpl.Execute(&b, user)
+	err = tmpl.Execute(&b, &data)
 	if err != nil {
 		return err
 	}
