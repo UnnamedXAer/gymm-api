@@ -86,7 +86,7 @@ func TestResetPassword(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 
-			err := authUC.ResetPassword(ctx, tC.emailAddress)
+			pwdResReq, err := authUC.AddResetPasswordRequest(ctx, tC.emailAddress)
 			if tC.errTxt == "" {
 				if err != nil {
 					t.Errorf("want nil error, got %q", err)
@@ -95,6 +95,14 @@ func TestResetPassword(t *testing.T) {
 				if err == nil || !strings.Contains(err.Error(), tC.errTxt) {
 					t.Errorf("want error like %q, got %q", tC.errTxt, err)
 				}
+			}
+
+			if len(pwdResReq.ID) == 0 {
+				t.Errorf("want saved request, got %v", pwdResReq)
+			}
+
+			if pwdResReq.EmailAddress != tC.emailAddress {
+				t.Errorf("want request for %s, got %v", tC.emailAddress, pwdResReq)
 			}
 		})
 	}
