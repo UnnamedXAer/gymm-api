@@ -21,18 +21,34 @@ func NewErrorEmailAddressInUse() *EmailAddressInUseError {
 // InvalidIDError is an error returned when given ID is not valid
 type InvalidIDError struct {
 	ID       string
-	DataName string
+	dataName string
 }
 
 func (err InvalidIDError) Error() string {
-	return "invalid " + err.DataName + " ID: " + err.ID
+	return "invalid " + err.dataName + " ID: " + err.ID
 }
 
 // NewErrorInvalidID returns a new error of type InvalidID
 func NewErrorInvalidID(id string, dataName string) *InvalidIDError {
 	return &InvalidIDError{
 		ID:       id,
-		DataName: dataName,
+		dataName: dataName,
+	}
+}
+
+// RecordNotExistsError is an error returned when expected record does not exist in storage
+type RecordNotExistsError struct {
+	dataName string
+}
+
+func (err RecordNotExistsError) Error() string {
+	return err.dataName + " does not exist"
+}
+
+// NewErrorRecordNotExists returns a new error of type *RecordNotExistsError
+func NewErrorRecordNotExists(dataName string) *RecordNotExistsError {
+	return &RecordNotExistsError{
+		dataName: dataName,
 	}
 }
 

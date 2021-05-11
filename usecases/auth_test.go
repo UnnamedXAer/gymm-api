@@ -60,7 +60,7 @@ func TestChangePassword(t *testing.T) {
 	}
 }
 
-func TestResetPassword(t *testing.T) {
+func TestAddResetPasswordRequest(t *testing.T) {
 	testCases := []struct {
 		desc         string
 		emailAddress string
@@ -68,12 +68,12 @@ func TestResetPassword(t *testing.T) {
 	}{
 		{
 			desc:   "missing email",
-			errTxt: "emailAddress cannot be empty",
+			errTxt: "",
 		},
 		{
 			desc:         "nonexisting user",
 			emailAddress: mocks.NonexistingEmail,
-			errTxt:       "user does not exist",
+			errTxt:       "",
 		},
 		{
 			desc:         "correct",
@@ -104,29 +104,16 @@ func TestResetPassword(t *testing.T) {
 					t.Errorf("want nil error, got %q", err)
 				}
 			} else {
-
-				if pwdResReq != nil {
-					t.Errorf("want nil pwd request, got %v", pwdResReq)
-				}
 				if err == nil || !strings.Contains(err.Error(), tC.errTxt) {
 					t.Errorf("want error like %q, got %q", tC.errTxt, err)
 				}
 			}
 
-			if pwdResReq == nil {
-				if tC.errTxt == "" {
-					t.Errorf("want password reset request, got nil")
-				}
-				return
+			if err != nil && pwdResReq == nil && !strings.Contains(err.Error(), usecases.NewErrorRecordNotExists("user").Error()) {
+				t.Error("want saved request, got nil")
 			}
 
-			if len(pwdResReq.ID) == 0 {
-				t.Errorf("want saved request, got %v", pwdResReq)
-			}
-
-			if pwdResReq.EmailAddress != tC.emailAddress {
-				t.Errorf("want request for %s, got %v", tC.emailAddress, pwdResReq)
-			}
 		})
 	}
+
 }

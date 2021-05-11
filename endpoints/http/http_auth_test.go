@@ -174,14 +174,13 @@ func TestChangePassword(t *testing.T) {
 	}
 }
 
-func TestResetPassword(t *testing.T) {
+func TestAddResetPasswordRequest(t *testing.T) {
 	testCases := []struct {
 		desc         string
 		emailAddress string
 		errTxt       string
 		code         int
 	}{
-
 		{
 			desc:   "missing email",
 			errTxt: "'emailAddress' field value is required",
@@ -217,12 +216,12 @@ func TestResetPassword(t *testing.T) {
 
 			got := res.Body.String()
 
-			if tC.errTxt == "" {
-				if got != "" {
-					t.Errorf("want empty body, got %q", got)
-				}
+			if tC.errTxt == "" && len(got) != 0 {
+				t.Errorf("want empty body, got %q", got)
+				return
 			}
-			if tC.errTxt != "" && !strings.Contains(got, tC.errTxt) {
+
+			if !strings.Contains(got, tC.errTxt) {
 				t.Errorf("want error like %q, got %q", tC.errTxt, got)
 			}
 
