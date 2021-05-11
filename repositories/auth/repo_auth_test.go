@@ -233,25 +233,25 @@ func TestAddResetPasswordRequest(t *testing.T) {
 		{
 			desc:      "missing email",
 			expiresAt: time.Now().Add(time.Minute * 15),
-			errTxt:    "no records found",
+			errTxt:    "user does not exist",
 		},
 		{
 			desc:         "nonexisting user",
 			expiresAt:    time.Now().Add(time.Minute * 15),
 			emailAddress: mocks.NonexistingEmail,
-			errTxt:       "no records found",
+			errTxt:       "user does not exist",
 		},
 		{
 			desc:         "past expiration time",
 			expiresAt:    time.Now().Add(time.Minute * -15),
 			emailAddress: mocks.NonexistingEmail,
-			errTxt:       "past expiration time",
+			errTxt:       "expiration time from the past",
 		},
 		{
 			desc:         "zero value expiration time",
 			expiresAt:    time.Time{},
 			emailAddress: mocks.NonexistingEmail,
-			errTxt:       "past expiration time",
+			errTxt:       "expiration time from the past",
 		},
 		{
 			desc:         "correct",
