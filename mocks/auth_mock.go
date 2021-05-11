@@ -2,11 +2,11 @@ package mocks
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/unnamedxaer/gymm-api/entities"
+	"github.com/unnamedxaer/gymm-api/usecases"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -85,8 +85,8 @@ func (r *MockAuthRepo) AddResetPasswordRequest(
 	emailaddress string,
 	expiresAt time.Time) (*entities.ResetPwdReq, error) {
 
-	if strings.Contains(emailaddress, "notfound") {
-		return nil, fmt.Errorf("user does not exist")
+	if len(emailaddress) == 0 || strings.Contains(emailaddress, "notfound") {
+		return nil, usecases.NewErrorRecordNotExists("user")
 	}
 
 	out := ExampleResetPwdReq
