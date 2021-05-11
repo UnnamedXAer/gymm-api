@@ -20,11 +20,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	usersCollectionName  = "users"
-	tokensCollectionName = "tokens"
-)
-
 var (
 	pwdHash []byte
 
@@ -56,9 +51,10 @@ func TestMain(m *testing.M) {
 	}
 	defer testhelpers.DisconnectDB(&logger, db)
 
-	tokensCol := db.Collection(usersCollectionName)
-	refTokensCol := db.Collection(usersCollectionName)
-	usersCol := db.Collection(usersCollectionName)
+	tokensCol := db.Collection(repositories.TokensCollectionName)
+	refTokensCol := db.Collection(repositories.RefreshTokensCollectionName)
+	pwdResReqCol := db.Collection(repositories.ResPwdReqCollectionName)
+	usersCol := db.Collection(repositories.UsersCollectionName)
 	_, err = usersCol.DeleteOne(context.TODO(), bson.M{"email_address": mocks.NonexistingEmail})
 	if err != nil && err != mongo.ErrNoDocuments {
 		log.Fatalln(err)
