@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -167,36 +168,40 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 		result, err := repo.resetPwdCol.InsertOne(sessCtx, &insert)
 		if err != nil {
 			if err.Error() == "mongo: no documents in result" {
-				return nil, errors.WithMessage(
-					errors.New("no record has been updated"), "add reset password request")
+				return nil, errors.New("no record has been updated")
 			}
-			return nil, errors.WithMessage(err, "add reset password request")
+			return nil, err
 		}
 
 		insertedID, ok := result.InsertedID.(primitive.ObjectID)
 		if !ok {
-			return nil, errors.WithMessage(
-				errors.New("ID assert failed"), "add reset password request")
+			return nil, errors.New("ID assert failed")
 		}
 
 		filter := bson.M{"$and": bson.A{
 			bson.M{"email_address": emailaddress},
-			bson.M{"_id": bson.M{"$not": insertedID}},
+			bson.M{"_id": bson.M{"$ne": insertedID}},
 		}}
-		update := resetPwdData{
+
+		update := bson.M{"$set": resetPwdData{
 			Status:    entities.ResetPwdStatusCanceled,
 			UpdatedAt: time.Now(),
-		}
+		}}
 
+		// @todo: move before insert and remove $ne condition
 		updateResult, err := repo.resetPwdCol.UpdateMany(sessCtx, &filter, &update)
 		if err != nil {
 			if err.Error() != "mongo: no documents in result" {
-				return nil, errors.WithMessage(err, "add reset password request: could not cancell previous requests")
+				return nil, errors.WithMessage(err,
+					"could not cancell previous requests")
 			}
 		}
 
 		if updateResult.ModifiedCount > 0 {
-			repo.l.Debug().Msgf("add reset password request: cancelled %d requests for %s", updateResult.ModifiedCount, emailaddress)
+			repo.l.Debug().Msgf(
+				"add reset password request: cancelled %d requests for %s",
+				updateResult.ModifiedCount,
+				emailaddress)
 		}
 
 		insert.ID = insertedID
@@ -214,24 +219,16 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 		return nil, errors.WithMessagef(err, "add reset password request")
 	}
 
-	insertResult, ok := transactionResult.(*mongo.SingleResult) // resetPwdData <--
+	// @todo: check for nil
+	sessResult, ok := transactionResult.(*mongo.SingleResult)
 	if !ok {
-		err = session.AbortTransaction(ctx)
-		return nil, errors.WithMessagef(err, "add reset password request: results assertion")
+		return nil, fmt.Errorf("add reset password request: session results assertion")
 	}
 
 	data := resetPwdData{}
-	err = insertResult.Decode(&data)
+	err = sessResult.Decode(&data)
 	if err != nil {
-		abortErr := session.AbortTransaction(ctx)
-		if abortErr != nil {
-			abortErr = errors.WithMessagef(
-				abortErr,
-				"add reset password request: aboard due to failed decode: %v",
-				err)
-			repo.l.Err(abortErr).Send()
-		}
-		return nil, errors.WithMessagef(err, "add reset password request")
+		return nil, errors.WithMessagef(err, "add reset password request: decode results")
 	}
 
 	resetPwdReq := entities.ResetPwdReq{
