@@ -30,7 +30,7 @@ var (
 func TestMain(m *testing.M) {
 
 	testhelpers.EnsureTestEnv()
-	logger := zerolog.New(os.Stdout)
+	loggerMock := zerolog.New(nil)
 
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
@@ -40,16 +40,16 @@ func TestMain(m *testing.M) {
 	if mongoURI == "" {
 		log.Fatalln("environment variable 'MONGO_URI' is not set")
 	}
-	db, err := repositories.GetDatabase(&logger, mongoURI, dbName)
+	db, err := repositories.GetDatabase(&loggerMock, mongoURI, dbName)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = repositories.CreateCollections(&logger, db)
+	err = repositories.CreateCollections(&loggerMock, db)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer testhelpers.DisconnectDB(&logger, db)
+	defer testhelpers.DisconnectDB(&loggerMock, db)
 
 	exercisesCol := db.Collection(exerciseColName)
 	res, err := exercisesCol.DeleteMany(context.TODO(), bson.D{})
@@ -57,10 +57,10 @@ func TestMain(m *testing.M) {
 		log.Fatalln(err)
 	}
 
-	exerciseRepo = NewRepository(&logger, exercisesCol)
+	exerciseRepo = NewRepository(&loggerMock, exercisesCol)
 
 	if err != nil {
-		logger.Err(err).Msgf("%d", res.DeletedCount)
+		loggerMock.Err(err).Msgf("%d", res.DeletedCount)
 		panic(err)
 	}
 	me, err := mocks.InsertMockExercise(exerciseRepo)

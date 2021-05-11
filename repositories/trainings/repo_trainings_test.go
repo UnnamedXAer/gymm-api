@@ -35,7 +35,7 @@ const (
 
 func TestMain(m *testing.M) {
 	testhelpers.EnsureTestEnv()
-	logger := zerolog.New(os.Stdout)
+	loggerMock := zerolog.New(nil)
 
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
@@ -45,26 +45,26 @@ func TestMain(m *testing.M) {
 	if mongoURI == "" {
 		panic("environment variable 'MONGO_URI' is not set")
 	}
-	db, err := repositories.GetDatabase(&logger, mongoURI, dbName)
+	db, err := repositories.GetDatabase(&loggerMock, mongoURI, dbName)
 	if err != nil {
 		panic(err)
 	}
 
-	err = repositories.CreateCollections(&logger, db)
+	err = repositories.CreateCollections(&loggerMock, db)
 	if err != nil {
 		panic(err)
 	}
-	defer testhelpers.DisconnectDB(&logger, db)
+	defer testhelpers.DisconnectDB(&loggerMock, db)
 
 	trainingsCol := db.Collection(trCollName)
 	usersCol := db.Collection(uCollName)
 
-	trainingRepo = NewRepository(&logger, trainingsCol)
-	userRepo = users.NewRepository(&logger, usersCol)
+	trainingRepo = NewRepository(&loggerMock, trainingsCol)
+	userRepo = users.NewRepository(&loggerMock, usersCol)
 
 	res, err := usersCol.DeleteMany(context.TODO(), bson.D{})
 	if err != nil {
-		logger.Err(err).Msgf("%d", res.DeletedCount)
+		loggerMock.Err(err).Msgf("%d", res.DeletedCount)
 		panic(err)
 	}
 	mockedUser, err = mocks.InsertMockUser(userRepo)

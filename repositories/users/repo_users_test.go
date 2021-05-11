@@ -22,7 +22,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	logger := zerolog.New(os.Stdout)
+	loggerMock := zerolog.New(nil)
 	testhelpers.EnsureTestEnv()
 
 	dbName := os.Getenv("DB_NAME")
@@ -33,16 +33,16 @@ func TestMain(m *testing.M) {
 	if mongoURI == "" {
 		panic("environment variable 'MONGO_URI' is not set")
 	}
-	db, err := repositories.GetDatabase(&logger, mongoURI, dbName)
+	db, err := repositories.GetDatabase(&loggerMock, mongoURI, dbName)
 	if err != nil {
 		panic(err)
 	}
 
-	err = repositories.CreateCollections(&logger, db)
+	err = repositories.CreateCollections(&loggerMock, db)
 	if err != nil {
 		panic(err)
 	}
-	defer testhelpers.DisconnectDB(&logger, db)
+	defer testhelpers.DisconnectDB(&loggerMock, db)
 
 	usersCol := db.Collection("users")
 	_, err = usersCol.DeleteMany(context.Background(), bson.D{})

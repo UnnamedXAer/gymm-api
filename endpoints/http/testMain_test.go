@@ -34,19 +34,18 @@ func TestMain(m *testing.M) {
 	testhelpers.EnsureTestEnv()
 
 	validate = validation.New()
-	l := &zerolog.Logger{}
-	l.Level(zerolog.Disabled)
+	loggerMock := zerolog.New(nil)
 
 	jwtKey := []byte(os.Getenv("JWT_KEY"))
 	if len(jwtKey) < 10 {
-		l.Panic().Msg("missing or too short jwt key")
+		panic("missing or too short jwt key")
 	}
 
 	aMockRepo := &mocks.MockAuthRepo{}
 	uMockRepo := &mocks.MockUserRepo{}
 	eMockRepo := &mocks.MockExerciseRepo{}
 	tMockRepo := &mocks.MockTrainingRepo{}
-	app = NewServer(l, aMockRepo, uMockRepo, eMockRepo, tMockRepo, validate, jwtKey)
+	app = NewServer(&loggerMock, aMockRepo, uMockRepo, eMockRepo, tMockRepo, validate, jwtKey)
 	app.AddHandlers()
 
 	jwtCookie = &http.Cookie{

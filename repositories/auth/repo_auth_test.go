@@ -30,7 +30,7 @@ var (
 func TestMain(m *testing.M) {
 
 	testhelpers.EnsureTestEnv()
-	logger := zerolog.New(os.Stdout)
+	loggerMock := zerolog.New(nil)
 
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
@@ -40,16 +40,16 @@ func TestMain(m *testing.M) {
 	if mongoURI == "" {
 		log.Fatalln("environment variable 'MONGO_URI' is not set")
 	}
-	db, err := repositories.GetDatabase(&logger, mongoURI, dbName)
+	db, err := repositories.GetDatabase(&loggerMock, mongoURI, dbName)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = repositories.CreateCollections(&logger, db)
+	err = repositories.CreateCollections(&loggerMock, db)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer testhelpers.DisconnectDB(&logger, db)
+	defer testhelpers.DisconnectDB(&loggerMock, db)
 
 	tokensCol := db.Collection(repositories.TokensCollectionName)
 	refTokensCol := db.Collection(repositories.RefreshTokensCollectionName)
@@ -79,7 +79,7 @@ func TestMain(m *testing.M) {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		usersRepo := users.NewRepository(&logger, usersCol)
+		usersRepo := users.NewRepository(&loggerMock, usersCol)
 		u, err := usersRepo.CreateUser(
 			context.TODO(),
 			mocks.ExampleUser.Username,
@@ -108,7 +108,7 @@ func TestMain(m *testing.M) {
 		mockedUser.Password = data.Password
 	}
 
-	authRepo = NewRepository(&logger, usersCol, tokensCol, refTokensCol, pwdResReqCol)
+	authRepo = NewRepository(&loggerMock, usersCol, tokensCol, refTokensCol, pwdResReqCol)
 
 	os.Exit(m.Run())
 }

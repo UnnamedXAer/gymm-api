@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	db     *mongo.Database
-	logger zerolog.Logger
+	db         *mongo.Database
+	loggerMock zerolog.Logger
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 
 func TestMain(m *testing.M) {
 	testhelpers.EnsureTestEnv()
-	logger = zerolog.New(os.Stdout)
+	loggerMock = zerolog.New(nil)
 
 	dbName := os.Getenv("DB_NAME")
 	if dbName == "" {
@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 		log.Fatalln("environment variable 'MONGO_URI' is not set")
 	}
 	var err error
-	db, err = GetDatabase(&logger, mongoURI, dbName)
+	db, err = GetDatabase(&loggerMock, mongoURI, dbName)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -67,7 +67,7 @@ func TestMain(m *testing.M) {
 
 func TestCreateUsersCollection(t *testing.T) {
 	colName := UsersCollectionName + colSuffix
-	err := createUsersCollection(&logger, db, colName)
+	err := createUsersCollection(&loggerMock, db, colName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +118,7 @@ func TestCreateUsersCollection(t *testing.T) {
 
 func TestCreateExercisesCollection(t *testing.T) {
 	colName := ExercisesCollectionName + colSuffix
-	err := createExercisesCollection(&logger, db, colName, false)
+	err := createExercisesCollection(&loggerMock, db, colName, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestCreateExercisesCollection(t *testing.T) {
 
 func TestCreateTrainingsCollection(t *testing.T) {
 	colName := TrainingsCollectionName + colSuffix
-	err := createTrainingsCollection(&logger, db, colName)
+	err := createTrainingsCollection(&loggerMock, db, colName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,7 +215,7 @@ func TestCreateTrainingsCollection(t *testing.T) {
 func TestCreateResPwdReqCollection(t *testing.T) {
 	ctx := context.TODO()
 	colName := ResPwdReqCollectionName + colSuffix
-	err := createResPwdReqCollection(&logger, db, colName)
+	err := createResPwdReqCollection(&loggerMock, db, colName)
 	if err != nil {
 		t.Fatal(err)
 	}
