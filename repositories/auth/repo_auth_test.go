@@ -262,20 +262,39 @@ func TestAddResetPasswordRequest(t *testing.T) {
 	}
 
 	var err error
+	var pwdResReq *entities.ResetPwdReq
 
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			ctx := context.TODO()
-			err = authRepo.AddResetPasswordRequest(ctx, tC.emailAddress, tC.expiresAt)
+			pwdResReq, err = authRepo.AddResetPasswordRequest(ctx, tC.emailAddress, tC.expiresAt)
 
 			if tC.errTxt == "" {
 				if err != nil {
 					t.Errorf("want nil error, got %v", err)
 				}
 			} else {
+				if pwdResReq != nil {
+					t.Errorf("want nil pwd request, got %v", pwdResReq)
+				}
 				if !strings.Contains(err.Error(), tC.errTxt) {
 					t.Errorf("want error %q, got %v", tC.errTxt, err)
 				}
+			}
+
+			if pwdResReq == nil {
+				if tC.errTxt == "" {
+					t.Errorf("want password reset request, got nil")
+				}
+				return
+			}
+
+			if len(pwdResReq.ID) == 0 {
+				t.Errorf("want saved request, got %v", pwdResReq)
+			}
+
+			if pwdResReq.EmailAddress != tC.emailAddress {
+				t.Errorf("want request for %s, got %v", tC.emailAddress, pwdResReq)
 			}
 		})
 	}
