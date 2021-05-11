@@ -27,6 +27,7 @@ type AuthRepo interface {
 
 type AuthUsecases struct {
 	repo AuthRepo
+	l    *zerolog.Logger
 }
 
 type IAuthUsecases interface {
@@ -125,30 +126,18 @@ func (au *AuthUsecases) AddResetPasswordRequest(
 	ctx context.Context,
 	mailer Mailer,
 	emailaddress string) (*entities.ResetPwdReq, error) {
-	if len(emailaddress) == 0 {
-		return nil, fmt.Errorf("emailAddress cannot be empty")
-	}
-
 	expiresAt := time.Now().Add(time.Minute * 15) // @todo: config
 
 	pwdResetReq, err := au.repo.AddResetPasswordRequest(ctx, emailaddress, expiresAt)
 	if err != nil {
+		var rneErr *RecordNotExistsError
+		if errors.As(err, &rneErr) {
+			return pwdResetReq, nil
+		}
 		return nil, err
 	}
 
-	authUser, err := au.repo.GetUserByEmailAddress(ctx, emailaddress)
-	if err != nil {
-		return nil, err
-	}
-
-	if authUser == nil {
-		//should not happend
-		return nil, errors.WithMessage(
-			fmt.Errorf("user with email %s not found", emailaddress),
-			"sending email abandoned")
-	}
-
-	go au.sendResetPwdRequestEmail(ctx, mailer, &authUser.User, pwdResetReq)
+	go au.sendResetPwdRequestEmail(ctx, mailer, pwdResetReq)
 
 	return pwdResetReq, nil
 }
