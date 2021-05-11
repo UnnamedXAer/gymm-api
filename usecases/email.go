@@ -3,10 +3,16 @@ package usecases
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"text/template"
 
 	"github.com/unnamedxaer/gymm-api/entities"
 )
+
+type Mailer interface {
+	Send(recipients []string, subject, data []byte)
+	Close()
+}
 
 func generatePwdResetEmailContent(
 	user *entities.User,
@@ -17,8 +23,7 @@ func generatePwdResetEmailContent(
 		return nil, err
 	}
 
-	clientURL := "http://localhost"
-	// clientURL := os.Getenv("CLIENT_URL")
+	clientURL := os.Getenv("CLIENT_URL")
 	appName := "The Gymm Api"
 
 	url := fmt.Sprintf("%s/password/reset/%s", clientURL, pwdResetReq.ID)

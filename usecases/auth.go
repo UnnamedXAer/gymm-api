@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
-	"github.com/unnamedxaer/gymm-api/usecases/mailer"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -35,7 +34,7 @@ type IAuthUsecases interface {
 	// ChangePassword updates user password
 	ChangePassword(ctx context.Context, userID string, oldPwd, newPwd string) error
 	// AddResetPasswordRequest adds a password reset request and send it via email
-	AddResetPasswordRequest(ctx context.Context, emailaddress string) (*entities.ResetPwdReq, error)
+	AddResetPasswordRequest(ctx context.Context, mailer Mailer, emailaddress string) (*entities.ResetPwdReq, error)
 	// SaveJWT saves jwt for given user and device name
 	SaveJWT(ctx context.Context, userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
 	// GetUserJWTs returns user jwt tokens
@@ -121,7 +120,10 @@ func (au *AuthUsecases) ChangePassword(
 	return nil
 }
 
-func (au *AuthUsecases) AddResetPasswordRequest(ctx context.Context, emailaddress string) (*entities.ResetPwdReq, error) {
+func (au *AuthUsecases) AddResetPasswordRequest(
+	ctx context.Context,
+	mailer Mailer,
+	emailaddress string) (*entities.ResetPwdReq, error) {
 	if len(emailaddress) == 0 {
 		return nil, fmt.Errorf("emailAddress cannot be empty")
 	}
@@ -145,7 +147,7 @@ func (au *AuthUsecases) AddResetPasswordRequest(ctx context.Context, emailaddres
 			"sending email abandoned")
 	}
 
-	go au.sendResetPwdRequestEmail(ctx, &authUser.User, pwdResetReq)
+	go au.sendResetPwdRequestEmail(ctx, mailer, &authUser.User, pwdResetReq)
 
 	return pwdResetReq, nil
 }
@@ -201,6 +203,7 @@ func (au *AuthUsecases) DeleteRefreshTokenAndAllTokens(
 
 func (au *AuthUsecases) sendResetPwdRequestEmail(
 	ctx context.Context,
+	m Mailer,
 	user *entities.User,
 	pwdResetReq *entities.ResetPwdReq) {
 	var data []byte
@@ -217,20 +220,7 @@ func (au *AuthUsecases) sendResetPwdRequestEmail(
 		}
 	}
 
-	m := mailer.NewMailer(func(err error) {
-		fmt.Println("---")
-		fmt.Println("Error while sending email: ")
-		fmt.Println(err)
-		fmt.Println("---")
-	})
-
-	go func() {
-		<-ctx.Done()
-		m.Close()
-		fmt.Println("leave goroutine with close mailer")
-	}()
-
-	m.Send([]string{pwdResetReq.EmailAddress}, data)
+	go m.Send([]string{pwdResetReq.EmailAddress}, []byte("Reset Password"), data)
 }
 
 // NewAuthUsecases creates auth usecases

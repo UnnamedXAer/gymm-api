@@ -1,25 +1,32 @@
 package mailer
 
 import (
-	"bytes"
 	"fmt"
-	"log"
 	"net/smtp"
 	"os"
 	"sync"
-	"time"
+
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 )
 
-var l = log.Default()
+var (
+	mime       = []byte("MIME-version: 1.0;\nContent-Type: text/plain; charset=\"UTF-8\";\n\n")
+	subjectKey = []byte("Subject: ")
+)
 
 type Mailer struct {
+	l           *zerolog.Logger
 	queue       chan *emailRequest
 	done        chan struct{}
 	errorsQueue chan error
-	callback    ErrorHandler
+	errHandler  ErrorHandler
+	// sendMail is a smtp.SendMail, declated here to allow overriding in tests
+	sendMail func(addr string, a smtp.Auth, from string, to []string, msg []byte) error
 }
 
 type emailRequest struct {
+	subject    []byte
 	recipients []string
 	data       []byte
 }
@@ -28,12 +35,14 @@ type emailRequest struct {
 type ErrorHandler func(err error)
 
 // NewMailer creates new Mailer, it setup listeners and returns created instace
-func NewMailer(errHandler ErrorHandler) *Mailer {
+func NewMailer(l *zerolog.Logger, errHandler ErrorHandler) *Mailer {
 	m := &Mailer{
-		callback:    errHandler,
+		l:           l,
+		errHandler:  errHandler,
 		queue:       make(chan *emailRequest, 5),
 		errorsQueue: make(chan error, 5),
 		done:        make(chan struct{}),
+		sendMail:    smtp.SendMail,
 	}
 
 	go m.listenErrors()
@@ -42,26 +51,28 @@ func NewMailer(errHandler ErrorHandler) *Mailer {
 }
 
 // Send emits event to send an email
-func (m *Mailer) Send(recipients []string, data []byte) {
+func (m *Mailer) Send(recipients []string, subject, data []byte) {
 
 	select {
 	case <-m.done:
-		m.emitError(fmt.Errorf("1. mailer already closed"))
+		m.emitError(fmt.Errorf("mailer: already closed"))
 		return
 	default:
 		if len(recipients) == 0 {
-			m.emitError(fmt.Errorf("missing mail recipients"))
+			m.emitError(fmt.Errorf("mailer: missing recipients"))
 			return
 		}
 		go func() {
 			select {
 			case <-m.done:
-				m.emitError(fmt.Errorf("2. mailer already closed"))
+				m.emitError(fmt.Errorf("mailer: already closed"))
 
 			case m.queue <- &emailRequest{
+				subject:    subject,
 				recipients: recipients,
 				data:       data,
 			}:
+				// default:
 			}
 		}()
 	}
@@ -70,29 +81,23 @@ func (m *Mailer) Send(recipients []string, data []byte) {
 // Close stops the mailer service, it will cancell all queued tasks
 // and waits for tasks in progress to complete before returning
 func (m *Mailer) Close() {
-	l.Println("[Close] about to close channels")
 	close(m.done)
-
-	l.Println("[Close] channels closed")
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	// drain queues
-	go func() {
-		for er := range m.queue {
-			l.Printf("[Close - drain] - message to: %s\n", er.recipients)
-		}
-		wg.Done()
-	}()
-	go func() {
-		for err := range m.errorsQueue {
-			l.Printf("[Close - drain] - error to: %s\n", err)
-		}
-		wg.Done()
-	}()
 	close(m.queue)
 	close(m.errorsQueue)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		for range m.queue {
+		}
+		wg.Done()
+	}()
+	for range m.errorsQueue {
+	}
+
 	wg.Wait()
-	l.Println("[Close] - all cancelled, returning")
+	<-m.done
+	m.l.Debug().Msg("mailer closed")
 }
 
 // listen starts to listen for send email requests and calling send when receive the request
@@ -100,10 +105,9 @@ func (m *Mailer) listen() {
 	for {
 		select {
 		case <-m.done:
-			l.Println("[listen] - leaving via done")
 			return
 		case emailReq := <-m.queue:
-			go m.send(emailReq)
+			go m.emitError(m.send(emailReq))
 		}
 	}
 }
@@ -113,55 +117,46 @@ func (m *Mailer) listenErrors() {
 	for {
 		select {
 		case <-m.done:
-			l.Println("[listenErrors] - leaving via done")
 			return
 		case err := <-m.errorsQueue:
-			go m.callback(err)
+			if err != nil {
+				go m.errHandler(err)
+			}
 		}
 	}
 }
 
-func (m *Mailer) send(er *emailRequest) {
+func (m *Mailer) send(er *emailRequest) error {
 
-	l.Printf("sending email to: %s - body: %s\n", er.recipients, er.data[:50])
-	time.Sleep(1 * time.Second)
-	select {
-	case <-m.done:
-		l.Printf(" [send - done]: cancelled while sending to: %s \n", er.recipients)
-		return
-	// case <-time.After(time.Second * 1): // simulate sending
-	default:
-		l.Printf("Real mail sending to %s\n", er.recipients)
-		// Sender data.
-		from := os.Getenv("APP_EMAIL_ADDRESS")
-		password := os.Getenv("APP_EMAIL_PASSWORD")
+	from := os.Getenv("APP_EMAIL_ADDRESS")
+	password := os.Getenv("APP_EMAIL_PASSWORD")
+	if er == nil {
 
-		// Receiver email address.
-		to := er.recipients
+		return errors.Errorf("mail request is nil")
+	}
+	to := er.recipients
 
-		// smtp server configuration.
-		smtpHost := os.Getenv("SMTP_HOST")
-		smtpPort := os.Getenv("SMTP_PORT")
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
 
-		// Authentication.
-		auth := smtp.PlainAuth("", from, password, smtpHost)
+	auth := smtp.PlainAuth("", from, password, smtpHost)
 
-		l.Println("auth:")
-		l.Println(auth)
-		l.Println()
-
-		// Sending email.
-		err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, er.data)
-		if err != nil {
-			m.emitError(err)
-		}
+	subject := er.subject
+	if len(subject) == 0 {
+		subject = []byte(os.Getenv("APP_NAME"))
 	}
 
-	if bytes.Contains(er.data, []byte("error")) {
-		m.emitError(fmt.Errorf("en error ocurred while sending email to: %s", er.recipients[0]))
-		return
+	msg := append(mime, subjectKey...)
+	msg = append(msg, subject...)
+	msg = append(msg, '\n')
+	msg = append(msg, er.data...)
+
+	if m.l == nil {
+		return errors.Errorf("nil logget!")
 	}
-	l.Printf("email to: %s sent\n", er.recipients)
+	m.l.Printf("mailer: about to send email to  %s", to)
+	err := m.sendMail(smtpHost+":"+smtpPort, auth, from, to, msg)
+	return errors.WithMessagef(err, "send email to: %s", to)
 }
 
 func (m *Mailer) emitError(err error) {
@@ -172,5 +167,4 @@ func (m *Mailer) emitError(err error) {
 			m.errorsQueue <- err
 		}
 	}
-
 }

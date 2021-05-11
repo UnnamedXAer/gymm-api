@@ -2,12 +2,13 @@ package usecases_test
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/unnamedxaer/gymm-api/mocks"
 	"github.com/unnamedxaer/gymm-api/usecases"
+	"github.com/unnamedxaer/gymm-api/usecases/mailer"
 )
 
 var (
@@ -65,20 +66,20 @@ func TestResetPassword(t *testing.T) {
 		emailAddress string
 		errTxt       string
 	}{
-		// {
-		// 	desc:   "missing email",
-		// 	errTxt: "emailAddress cannot be empty",
-		// },
-		// {
-		// 	desc:         "nonexisting user",
-		// 	emailAddress: mocks.NonexistingEmail,
-		// 	errTxt:       "user does not exist",
-		// },
-		// {
-		// 	desc:         "correct",
-		// 	emailAddress: mocks.ExampleUser.EmailAddress,
-		// 	errTxt:       "",
-		// },
+		{
+			desc:   "missing email",
+			errTxt: "emailAddress cannot be empty",
+		},
+		{
+			desc:         "nonexisting user",
+			emailAddress: mocks.NonexistingEmail,
+			errTxt:       "user does not exist",
+		},
+		{
+			desc:         "correct",
+			emailAddress: mocks.ExampleUser.EmailAddress,
+			errTxt:       "",
+		},
 		{
 			desc:         "correct2",
 			emailAddress: "unnamedxaer@gmail.com",
@@ -86,11 +87,18 @@ func TestResetPassword(t *testing.T) {
 		},
 	}
 
+	// mockedMailer := &mocks.MockMailer{}
+	mockedMailer := mailer.NewMailer(
+		&mockedLogger,
+		func(err error) {
+			fmt.Printf("mailer-mock: %v", err)
+		})
+
 	ctx := context.TODO()
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 
-			pwdResReq, err := authUC.AddResetPasswordRequest(ctx, tC.emailAddress)
+			pwdResReq, err := authUC.AddResetPasswordRequest(ctx, mockedMailer, tC.emailAddress)
 			if tC.errTxt == "" {
 				if err != nil {
 					t.Errorf("want nil error, got %q", err)
@@ -119,10 +127,6 @@ func TestResetPassword(t *testing.T) {
 			if pwdResReq.EmailAddress != tC.emailAddress {
 				t.Errorf("want request for %s, got %v", tC.emailAddress, pwdResReq)
 			}
-
 		})
-
 	}
-	time.Sleep(time.Second * 5)
-	t.Log("finish")
 }
