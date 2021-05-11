@@ -219,16 +219,9 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 		return nil, errors.WithMessagef(err, "add reset password request")
 	}
 
-	// @todo: check for nil
-	sessResult, ok := transactionResult.(*mongo.SingleResult)
+	data, ok := transactionResult.(*resetPwdData)
 	if !ok {
-		return nil, fmt.Errorf("add reset password request: session results assertion")
-	}
-
-	data := resetPwdData{}
-	err = sessResult.Decode(&data)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "add reset password request: decode results")
+		return nil, fmt.Errorf("add reset password request: session results assertion not of type *resetPwdData")
 	}
 
 	resetPwdReq := entities.ResetPwdReq{
