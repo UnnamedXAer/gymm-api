@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -204,18 +205,39 @@ func (au *AuthUsecases) DeleteRefreshTokenAndAllTokens(
 func (au *AuthUsecases) sendResetPwdRequestEmail(
 	ctx context.Context,
 	m Mailer,
-	user *entities.User,
 	pwdResetReq *entities.ResetPwdReq) {
+
+	if pwdResetReq == nil {
+		au.l.Err(
+			fmt.Errorf(
+				"sending email with reset password request abandoned: nil reset password request")).Send()
+		return
+	}
+
 	var data []byte
-	var err error
 	select {
 	case <-ctx.Done():
 		// @todo: handle err
 		return
 	default:
-		data, err = generatePwdResetEmailContent(user, pwdResetReq)
+
+		authUser, err := au.repo.GetUserByEmailAddress(ctx, pwdResetReq.EmailAddress)
 		if err != nil {
-			// @todo: handler error
+			au.l.Err(err).Send()
+			return
+		}
+
+		if authUser == nil { //should not happend
+			au.l.Err(
+				fmt.Errorf(
+					"sending email with reset password request abandoned: user with email %s not found",
+					pwdResetReq.EmailAddress)).Send()
+			return
+		}
+
+		data, err = generatePwdResetEmailContent(&authUser.User, pwdResetReq)
+		if err != nil {
+			au.l.Err(err).Send()
 			return
 		}
 	}
@@ -224,8 +246,9 @@ func (au *AuthUsecases) sendResetPwdRequestEmail(
 }
 
 // NewAuthUsecases creates auth usecases
-func NewAuthUsecases(repo AuthRepo) IAuthUsecases {
+func NewAuthUsecases(l *zerolog.Logger, repo AuthRepo) IAuthUsecases {
 	return &AuthUsecases{
 		repo: repo,
+		l:    l,
 	}
 }

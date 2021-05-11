@@ -38,7 +38,7 @@ func NewServer(
 	mailer usecases.Mailer,
 ) *App {
 
-	var authUsecases usecases.IAuthUsecases = usecases.NewAuthUsecases(authRepo)
+	var authUsecases usecases.IAuthUsecases = usecases.NewAuthUsecases(logger, authRepo)
 	var userUsecases usecases.IUserUseCases = usecases.NewUserUseCases(userRepo)
 	var exerciseUsecases usecases.IExerciseUseCases = usecases.NewExerciseUseCases(exerciseRepo)
 	var trainingUsecases usecases.ITrainingUsecases = usecases.NewTrainingUseCases(trainingRepo)
