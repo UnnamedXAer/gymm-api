@@ -45,7 +45,15 @@ func TestMain(m *testing.M) {
 	uMockRepo := &mocks.MockUserRepo{}
 	eMockRepo := &mocks.MockExerciseRepo{}
 	tMockRepo := &mocks.MockTrainingRepo{}
-	app = NewServer(&loggerMock, aMockRepo, uMockRepo, eMockRepo, tMockRepo, validate, jwtKey)
+	app = NewServer(
+		&loggerMock,
+		aMockRepo,
+		uMockRepo,
+		eMockRepo,
+		tMockRepo,
+		validate,
+		jwtKey,
+		&mocks.MockMailer{})
 	app.AddHandlers()
 
 	jwtCookie = &http.Cookie{

@@ -12,6 +12,7 @@ import (
 	"github.com/unnamedxaer/gymm-api/repositories/exercises"
 	"github.com/unnamedxaer/gymm-api/repositories/trainings"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
+	"github.com/unnamedxaer/gymm-api/usecases/mailer"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
 
@@ -62,6 +63,10 @@ func main() {
 
 	validate := validation.New()
 
+	mailer := mailer.NewMailer(&logger, func(err error) {
+		logger.Err(err).Send()
+	})
+
 	app := http.NewServer(
 		&logger,
 		authRepo,
@@ -69,7 +74,9 @@ func main() {
 		exercisesRepo,
 		trainingsRepo,
 		validate,
-		jwtKey)
+		jwtKey,
+		mailer,
+	)
 
 	app.AddHandlers()
 

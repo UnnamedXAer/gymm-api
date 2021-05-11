@@ -24,6 +24,7 @@ type App struct {
 	Router           *mux.Router
 	Validate         *validator.Validate
 	jwtKey           []byte
+	mailer           usecases.Mailer
 }
 
 func NewServer(
@@ -33,7 +34,9 @@ func NewServer(
 	exerciseRepo usecases.ExerciseRepo,
 	trainingRepo usecases.TrainingRepo,
 	validate *validator.Validate,
-	jwtKey []byte) *App {
+	jwtKey []byte,
+	mailer usecases.Mailer,
+) *App {
 
 	var authUsecases usecases.IAuthUsecases = usecases.NewAuthUsecases(authRepo)
 	var userUsecases usecases.IUserUseCases = usecases.NewUserUseCases(userRepo)
@@ -52,6 +55,7 @@ func NewServer(
 		Router:           router,
 		Validate:         validate,
 		jwtKey:           jwtKey,
+		mailer:           mailer,
 	}
 	return &app
 }
@@ -64,6 +68,7 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/logout-session", chainMiddlewares(app.LogoutSession, app.checkAuthenticated)).Methods(http.MethodPost)
 	app.Router.HandleFunc("/logout-all", chainMiddlewares(app.LogoutAllSessions, app.checkAuthenticated)).Methods(http.MethodPost)
 	app.Router.HandleFunc("/password/change", chainMiddlewares(app.ChangePassword, app.checkAuthenticated)).Methods(http.MethodPost)
+	app.Router.HandleFunc("/password/reset", app.AddResetPasswordRequest).Methods(http.MethodPost)
 	app.Router.HandleFunc("/health", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
 
 	// app.Router.HandleFunc(
