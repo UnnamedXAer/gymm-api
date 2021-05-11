@@ -137,6 +137,7 @@ func (repo *AuthRepository) ChangePassword(ctx context.Context, userID string, n
 
 	return nil
 }
+
 func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailaddress string, expiresAt time.Time) (*entities.ResetPwdReq, error) {
 	if expiresAt.Before(time.Now()) {
 		return nil, errors.New("expiration time from the past")
@@ -154,7 +155,7 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 		}
 		if countRes == 0 {
 			return nil, errors.WithMessage(
-				errors.New("user does not exist"), "add reset password request")
+				usecases.NewErrorRecordNotExists("user"), "add reset password request")
 		}
 
 		insert := resetPwdData{
@@ -168,7 +169,7 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 		result, err := repo.resetPwdCol.InsertOne(sessCtx, &insert)
 		if err != nil {
 			if err.Error() == "mongo: no documents in result" {
-				return nil, errors.New("no record has been updated")
+				return nil, errors.New("no record has been created")
 			}
 			return nil, err
 		}
