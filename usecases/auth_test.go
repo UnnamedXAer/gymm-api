@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/unnamedxaer/gymm-api/mailer"
 	"github.com/unnamedxaer/gymm-api/mocks"
 	"github.com/unnamedxaer/gymm-api/usecases"
-	"github.com/unnamedxaer/gymm-api/usecases/mailer"
 )
 
 var (

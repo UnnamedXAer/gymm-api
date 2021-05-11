@@ -40,7 +40,7 @@ func NewMailer(l *zerolog.Logger, errHandler ErrorHandler) *Mailer {
 		l:           l,
 		errHandler:  errHandler,
 		queue:       make(chan *emailRequest, 5),
-		errorsQueue: make(chan error, 5),
+		errorsQueue: make(chan error, 2),
 		done:        make(chan struct{}),
 		sendMail:    smtp.SendMail,
 	}

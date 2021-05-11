@@ -7,12 +7,12 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
 	"github.com/unnamedxaer/gymm-api/endpoints/http"
+	"github.com/unnamedxaer/gymm-api/mailer"
 	"github.com/unnamedxaer/gymm-api/repositories"
 	"github.com/unnamedxaer/gymm-api/repositories/auth"
 	"github.com/unnamedxaer/gymm-api/repositories/exercises"
 	"github.com/unnamedxaer/gymm-api/repositories/trainings"
 	"github.com/unnamedxaer/gymm-api/repositories/users"
-	"github.com/unnamedxaer/gymm-api/usecases/mailer"
 	"github.com/unnamedxaer/gymm-api/validation"
 )
 
