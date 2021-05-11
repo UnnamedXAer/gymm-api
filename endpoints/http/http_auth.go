@@ -330,6 +330,58 @@ func (app *App) ChangePassword(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (app *App) AddResetPasswordRequest(w http.ResponseWriter, req *http.Request) {
+
+	input := usecases.UserInput{}
+	err := json.NewDecoder(req.Body).Decode(&input)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		errTxt := getErrOfMalformedInput(&input, []string{
+			"Username", "Password", "CreatedAt",
+		})
+		responseWithErrorTxt(w, http.StatusBadRequest, errTxt)
+		return
+	}
+
+	rv := reflect.TypeOf(input)
+	srf, ok := rv.FieldByName("EmailAddress")
+	if !ok {
+		responseWithInternalError(w)
+		return
+	}
+
+	validationRules := srf.Tag.Get("validate")
+	fieldName := "emailAddress"
+	err = app.Validate.Var(input.EmailAddress, validationRules)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		// @refactor: see exercise validation
+		formattedErrors := make(map[string]string, 1)
+		validateErrs, ok := err.(validator.ValidationErrors)
+		if !ok {
+			formattedErrors[fieldName] = err.Error()
+		}
+
+		for _, err := range validateErrs {
+			formattedErrors[fieldName] += getErrorTranslation4User(&err, fieldName)
+		}
+
+		vErrs := validation.NewStructValidError(formattedErrors)
+		responseWithJSON(w, http.StatusBadRequest, vErrs.Format())
+		return
+	}
+
+	ctx := req.Context()
+	_, err = app.authUsecases.AddResetPasswordRequest(ctx, app.mailer, input.EmailAddress)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+}
+
 func (app *App) Refresh(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
