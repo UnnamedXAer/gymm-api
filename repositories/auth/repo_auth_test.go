@@ -108,7 +108,7 @@ func TestMain(m *testing.M) {
 		mockedUser.Password = data.Password
 	}
 
-	authRepo = NewRepository(&logger, usersCol, tokensCol, refTokensCol)
+	authRepo = NewRepository(&logger, usersCol, tokensCol, refTokensCol, pwdResReqCol)
 
 	os.Exit(m.Run())
 }
