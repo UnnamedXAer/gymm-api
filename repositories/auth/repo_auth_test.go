@@ -17,12 +17,10 @@ import (
 	"github.com/unnamedxaer/gymm-api/usecases"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
-	pwdHash []byte
-
 	authRepo   usecases.AuthRepo
 	mockedUser entities.AuthUser
 )
@@ -75,16 +73,12 @@ func TestMain(m *testing.M) {
 		if err != mongo.ErrNoDocuments {
 			log.Fatalln(err)
 		}
-		pwdHash, err = bcrypt.GenerateFromPassword([]byte(mocks.Password), bcrypt.MinCost)
-		if err != nil {
-			log.Fatalln(err)
-		}
 		usersRepo := users.NewRepository(&loggerMock, usersCol)
 		u, err := usersRepo.CreateUser(
 			context.TODO(),
 			mocks.ExampleUser.Username,
 			mocks.ExampleUser.EmailAddress,
-			pwdHash,
+			mocks.PasswordHash,
 		)
 		if err != nil {
 			log.Fatalln(err)
@@ -165,6 +159,11 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestChangePassword(t *testing.T) {
+
+	pwdHash := make([]byte, len(mocks.PasswordHash))
+
+	copy(pwdHash, mocks.PasswordHash)
+
 	testCases := []struct {
 		desc   string
 		id     string
@@ -198,7 +197,7 @@ func TestChangePassword(t *testing.T) {
 		{
 			desc:   "__restore default password",
 			id:     mockedUser.ID,
-			pwd:    pwdHash,
+			pwd:    mocks.PasswordHash,
 			errTxt: "",
 		},
 	}
