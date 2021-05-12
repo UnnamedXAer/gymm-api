@@ -62,13 +62,16 @@ func TestMain(m *testing.M) {
 		mocks.NonexistingUserID = mocks.NonexistingUserID[:len(mocks.NonexistingUserID)-1] + "b"
 	}
 
-	result := usersCol.FindOne(context.TODO(),
-		bson.M{
-			"$or": bson.A{
-				bson.M{"email_address": mocks.ExampleUser.EmailAddress},
-				bson.M{"_id": mocks.NonexistingEmail},
-			},
-		})
+	update := bson.M{"$set": users.UserData{
+		Username:     mocks.ExampleUser.Username,
+		EmailAddress: mocks.ExampleUser.EmailAddress,
+		Password:     mocks.PasswordHash,
+		CreatedAt:    time.Now(),
+	}}
+
+	result := usersCol.FindOneAndUpdate(context.TODO(),
+		bson.M{"email_address": mocks.ExampleUser.EmailAddress}, update,
+		options.FindOneAndUpdate().SetReturnDocument(options.After).SetUpsert(true))
 	if err = result.Err(); err != nil {
 		if err != mongo.ErrNoDocuments {
 			log.Fatalln(err)
