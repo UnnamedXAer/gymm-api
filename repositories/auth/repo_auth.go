@@ -180,6 +180,7 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 		}
 
 		filter := bson.M{"$and": bson.A{
+			bson.M{"status": entities.ResetPwdStatusNoActionYet},
 			bson.M{"email_address": emailaddress},
 			bson.M{"_id": bson.M{"$ne": insertedID}},
 		}}
