@@ -272,6 +272,10 @@ func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, r
 			return nil, fmt.Errorf("reset password request expired")
 		}
 
+		if req.Status != entities.ResetPwdStatusNoActionYet {
+			return nil, fmt.Errorf("reset password request is not active anymore")
+		}
+
 		filter := bson.M{"$and": bson.A{
 			bson.M{"email_address": req.EmailAddress},
 			bson.M{"status": entities.ResetPwdStatusNoActionYet},
