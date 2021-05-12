@@ -300,6 +300,63 @@ func TestAddResetPasswordRequest(t *testing.T) {
 	}
 }
 
+func TestUpdatePasswordForResetRequest(t *testing.T) {
+
+	nonexistingReqID := mocks.ExampleResetPwdReq.ID[:len(mocks.ExampleResetPwdReq.ID)-1]
+	if mocks.ExampleResetPwdReq.ID[len(mocks.ExampleResetPwdReq.ID)-1] == 'f' {
+		nonexistingReqID += "e"
+	} else {
+		nonexistingReqID += "f"
+	}
+
+	testCases := []struct {
+		desc     string
+		password []byte
+		reqID    string
+		errTxt   string
+	}{
+		{
+			desc:   "missing pasword",
+			reqID:  mocks.ExampleResetPwdReq.ID,
+			errTxt: "missing password",
+		},
+		{
+			desc:     "missing id",
+			password: pwdHash,
+			errTxt:   usecases.NewErrorInvalidID("", "reset password request").Error(),
+		},
+		{
+			desc:     "not existing request",
+			password: pwdHash,
+			reqID:    "notfound",
+			errTxt:   usecases.NewErrorRecordNotExists("reset password request").Error(),
+		},
+		{
+			desc:     "correct",
+			reqID:    nonexistingReqID,
+			password: pwdHash,
+		},
+	}
+
+	ctx := context.TODO()
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+
+			err := authRepo.UpdatePasswordForResetRequest(ctx, tC.reqID, tC.password)
+			if tC.errTxt == "" {
+				if err != nil {
+					t.Errorf("want nil error, got %q", err)
+				}
+			} else {
+				if err == nil || !strings.Contains(err.Error(), tC.errTxt) {
+					t.Errorf("want error like %q, got %q", tC.errTxt, err)
+				}
+			}
+
+		})
+	}
+}
+
 func TestGetUserByEmailAddress(t *testing.T) {
 	ctx := context.TODO()
 	got, err := authRepo.GetUserByEmailAddress(ctx, mockedUser.EmailAddress)

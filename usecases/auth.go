@@ -16,6 +16,7 @@ type AuthRepo interface {
 	GetUserByID(ctx context.Context, id string) (*entities.AuthUser, error)
 	ChangePassword(ctx context.Context, userID string, newPwd []byte) error
 	AddResetPasswordRequest(ctx context.Context, emailaddress string, expiresAt time.Time) (*entities.ResetPwdReq, error)
+	UpdatePasswordForResetRequest(ctx context.Context, reqID string, password []byte) error
 	SaveJWT(ctx context.Context, userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
 	GetUserJWTs(ctx context.Context, userID string, expired entities.ExpireType) ([]entities.UserToken, error)
 	DeleteJWT(ctx context.Context, ut *entities.UserToken) (int64, error)
@@ -37,6 +38,8 @@ type IAuthUsecases interface {
 	ChangePassword(ctx context.Context, userID string, oldPwd, newPwd string) error
 	// AddResetPasswordRequest adds a password reset request and send it via email
 	AddResetPasswordRequest(ctx context.Context, mailer Mailer, emailaddress string) (*entities.ResetPwdReq, error)
+	// UpdatePasswordForResetRequest sets new password based on reset request ID
+	UpdatePasswordForResetRequest(ctx context.Context, reqID string, password string) error
 	// SaveJWT saves jwt for given user and device name
 	SaveJWT(ctx context.Context, userID string, device string, token string, expiresAt time.Time) (*entities.UserToken, error)
 	// GetUserJWTs returns user jwt tokens
@@ -137,9 +140,36 @@ func (au *AuthUsecases) AddResetPasswordRequest(
 		return nil, err
 	}
 
-	go au.sendResetPwdRequestEmail(ctx, mailer, pwdResetReq)
+	select {
+	case <-ctx.Done():
+	default:
+		go au.sendResetPwdRequestEmail(context.Background(), mailer, pwdResetReq)
+	}
 
 	return pwdResetReq, nil
+}
+
+func (au *AuthUsecases) UpdatePasswordForResetRequest(
+	ctx context.Context,
+	reqID string,
+	password string) error {
+
+	if len(password) == 0 {
+		return errors.WithMessage(
+			fmt.Errorf("missing password"), "reset password request")
+	}
+
+	hash, err := hashPassword(password)
+	if err != nil {
+		return errors.WithMessage(err, "reset password request")
+	}
+
+	err = au.repo.UpdatePasswordForResetRequest(ctx, reqID, hash)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (au *AuthUsecases) SaveJWT(

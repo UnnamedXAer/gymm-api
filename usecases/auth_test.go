@@ -117,3 +117,52 @@ func TestAddResetPasswordRequest(t *testing.T) {
 	}
 
 }
+
+func TestUpdatePasswordForResetRequest(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		password string
+		reqID    string
+		errTxt   string
+	}{
+		{
+			desc:   "missing pasword",
+			reqID:  mocks.ExampleResetPwdReq.ID,
+			errTxt: "missing password",
+		},
+		{
+			desc:     "missing id",
+			password: string(mocks.Password),
+			errTxt:   usecases.NewErrorInvalidID("", "reset password request").Error(),
+		},
+		{
+			desc:     "not existing request",
+			password: string(mocks.Password),
+			reqID:    "notfound",
+			errTxt:   usecases.NewErrorRecordNotExists("reset password request").Error(),
+		},
+		{
+			desc:     "correct",
+			reqID:    mocks.ExampleResetPwdReq.ID,
+			password: string(mocks.Password),
+		},
+	}
+
+	ctx := context.TODO()
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+
+			err := authUC.UpdatePasswordForResetRequest(ctx, tC.reqID, tC.password)
+			if tC.errTxt == "" {
+				if err != nil {
+					t.Errorf("want nil error, got %q", err)
+				}
+			} else {
+				if err == nil || !strings.Contains(err.Error(), tC.errTxt) {
+					t.Errorf("want error like %q, got %q", tC.errTxt, err)
+				}
+			}
+
+		})
+	}
+}

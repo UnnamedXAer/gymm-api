@@ -11,6 +11,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 	"github.com/unnamedxaer/gymm-api/entities"
 	"github.com/unnamedxaer/gymm-api/usecases"
@@ -382,6 +383,76 @@ func (app *App) AddResetPasswordRequest(w http.ResponseWriter, req *http.Request
 	w.WriteHeader(http.StatusAccepted)
 }
 
+func (app *App) UpdatePasswordOnResetRequest(w http.ResponseWriter, req *http.Request) {
+
+	// clean it in case another account was logged in
+	// to not mess it up.
+	clearCookieJWTAuthToken(w)
+	reqID, ok := mux.Vars(req)["requestID"]
+	if !ok {
+		err := errors.New("missign request id query parameter")
+		logDebugError(app.l, req, err)
+		responseWithError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	input := usecases.UserInput{}
+	err := json.NewDecoder(req.Body).Decode(&input)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		errTxt := getErrOfMalformedInput(&input, []string{
+			"Username", "EmailAddress", "CreatedAt",
+		})
+		responseWithErrorTxt(w, http.StatusBadRequest, errTxt)
+		return
+	}
+
+	rv := reflect.TypeOf(input)
+	srf, ok := rv.FieldByName("Password")
+	if !ok {
+		responseWithInternalError(w)
+		return
+	}
+
+	validationRules := srf.Tag.Get("validate")
+	fieldName := "password"
+	err = app.Validate.Var(input.Password, validationRules)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		// @refactor: see exercise validation
+		formattedErrors := make(map[string]string, 1)
+		validateErrs, ok := err.(validator.ValidationErrors)
+		if !ok {
+			// @thought: probably should return code 500 here
+			formattedErrors[fieldName] = err.Error()
+		}
+
+		for _, err := range validateErrs {
+			formattedErrors[fieldName] += getErrorTranslation4User(&err, fieldName)
+		}
+
+		vErrs := validation.NewStructValidError(formattedErrors)
+		responseWithJSON(w, http.StatusBadRequest, vErrs.Format())
+		return
+	}
+
+	ctx := req.Context()
+	err = app.authUsecases.UpdatePasswordForResetRequest(ctx, reqID, input.Password)
+	if err != nil {
+		logDebugError(app.l, req, err)
+		var rnfErr *usecases.RecordNotExistsError
+		if errors.As(err, &rnfErr) {
+			responseWithUnauthorized(w, formatUnauthorizedError("reset password request"))
+			return
+		}
+
+		responseWithError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+}
 func (app *App) Refresh(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }

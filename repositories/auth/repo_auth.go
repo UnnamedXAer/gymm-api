@@ -237,6 +237,101 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 	return &resetPwdReq, nil
 }
 
+func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, reqID string, pwdHash []byte) error {
+
+	reqOID, err := primitive.ObjectIDFromHex(reqID)
+	if err != nil {
+		return errors.WithMessage(
+			usecases.NewErrorInvalidID(reqID, "reset password request"), "reset password request")
+	}
+
+	cb := func(sessCtx mongo.SessionContext) (interface{}, error) {
+		reqFilter := bson.M{
+			"_id": reqOID,
+		}
+		result := repo.usersCol.FindOne(sessCtx, reqFilter)
+		if err = result.Err(); err != nil {
+			if err.Error() == "mongo: no documents in result" {
+				return nil, usecases.NewErrorRecordNotExists("reset password request")
+			}
+			return nil, err
+		}
+
+		req := resetPwdData{}
+
+		err := result.Decode(&req)
+		if err = result.Err(); err != nil {
+			return nil, err
+		}
+
+		if req.ExpiresAt.Before(time.Now()) {
+			return nil, fmt.Errorf("reset password request expired")
+		}
+
+		filter := bson.M{"$and": bson.A{
+			bson.M{"email_address": req.EmailAddress},
+			bson.M{"status": entities.ResetPwdStatusNoActionYet},
+			// @i: not necessarily needed as we would override it in next lines
+			bson.M{"_id": bson.M{"$ne": req.ID}},
+		}}
+
+		update := bson.M{"$set": resetPwdData{
+			Status:    entities.ResetPwdStatusCanceled,
+			UpdatedAt: time.Now(),
+		}}
+
+		updateResult, err := repo.resetPwdCol.UpdateMany(sessCtx, &filter, &update)
+		if err != nil {
+			if err.Error() != "mongo: no documents in result" {
+				return nil, errors.WithMessage(err,
+					"could not cancell previous requests")
+			}
+		}
+
+		if updateResult.ModifiedCount > 0 {
+			repo.l.Debug().Msgf(
+				"add reset password request: cancelled %d requests for %s",
+				updateResult.ModifiedCount,
+				req.EmailAddress)
+		}
+
+		update = bson.M{"$set": resetPwdData{
+			Status:    entities.ResetPwdStatusCompleted,
+			UpdatedAt: time.Now(),
+		}}
+
+		updateResult, err = repo.resetPwdCol.UpdateOne(sessCtx, &filter, &update)
+		if err != nil {
+			return nil, errors.WithMessage(err,
+				"could not update")
+		}
+
+		if updateResult.MatchedCount == 0 {
+			return nil, errors.WithMessage(
+				usecases.NewErrorRecordNotExists("reset password request"),
+				"could not update")
+		}
+
+		// repo.usersCol.UpdateOne()
+		return nil, fmt.Errorf("not implemented yet")
+
+		return nil, nil
+	}
+
+	session, err := repo.resetPwdCol.Database().Client().StartSession()
+	if err != nil {
+		return errors.WithMessagef(err, "reset password request: start session")
+	}
+	defer session.EndSession(ctx)
+
+	_, err = session.WithTransaction(ctx, cb)
+	if err != nil {
+		return errors.WithMessagef(err, "reset password request")
+	}
+
+	return nil
+}
+
 func (repo *AuthRepository) GetUserJWTs(
 	ctx context.Context,
 

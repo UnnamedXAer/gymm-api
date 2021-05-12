@@ -228,3 +228,74 @@ func TestAddResetPasswordRequest(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdatePasswordForResetRequest(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		password string
+		reqID    string
+		errTxt   string
+		code     int
+	}{
+		{
+			desc:   "missing pasword",
+			reqID:  mocks.ExampleResetPwdReq.ID,
+			errTxt: "'password' field value is required",
+			code:   http.StatusBadRequest,
+		},
+		{
+			desc:     "missing id",
+			password: string(mocks.Password),
+			code:     http.StatusMethodNotAllowed,
+		},
+		{
+			desc:     "not existing request",
+			password: string(mocks.Password),
+			reqID:    "notfound",
+			errTxt:   "unauthorized",
+			code:     http.StatusUnauthorized,
+		},
+		{
+			desc:     "invalid password",
+			reqID:    mocks.ExampleResetPwdReq.ID,
+			password: "aaa",
+			errTxt:   "validation failed",
+			code:     http.StatusBadRequest,
+		},
+		{
+			desc:     "correct",
+			reqID:    mocks.ExampleResetPwdReq.ID,
+			password: string(mocks.Password),
+			code:     http.StatusOK,
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			payload := map[string]string{
+				"password": tC.password,
+			}
+
+			b, _ := json.Marshal(&payload)
+
+			req, _ := http.NewRequest(http.MethodPatch, "/password/reset/"+tC.reqID, bytes.NewBuffer(b))
+			req.Header.Set("Content-Type", "application/json")
+
+			res := executeRequest(req)
+
+			checkResponseCode(t, tC.code, res.Code)
+
+			got := res.Body.String()
+
+			if tC.errTxt == "" && len(got) != 0 {
+				t.Errorf("want empty body, got %q", got)
+				return
+			}
+
+			if !strings.Contains(got, tC.errTxt) {
+				t.Errorf("want error like %q, got %q", tC.errTxt, got)
+			}
+
+		})
+	}
+}

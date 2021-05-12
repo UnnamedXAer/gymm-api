@@ -14,7 +14,7 @@ type ResetPwdStatus uint8
 
 const (
 	ResetPwdStatusNoActionYet ResetPwdStatus = iota
-	ResetPwdStatusAccepted
+	ResetPwdStatusCompleted
 	ResetPwdStatusCanceled
 )
 

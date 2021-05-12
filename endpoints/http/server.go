@@ -67,13 +67,14 @@ func (app *App) AddHandlers() {
 	app.Router.HandleFunc("/sessions", chainMiddlewares(app.GetSessions, app.checkAuthenticated)).Methods(http.MethodGet)
 	app.Router.HandleFunc("/logout-session", chainMiddlewares(app.LogoutSession, app.checkAuthenticated)).Methods(http.MethodPost)
 	app.Router.HandleFunc("/logout-all", chainMiddlewares(app.LogoutAllSessions, app.checkAuthenticated)).Methods(http.MethodPost)
-	app.Router.HandleFunc("/password/change", chainMiddlewares(app.ChangePassword, app.checkAuthenticated)).Methods(http.MethodPost)
-	app.Router.HandleFunc("/password/reset", app.AddResetPasswordRequest).Methods(http.MethodPost)
+
 	app.Router.HandleFunc("/health", chainMiddlewares(app.Health, app.checkAuthenticated)).Methods(http.MethodGet)
 
-	// app.Router.HandleFunc(
-	// 	"/users/{id:[0-9a-zA-Z]+}",
-	// 	chainMiddlewares(app.GetUserById, app.checkAuthenticated)).Methods(http.MethodGet)
+	// password
+	passwordRouter := app.Router.PathPrefix("/password").Subrouter()
+	passwordRouter.HandleFunc("/change", chainMiddlewares(app.ChangePassword, app.checkAuthenticated)).Methods(http.MethodPost)
+	passwordRouter.HandleFunc("/reset/{requestID:[0-9a-zA-Z]+}", app.UpdatePasswordOnResetRequest).Methods(http.MethodPatch)
+	passwordRouter.HandleFunc("/reset", app.AddResetPasswordRequest).Methods(http.MethodPost)
 
 	exercisesRouter := app.Router.PathPrefix("/exercises").Subrouter()
 	exercisesRouter.HandleFunc(

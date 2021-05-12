@@ -12,7 +12,7 @@ import (
 
 var (
 	ExampleUserToken = entities.UserToken{
-		ID:        "ID here",
+		ID:        "609bba6ffc79f3b3bdd9431f",
 		UserID:    UserID,
 		Token:     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwNzJkMzIwNjE0NDY0NDk4NGE1NGZhMSIsImNyZWF0ZWRBdCI6MTYyMDQ4Njg2MjkyOTA2NTUwMCwiciI6eyJ0b2tlbiI6IjRiYmI1NDZlLTM0MjEtNGI1Ni1iODI2LWQwYjY0OGM3YjUzYiJ9LCJleHAiOjE2MjA0ODcxNjIsImlhdCI6MTYyMDQ4Njg2Mn0.j8dSyoCoSiKOI1duK9eNAl2LFgHjV0fe8eB58IhxlvI",
 		Device:    "PostmanRuntime/7.26.10",
@@ -20,7 +20,7 @@ var (
 		ExpiresAt: Now.AddDate(1, 0, 0),
 	}
 	ExampleRefreshToken = entities.RefreshToken{
-		ID:        "ID here",
+		ID:        "609bba6ffc79f3b3bdd9431e",
 		UserID:    UserID,
 		Token:     "4bbb546e-3421-4b56-b826-d0b648c7b53b",
 		CreatedAt: Now,
@@ -28,7 +28,7 @@ var (
 	}
 
 	ExampleResetPwdReq = entities.ResetPwdReq{
-		ID:           "ID here",
+		ID:           "609ba7fedcc11ebd3051a816",
 		EmailAddress: ExampleUser.EmailAddress,
 		Status:       entities.ResetPwdStatusNoActionYet,
 		ExpiresAt:    Now.Add(time.Minute * 15),
@@ -93,6 +93,22 @@ func (r *MockAuthRepo) AddResetPasswordRequest(
 	out.EmailAddress = emailaddress
 	out.ExpiresAt = expiresAt
 	return &out, nil
+}
+
+func (r *MockAuthRepo) UpdatePasswordForResetRequest(
+	ctx context.Context,
+	reqID string,
+	pwdHash []byte) error {
+
+	if strings.Contains(reqID, "notfound") {
+		return usecases.NewErrorRecordNotExists("reset password request")
+	}
+
+	if len(reqID) == 0 {
+		return usecases.NewErrorInvalidID(reqID, "reset password request")
+	}
+
+	return nil
 }
 
 func (r *MockAuthRepo) GetUserJWTs(
