@@ -239,6 +239,10 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 
 func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, reqID string, pwdHash []byte) error {
 
+	if len(pwdHash) == 0 {
+		return errors.WithMessage(fmt.Errorf("missing password"), "reset password request")
+	}
+
 	reqOID, err := primitive.ObjectIDFromHex(reqID)
 	if err != nil {
 		return errors.WithMessage(
