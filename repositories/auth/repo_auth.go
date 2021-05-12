@@ -308,15 +308,20 @@ func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, r
 			UpdatedAt: time.Now(),
 		}}
 
+		filter = bson.M{"$and": bson.A{
+			bson.M{"status": entities.ResetPwdStatusNoActionYet},
+			bson.M{"_id": req.ID},
+		}}
+
 		updateResult, err = repo.resetPwdCol.UpdateOne(sessCtx, &filter, &update)
 		if err != nil {
 			return nil, errors.WithMessage(err,
 				"could not update")
 		}
 
-		if updateResult.MatchedCount == 0 {
+		if updateResult.ModifiedCount == 0 {
 			return nil, errors.WithMessage(
-				usecases.NewErrorRecordNotExists("reset password request"),
+				fmt.Errorf("reset password request is not active anymore"),
 				"could not update")
 		}
 
