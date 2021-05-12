@@ -263,8 +263,8 @@ func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, r
 
 		req := resetPwdData{}
 
-		err := result.Decode(&req)
-		if err = result.Err(); err != nil {
+		err = result.Decode(&req)
+		if err != nil {
 			return nil, err
 		}
 
