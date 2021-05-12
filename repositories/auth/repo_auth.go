@@ -238,25 +238,26 @@ func (repo *AuthRepository) AddResetPasswordRequest(ctx context.Context, emailad
 }
 
 func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, reqID string, pwdHash []byte) error {
-
+	label := "reset password request"
 	if len(pwdHash) == 0 {
-		return errors.WithMessage(fmt.Errorf("missing password"), "reset password request")
+		return errors.WithMessage(fmt.Errorf("missing password"), label)
 	}
 
 	reqOID, err := primitive.ObjectIDFromHex(reqID)
 	if err != nil {
 		return errors.WithMessage(
-			usecases.NewErrorInvalidID(reqID, "reset password request"), "reset password request")
+			usecases.NewErrorInvalidID(reqID, label), label)
 	}
 
 	cb := func(sessCtx mongo.SessionContext) (interface{}, error) {
 		reqFilter := bson.M{
 			"_id": reqOID,
 		}
-		result := repo.usersCol.FindOne(sessCtx, reqFilter)
+		// @i: probably we can findOneAndUpdate to not call update later
+		result := repo.resetPwdCol.FindOne(sessCtx, reqFilter)
 		if err = result.Err(); err != nil {
 			if err.Error() == "mongo: no documents in result" {
-				return nil, usecases.NewErrorRecordNotExists("reset password request")
+				return nil, usecases.NewErrorRecordNotExists(label)
 			}
 			return nil, err
 		}
@@ -269,11 +270,11 @@ func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, r
 		}
 
 		if req.ExpiresAt.Before(time.Now()) {
-			return nil, fmt.Errorf("reset password request expired")
+			return nil, fmt.Errorf(label + " expired")
 		}
 
 		if req.Status != entities.ResetPwdStatusNoActionYet {
-			return nil, fmt.Errorf("reset password request is not active anymore")
+			return nil, fmt.Errorf(label + " is not active anymore")
 		}
 
 		filter := bson.M{"$and": bson.A{
@@ -298,7 +299,7 @@ func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, r
 
 		if updateResult.ModifiedCount > 0 {
 			repo.l.Debug().Msgf(
-				"add reset password request: cancelled %d requests for %s",
+				label+": cancelled (%d) remaining requests for %s",
 				updateResult.ModifiedCount,
 				req.EmailAddress)
 		}
@@ -321,25 +322,39 @@ func (repo *AuthRepository) UpdatePasswordForResetRequest(ctx context.Context, r
 
 		if updateResult.ModifiedCount == 0 {
 			return nil, errors.WithMessage(
-				fmt.Errorf("reset password request is not active anymore"),
+				fmt.Errorf(label+" is not active anymore"),
 				"could not update")
 		}
 
-		// repo.usersCol.UpdateOne()
-		return nil, fmt.Errorf("not implemented yet")
+		userFilter := users.UserData{
+			EmailAddress: req.EmailAddress,
+		}
+
+		userUpdate := bson.M{"$set": users.UserData{
+			Password: pwdHash,
+		}}
+
+		updateResult, err = repo.usersCol.UpdateOne(sessCtx, userFilter, userUpdate)
+		if err != nil {
+			return nil, err
+		}
+
+		if updateResult.MatchedCount == 0 {
+			return nil, usecases.NewErrorRecordNotExists("users")
+		}
 
 		return nil, nil
 	}
 
 	session, err := repo.resetPwdCol.Database().Client().StartSession()
 	if err != nil {
-		return errors.WithMessagef(err, "reset password request: start session")
+		return errors.WithMessagef(err, label+": start session")
 	}
 	defer session.EndSession(ctx)
 
 	_, err = session.WithTransaction(ctx, cb)
 	if err != nil {
-		return errors.WithMessagef(err, "reset password request")
+		return errors.WithMessagef(err, label)
 	}
 
 	return nil
