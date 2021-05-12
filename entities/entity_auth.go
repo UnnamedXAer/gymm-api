@@ -5,7 +5,7 @@ import "time"
 type ExpireType uint8
 
 const (
-	Expired ExpireType = iota
+	Expired ExpireType = iota + 1
 	NotExpired
 	All
 )
@@ -13,7 +13,7 @@ const (
 type ResetPwdStatus uint8
 
 const (
-	ResetPwdStatusNoActionYet ResetPwdStatus = iota
+	ResetPwdStatusNoActionYet ResetPwdStatus = iota + 1
 	ResetPwdStatusCompleted
 	ResetPwdStatusCanceled
 )
