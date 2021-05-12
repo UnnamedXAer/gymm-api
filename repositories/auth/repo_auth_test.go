@@ -303,9 +303,15 @@ func TestAddResetPasswordRequest(t *testing.T) {
 }
 
 func TestUpdatePasswordForResetRequest(t *testing.T) {
+	ctx := context.TODO()
 
-	nonexistingReqID := mocks.ExampleResetPwdReq.ID[:len(mocks.ExampleResetPwdReq.ID)-1]
-	if mocks.ExampleResetPwdReq.ID[len(mocks.ExampleResetPwdReq.ID)-1] == 'f' {
+	pwdResReq, err := authRepo.AddResetPasswordRequest(ctx, mockedUser.EmailAddress, time.Now().AddDate(0, 0, 1))
+	if err != nil {
+		t.Fatalf("could not inset mock record %v", err)
+	}
+
+	nonexistingReqID := pwdResReq.ID[:len(pwdResReq.ID)-1]
+	if pwdResReq.ID[len(pwdResReq.ID)-1] == 'f' {
 		nonexistingReqID += "e"
 	} else {
 		nonexistingReqID += "f"
@@ -324,23 +330,23 @@ func TestUpdatePasswordForResetRequest(t *testing.T) {
 		},
 		{
 			desc:     "missing id",
-			password: pwdHash,
+			password: mocks.PasswordHash,
 			errTxt:   usecases.NewErrorInvalidID("", "reset password request").Error(),
 		},
 		{
 			desc:     "not existing request",
-			password: pwdHash,
-			reqID:    "notfound",
+			reqID:    nonexistingReqID,
+			password: mocks.PasswordHash,
 			errTxt:   usecases.NewErrorRecordNotExists("reset password request").Error(),
 		},
 		{
 			desc:     "correct",
-			reqID:    nonexistingReqID,
-			password: pwdHash,
+			password: mocks.PasswordHash,
+			reqID:    pwdResReq.ID,
+			errTxt:   "",
 		},
 	}
 
-	ctx := context.TODO()
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 
